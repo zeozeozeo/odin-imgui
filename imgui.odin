@@ -1459,7 +1459,10 @@ PlatformImeData :: struct {
 // FUNCTIONS
 ////////////////////////////////////////////////////////////
 
-foreign import lib "imgui.lib"
+// I'm not an expert on this, so the linux/osx imports may be incorrect!
+when      ODIN_OS == .Windows do foreign import lib "imgui.lib"
+else when ODIN_OS == .Linux   do foreign import lib "imgui.a"
+else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
 
 foreign lib {
 	@(link_name="ImGui_CreateContext") CreateContext :: proc "c" (shared_font_atlas: ^FontAtlas) -> ^Context ---
