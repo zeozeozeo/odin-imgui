@@ -11,7 +11,7 @@ CHECKVERSION :: proc() {
 // DEFINES
 ////////////////////////////////////////////////////////////
 
-IMGUI_VERSION :: "1.89.3 WIP"
+IMGUI_VERSION :: "1.89.5 WIP"
 
 
 ////////////////////////////////////////////////////////////
@@ -126,7 +126,6 @@ InputTextFlags_CharsScientific :: InputTextFlags{.CharsScientific}
 InputTextFlags_CallbackResize :: InputTextFlags{.CallbackResize}
 InputTextFlags_CallbackEdit :: InputTextFlags{.CallbackEdit}
 InputTextFlags_EscapeClearsAll :: InputTextFlags{.EscapeClearsAll}
-InputTextFlags_AlwaysInsertMode :: InputTextFlags{.AlwaysOverwrite}
 
 TreeNodeFlags :: bit_set[TreeNodeFlag; c.int]
 TreeNodeFlag :: enum c.int {
@@ -773,6 +772,9 @@ StyleVar :: enum c.int {
 	TabRounding,
 	ButtonTextAlign,
 	SelectableTextAlign,
+	SeparatorTextBorderSize,
+	SeparatorTextAlign,
+	SeparatorTextPadding,
 	COUNT,
 }
 
@@ -862,7 +864,6 @@ SliderFlags_Logarithmic :: SliderFlags{.Logarithmic}
 SliderFlags_NoRoundToFormat :: SliderFlags{.NoRoundToFormat}
 SliderFlags_NoInput :: SliderFlags{.NoInput}
 SliderFlags_InvalidMask_ :: c.int(0x7000000F) // Meant to be of type SliderFlags
-SliderFlags_ClampOnInput :: SliderFlags{.AlwaysClamp}
 
 MouseButton :: enum c.int {
 	Left = 0,
@@ -1104,6 +1105,9 @@ Style :: struct {
 	ColorButtonPosition: Dir,
 	ButtonTextAlign: Vec2,
 	SelectableTextAlign: Vec2,
+	SeparatorTextBorderSize: f32,
+	SeparatorTextAlign: Vec2,
+	SeparatorTextPadding: Vec2,
 	DisplayWindowPadding: Vec2,
 	DisplaySafeAreaPadding: Vec2,
 	MouseCursorScale: f32,
@@ -1152,6 +1156,8 @@ IO :: struct {
 	ConfigWindowsResizeFromEdges: bool,
 	ConfigWindowsMoveFromTitleBarOnly: bool,
 	ConfigMemoryCompactTimer: f32,
+	ConfigDebugBeginReturnValueOnce: bool,
+	ConfigDebugBeginReturnValueLoop: bool,
 	BackendPlatformName: cstring,
 	BackendRendererName: cstring,
 	BackendPlatformUserData: rawptr,
@@ -1179,6 +1185,7 @@ IO :: struct {
 	KeyMap: [Key.COUNT]c.int,
 	KeysDown: [Key.COUNT]bool,
 	NavInputs: [NavInput.COUNT]f32,
+	Ctx: ^Context,
 	MousePos: Vec2,
 	MouseDown: [5]bool,
 	MouseWheel: f32,
@@ -1213,6 +1220,7 @@ IO :: struct {
 }
 
 InputTextCallbackData :: struct {
+	Ctx: ^Context,
 	EventFlag: InputTextFlags,
 	Flags: InputTextFlags,
 	UserData: rawptr,
@@ -1274,6 +1282,7 @@ TextBuffer :: struct {
 }
 
 ListClipper :: struct {
+	Ctx: ^Context,
 	DisplayStart: c.int,
 	DisplayEnd: c.int,
 	ItemsCount: c.int,
@@ -1544,8 +1553,8 @@ foreign lib {
 	@(link_name="ImGui_PushStyleVarImVec2") PushStyleVarImVec2 :: proc "c" (idx: StyleVar, val: Vec2) ---
 	@(link_name="ImGui_PopStyleVar") PopStyleVar :: proc "c" () ---
 	@(link_name="ImGui_PopStyleVarEx") PopStyleVarEx :: proc "c" (count: c.int) ---
-	@(link_name="ImGui_PushAllowKeyboardFocus") PushAllowKeyboardFocus :: proc "c" (allow_keyboard_focus: bool) ---
-	@(link_name="ImGui_PopAllowKeyboardFocus") PopAllowKeyboardFocus :: proc "c" () ---
+	@(link_name="ImGui_PushTabStop") PushTabStop :: proc "c" (tab_stop: bool) ---
+	@(link_name="ImGui_PopTabStop") PopTabStop :: proc "c" () ---
 	@(link_name="ImGui_PushButtonRepeat") PushButtonRepeat :: proc "c" (repeat: bool) ---
 	@(link_name="ImGui_PopButtonRepeat") PopButtonRepeat :: proc "c" () ---
 	@(link_name="ImGui_PushItemWidth") PushItemWidth :: proc "c" (item_width: f32) ---
@@ -1610,6 +1619,7 @@ foreign lib {
 	// @(link_name="ImGui_LabelTextV") LabelTextV :: proc "c" (label: cstring, fmt: cstring, args: libc.va_list) ---
 	@(link_name="ImGui_BulletText") BulletText :: proc "c" (fmt: cstring, #c_vararg args: ..any) ---
 	// @(link_name="ImGui_BulletTextV") BulletTextV :: proc "c" (fmt: cstring, args: libc.va_list) ---
+	@(link_name="ImGui_SeparatorText") SeparatorText :: proc "c" (label: cstring) ---
 	@(link_name="ImGui_Button") Button :: proc "c" (label: cstring) -> bool ---
 	@(link_name="ImGui_ButtonEx") ButtonEx :: proc "c" (label: cstring, size: Vec2) -> bool ---
 	@(link_name="ImGui_SmallButton") SmallButton :: proc "c" (label: cstring) -> bool ---
@@ -1762,7 +1772,7 @@ foreign lib {
 	@(link_name="ImGui_MenuItem") MenuItem :: proc "c" (label: cstring) -> bool ---
 	@(link_name="ImGui_MenuItemEx") MenuItemEx :: proc "c" (label: cstring, shortcut: cstring, selected: bool, enabled: bool) -> bool ---
 	@(link_name="ImGui_MenuItemBoolPtr") MenuItemBoolPtr :: proc "c" (label: cstring, shortcut: cstring, p_selected: ^bool, enabled: bool) -> bool ---
-	@(link_name="ImGui_BeginTooltip") BeginTooltip :: proc "c" () ---
+	@(link_name="ImGui_BeginTooltip") BeginTooltip :: proc "c" () -> bool ---
 	@(link_name="ImGui_EndTooltip") EndTooltip :: proc "c" () ---
 	@(link_name="ImGui_SetTooltip") SetTooltip :: proc "c" (fmt: cstring, #c_vararg args: ..any) ---
 	// @(link_name="ImGui_SetTooltipV") SetTooltipV :: proc "c" (fmt: cstring, args: libc.va_list) ---
@@ -1917,7 +1927,7 @@ foreign lib {
 	@(link_name="ImGuiIO_AddKeyAnalogEvent") IO_AddKeyAnalogEvent :: proc "c" (self: ^IO, key: Key, down: bool, v: f32) ---
 	@(link_name="ImGuiIO_AddMousePosEvent") IO_AddMousePosEvent :: proc "c" (self: ^IO, x: f32, y: f32) ---
 	@(link_name="ImGuiIO_AddMouseButtonEvent") IO_AddMouseButtonEvent :: proc "c" (self: ^IO, button: c.int, down: bool) ---
-	@(link_name="ImGuiIO_AddMouseWheelEvent") IO_AddMouseWheelEvent :: proc "c" (self: ^IO, wh_x: f32, wh_y: f32) ---
+	@(link_name="ImGuiIO_AddMouseWheelEvent") IO_AddMouseWheelEvent :: proc "c" (self: ^IO, wheel_x: f32, wheel_y: f32) ---
 	@(link_name="ImGuiIO_AddFocusEvent") IO_AddFocusEvent :: proc "c" (self: ^IO, focused: bool) ---
 	@(link_name="ImGuiIO_AddInputCharacter") IO_AddInputCharacter :: proc "c" (self: ^IO, c: c.uint) ---
 	@(link_name="ImGuiIO_AddInputCharacterUTF16") IO_AddInputCharacterUTF16 :: proc "c" (self: ^IO, c: Wchar16) ---
@@ -2028,8 +2038,6 @@ foreign lib {
 	@(link_name="ImDrawList_PrimWriteVtx") DrawList_PrimWriteVtx :: proc "c" (self: ^DrawList, pos: Vec2, uv: Vec2, col: U32) ---
 	@(link_name="ImDrawList_PrimWriteIdx") DrawList_PrimWriteIdx :: proc "c" (self: ^DrawList, idx: DrawIdx) ---
 	@(link_name="ImDrawList_PrimVtx") DrawList_PrimVtx :: proc "c" (self: ^DrawList, pos: Vec2, uv: Vec2, col: U32) ---
-	@(link_name="ImDrawList_AddBezierCurve") DrawList_AddBezierCurve :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: U32, thickness: f32, num_segments: c.int) ---
-	@(link_name="ImDrawList_PathBezierCurveTo") DrawList_PathBezierCurveTo :: proc "c" (self: ^DrawList, p2: Vec2, p3: Vec2, p4: Vec2, num_segments: c.int) ---
 	@(link_name="ImDrawList__ResetForNewFrame") DrawList__ResetForNewFrame :: proc "c" (self: ^DrawList) ---
 	@(link_name="ImDrawList__ClearFreeMemory") DrawList__ClearFreeMemory :: proc "c" (self: ^DrawList) ---
 	@(link_name="ImDrawList__PopUnusedDrawCmd") DrawList__PopUnusedDrawCmd :: proc "c" (self: ^DrawList) ---
@@ -2100,6 +2108,8 @@ foreign lib {
 	@(link_name="ImGuiViewport_GetCenter") Viewport_GetCenter :: proc "c" (self: ^Viewport) -> Vec2 ---
 	@(link_name="ImGuiViewport_GetWorkCenter") Viewport_GetWorkCenter :: proc "c" (self: ^Viewport) -> Vec2 ---
 	@(link_name="GetKeyIndex") GetKeyIndex :: proc "c" (key: Key) -> Key ---
+	@(link_name="ImGui_PushAllowKeyboardFocus") PushAllowKeyboardFocus :: proc "c" (tab_stop: bool) ---
+	@(link_name="ImGui_PopAllowKeyboardFocus") PopAllowKeyboardFocus :: proc "c" () ---
 	@(link_name="ImGui_ImageButtonImTextureID") ImageButtonImTextureID :: proc "c" (user_texture_id: TextureID, size: Vec2, uv0: Vec2, uv1: Vec2, frame_padding: c.int, bg_col: Vec4, tint_col: Vec4) -> bool ---
 	@(link_name="ImGui_CaptureKeyboardFromApp") CaptureKeyboardFromApp :: proc "c" (want_capture_keyboard: bool) ---
 	@(link_name="ImGui_CaptureMouseFromApp") CaptureMouseFromApp :: proc "c" (want_capture_mouse: bool) ---
