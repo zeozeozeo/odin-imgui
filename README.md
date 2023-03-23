@@ -40,7 +40,8 @@ mv c_imgui.cpp imgui/
 mv c_imgui.h imgui/
 ```
 
-## Example script for compiling imgui wrapper
+## Example scripts for compiling imgui wrapper
+### Windows:
 ```bat
 set sources=imgui.cpp imgui_demo.cpp imgui_draw.cpp imgui_tables.cpp imgui_widgets.cpp c_imgui.cpp
 set objects=imgui.obj imgui_demo.obj imgui_draw.obj imgui_tables.obj imgui_widgets.obj c_imgui.obj
@@ -50,4 +51,13 @@ del imgui.lib
 cl /c %sources% %compile_flags%
 lib %objects%
 del %objects%
+```
+
+### Linux:
+```sh
+#!/bin/bash
+mkdir build
+cd build
+clang -c ../imgui_demo.cpp ../imgui_draw.cpp ../imgui_tables.cpp ../imgui_widgets.cpp ../imgui.cpp ../cimgui.cpp -O2 -fPIC -fno-exceptions -fno-rtti -fno-threadsafe-statics
+ar rcs imgui.a  imgui_demo.o imgui_draw.o imgui_tables.o imgui_widgets.o imgui.o cimgui.o
 ```
