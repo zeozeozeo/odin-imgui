@@ -110,6 +110,8 @@ _type_aliases = {
 	"signed char": "c.char",
 	"signed short": "c.short",
 	"signed int": "c.int",
+	"signed long long": "c.longlong",
+	"unsigned long long": "c.ulonglong",
 	"short": "c.short",
 	"size_t": "c.size_t",
 	"va_list": "libc.va_list",
@@ -644,11 +646,13 @@ else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
 
 _imgui_allowed_typedefs = [
 	"ImS8",
-	"ImS16",
-	"ImS32",
 	"ImU8",
+	"ImS16",
 	"ImU16",
+	"ImS32",
 	"ImU32",
+	"ImS64",
+	"ImU64",
 
 	"ImWchar16",
 	"ImWchar32",

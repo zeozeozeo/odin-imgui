@@ -11,7 +11,7 @@ CHECKVERSION :: proc() {
 // DEFINES
 ////////////////////////////////////////////////////////////
 
-IMGUI_VERSION :: "1.89.5 WIP"
+IMGUI_VERSION :: "1.89.7 WIP"
 
 
 ////////////////////////////////////////////////////////////
@@ -40,12 +40,14 @@ WindowFlag :: enum c.int {
 	NoNavInputs = 18,
 	NoNavFocus = 19,
 	UnsavedDocument = 20,
+	NoDocking = 21,
 	NavFlattened = 23,
 	ChildWindow = 24,
 	Tooltip = 25,
 	Popup = 26,
 	Modal = 27,
 	ChildMenu = 28,
+	DockNodeHost = 29,
 }
 
 WindowFlags_None :: WindowFlags{}
@@ -69,6 +71,7 @@ WindowFlags_AlwaysUseWindowPadding :: WindowFlags{.AlwaysUseWindowPadding}
 WindowFlags_NoNavInputs :: WindowFlags{.NoNavInputs}
 WindowFlags_NoNavFocus :: WindowFlags{.NoNavFocus}
 WindowFlags_UnsavedDocument :: WindowFlags{.UnsavedDocument}
+WindowFlags_NoDocking :: WindowFlags{.NoDocking}
 WindowFlags_NoNav :: WindowFlags{.NoNavInputs,.NoNavFocus}
 WindowFlags_NoDecoration :: WindowFlags{.NoTitleBar,.NoResize,.NoScrollbar,.NoCollapse}
 WindowFlags_NoInputs :: WindowFlags{.NoMouseInputs,.NoNavInputs,.NoNavFocus}
@@ -78,6 +81,7 @@ WindowFlags_Tooltip :: WindowFlags{.Tooltip}
 WindowFlags_Popup :: WindowFlags{.Popup}
 WindowFlags_Modal :: WindowFlags{.Modal}
 WindowFlags_ChildMenu :: WindowFlags{.ChildMenu}
+WindowFlags_DockNodeHost :: WindowFlags{.DockNodeHost}
 
 InputTextFlags :: bit_set[InputTextFlag; c.int]
 InputTextFlag :: enum c.int {
@@ -372,6 +376,7 @@ FocusedFlag :: enum c.int {
 	RootWindow = 1,
 	AnyWindow = 2,
 	NoPopupHierarchy = 3,
+	DockHierarchy = 4,
 }
 
 FocusedFlags_None :: FocusedFlags{}
@@ -379,6 +384,7 @@ FocusedFlags_ChildWindows :: FocusedFlags{.ChildWindows}
 FocusedFlags_RootWindow :: FocusedFlags{.RootWindow}
 FocusedFlags_AnyWindow :: FocusedFlags{.AnyWindow}
 FocusedFlags_NoPopupHierarchy :: FocusedFlags{.NoPopupHierarchy}
+FocusedFlags_DockHierarchy :: FocusedFlags{.DockHierarchy}
 FocusedFlags_RootAndChildWindows :: FocusedFlags{.RootWindow,.ChildWindows}
 
 HoveredFlags :: bit_set[HoveredFlag; c.int]
@@ -387,6 +393,7 @@ HoveredFlag :: enum c.int {
 	RootWindow = 1,
 	AnyWindow = 2,
 	NoPopupHierarchy = 3,
+	DockHierarchy = 4,
 	AllowWhenBlockedByPopup = 5,
 	AllowWhenBlockedByActiveItem = 7,
 	AllowWhenOverlapped = 8,
@@ -402,6 +409,7 @@ HoveredFlags_ChildWindows :: HoveredFlags{.ChildWindows}
 HoveredFlags_RootWindow :: HoveredFlags{.RootWindow}
 HoveredFlags_AnyWindow :: HoveredFlags{.AnyWindow}
 HoveredFlags_NoPopupHierarchy :: HoveredFlags{.NoPopupHierarchy}
+HoveredFlags_DockHierarchy :: HoveredFlags{.DockHierarchy}
 HoveredFlags_AllowWhenBlockedByPopup :: HoveredFlags{.AllowWhenBlockedByPopup}
 HoveredFlags_AllowWhenBlockedByActiveItem :: HoveredFlags{.AllowWhenBlockedByActiveItem}
 HoveredFlags_AllowWhenOverlapped :: HoveredFlags{.AllowWhenOverlapped}
@@ -412,6 +420,24 @@ HoveredFlags_RootAndChildWindows :: HoveredFlags{.RootWindow,.ChildWindows}
 HoveredFlags_DelayNormal :: HoveredFlags{.DelayNormal}
 HoveredFlags_DelayShort :: HoveredFlags{.DelayShort}
 HoveredFlags_NoSharedDelay :: HoveredFlags{.NoSharedDelay}
+
+DockNodeFlags :: bit_set[DockNodeFlag; c.int]
+DockNodeFlag :: enum c.int {
+	KeepAliveOnly = 0,
+	NoDockingInCentralNode = 2,
+	PassthruCentralNode = 3,
+	NoSplit = 4,
+	NoResize = 5,
+	AutoHideTabBar = 6,
+}
+
+DockNodeFlags_None :: DockNodeFlags{}
+DockNodeFlags_KeepAliveOnly :: DockNodeFlags{.KeepAliveOnly}
+DockNodeFlags_NoDockingInCentralNode :: DockNodeFlags{.NoDockingInCentralNode}
+DockNodeFlags_PassthruCentralNode :: DockNodeFlags{.PassthruCentralNode}
+DockNodeFlags_NoSplit :: DockNodeFlags{.NoSplit}
+DockNodeFlags_NoResize :: DockNodeFlags{.NoResize}
+DockNodeFlags_AutoHideTabBar :: DockNodeFlags{.AutoHideTabBar}
 
 DragDropFlags :: bit_set[DragDropFlag; c.int]
 DragDropFlag :: enum c.int {
@@ -661,6 +687,10 @@ ConfigFlag :: enum c.int {
 	NavNoCaptureKeyboard = 3,
 	NoMouse = 4,
 	NoMouseCursorChange = 5,
+	DockingEnable = 6,
+	ViewportsEnable = 10,
+	DpiEnableScaleViewports = 14,
+	DpiEnableScaleFonts = 15,
 	IsSRGB = 20,
 	IsTouchScreen = 21,
 }
@@ -672,6 +702,10 @@ ConfigFlags_NavEnableSetMousePos :: ConfigFlags{.NavEnableSetMousePos}
 ConfigFlags_NavNoCaptureKeyboard :: ConfigFlags{.NavNoCaptureKeyboard}
 ConfigFlags_NoMouse :: ConfigFlags{.NoMouse}
 ConfigFlags_NoMouseCursorChange :: ConfigFlags{.NoMouseCursorChange}
+ConfigFlags_DockingEnable :: ConfigFlags{.DockingEnable}
+ConfigFlags_ViewportsEnable :: ConfigFlags{.ViewportsEnable}
+ConfigFlags_DpiEnableScaleViewports :: ConfigFlags{.DpiEnableScaleViewports}
+ConfigFlags_DpiEnableScaleFonts :: ConfigFlags{.DpiEnableScaleFonts}
 ConfigFlags_IsSRGB :: ConfigFlags{.IsSRGB}
 ConfigFlags_IsTouchScreen :: ConfigFlags{.IsTouchScreen}
 
@@ -681,6 +715,9 @@ BackendFlag :: enum c.int {
 	HasMouseCursors = 1,
 	HasSetMousePos = 2,
 	RendererHasVtxOffset = 3,
+	PlatformHasViewports = 10,
+	HasMouseHoveredViewport = 11,
+	RendererHasViewports = 12,
 }
 
 BackendFlags_None :: BackendFlags{}
@@ -688,6 +725,9 @@ BackendFlags_HasGamepad :: BackendFlags{.HasGamepad}
 BackendFlags_HasMouseCursors :: BackendFlags{.HasMouseCursors}
 BackendFlags_HasSetMousePos :: BackendFlags{.HasSetMousePos}
 BackendFlags_RendererHasVtxOffset :: BackendFlags{.RendererHasVtxOffset}
+BackendFlags_PlatformHasViewports :: BackendFlags{.PlatformHasViewports}
+BackendFlags_HasMouseHoveredViewport :: BackendFlags{.HasMouseHoveredViewport}
+BackendFlags_RendererHasViewports :: BackendFlags{.RendererHasViewports}
 
 Col :: enum c.int {
 	Text,
@@ -728,6 +768,8 @@ Col :: enum c.int {
 	TabActive,
 	TabUnfocused,
 	TabUnfocusedActive,
+	DockingPreview,
+	DockingEmptyBg,
 	PlotLines,
 	PlotLinesHovered,
 	PlotHistogram,
@@ -886,6 +928,13 @@ MouseCursor :: enum c.int {
 	COUNT,
 }
 
+MouseSource :: enum c.int {
+	Mouse = 0,
+	TouchScreen,
+	Pen,
+	COUNT,
+}
+
 Cond :: enum c.int {
 	None = 0,
 	Always = 1<<0,
@@ -941,12 +990,34 @@ ViewportFlag :: enum c.int {
 	IsPlatformWindow = 0,
 	IsPlatformMonitor = 1,
 	OwnedByApp = 2,
+	NoDecoration = 3,
+	NoTaskBarIcon = 4,
+	NoFocusOnAppearing = 5,
+	NoFocusOnClick = 6,
+	NoInputs = 7,
+	NoRendererClear = 8,
+	NoAutoMerge = 9,
+	TopMost = 10,
+	CanHostOtherWindows = 11,
+	IsMinimized = 12,
+	IsFocused = 13,
 }
 
 ViewportFlags_None :: ViewportFlags{}
 ViewportFlags_IsPlatformWindow :: ViewportFlags{.IsPlatformWindow}
 ViewportFlags_IsPlatformMonitor :: ViewportFlags{.IsPlatformMonitor}
 ViewportFlags_OwnedByApp :: ViewportFlags{.OwnedByApp}
+ViewportFlags_NoDecoration :: ViewportFlags{.NoDecoration}
+ViewportFlags_NoTaskBarIcon :: ViewportFlags{.NoTaskBarIcon}
+ViewportFlags_NoFocusOnAppearing :: ViewportFlags{.NoFocusOnAppearing}
+ViewportFlags_NoFocusOnClick :: ViewportFlags{.NoFocusOnClick}
+ViewportFlags_NoInputs :: ViewportFlags{.NoInputs}
+ViewportFlags_NoRendererClear :: ViewportFlags{.NoRendererClear}
+ViewportFlags_NoAutoMerge :: ViewportFlags{.NoAutoMerge}
+ViewportFlags_TopMost :: ViewportFlags{.TopMost}
+ViewportFlags_CanHostOtherWindows :: ViewportFlags{.CanHostOtherWindows}
+ViewportFlags_IsMinimized :: ViewportFlags{.IsMinimized}
+ViewportFlags_IsFocused :: ViewportFlags{.IsFocused}
 
 DrawCornerFlags :: distinct c.int
 DrawCornerFlags_None :: DrawCornerFlags(DrawFlags_RoundCornersNone)
@@ -1072,6 +1143,18 @@ Vector_FontGlyph :: struct {
 	Data: ^FontGlyph,
 }
 
+Vector_PlatformMonitor :: struct {
+	Size: c.int,
+	Capacity: c.int,
+	Data: ^PlatformMonitor,
+}
+
+Vector_ViewportPtr :: struct {
+	Size: c.int,
+	Capacity: c.int,
+	Data: ^^Viewport,
+}
+
 Style :: struct {
 	Alpha: f32,
 	DisabledAlpha: f32,
@@ -1147,6 +1230,14 @@ IO :: struct {
 	FontAllowUserScaling: bool,
 	FontDefault: ^Font,
 	DisplayFramebufferScale: Vec2,
+	ConfigDockingNoSplit: bool,
+	ConfigDockingWithShift: bool,
+	ConfigDockingAlwaysTabBar: bool,
+	ConfigDockingTransparentPayload: bool,
+	ConfigViewportsNoAutoMerge: bool,
+	ConfigViewportsNoTaskBarIcon: bool,
+	ConfigViewportsNoDecoration: bool,
+	ConfigViewportsNoDefaultParent: bool,
 	MouseDrawCursor: bool,
 	ConfigMacOSXBehaviors: bool,
 	ConfigInputTrickleEventQueue: bool,
@@ -1158,6 +1249,7 @@ IO :: struct {
 	ConfigMemoryCompactTimer: f32,
 	ConfigDebugBeginReturnValueOnce: bool,
 	ConfigDebugBeginReturnValueLoop: bool,
+	ConfigDebugIgnoreFocusLoss: bool,
 	BackendPlatformName: cstring,
 	BackendRendererName: cstring,
 	BackendPlatformUserData: rawptr,
@@ -1190,6 +1282,8 @@ IO :: struct {
 	MouseDown: [5]bool,
 	MouseWheel: f32,
 	MouseWheelH: f32,
+	MouseSource: MouseSource,
+	MouseHoveredViewport: ID,
 	KeyCtrl: bool,
 	KeyShift: bool,
 	KeyAlt: bool,
@@ -1207,8 +1301,10 @@ IO :: struct {
 	MouseReleased: [5]bool,
 	MouseDownOwned: [5]bool,
 	MouseDownOwnedUnlessPopupClose: [5]bool,
+	MouseWheelRequestAxisSwap: bool,
 	MouseDownDuration: [5]f32,
 	MouseDownDurationPrev: [5]f32,
+	MouseDragMaxDistanceAbs: [5]Vec2,
 	MouseDragMaxDistanceSqr: [5]f32,
 	PenPressure: f32,
 	AppFocusLost: bool,
@@ -1240,6 +1336,17 @@ SizeCallbackData :: struct {
 	Pos: Vec2,
 	CurrentSize: Vec2,
 	DesiredSize: Vec2,
+}
+
+WindowClass :: struct {
+	ClassId: ID,
+	ParentViewportId: ID,
+	ViewportFlagsOverrideSet: ViewportFlags,
+	ViewportFlagsOverrideClear: ViewportFlags,
+	TabItemFlagsOverrideSet: TabItemFlags,
+	DockNodeFlagsOverrideSet: DockNodeFlags,
+	DockingAlwaysTabBar: bool,
+	DockingAllowUnclassed: bool,
 }
 
 Payload :: struct {
@@ -1355,6 +1462,7 @@ DrawData :: struct {
 	DisplayPos: Vec2,
 	DisplaySize: Vec2,
 	FramebufferScale: Vec2,
+	OwnerViewport: ^Viewport,
 }
 
 FontConfig :: struct {
@@ -1449,12 +1557,58 @@ Font :: struct {
 }
 
 Viewport :: struct {
+	_ID: ID,
 	Flags: ViewportFlags,
 	Pos: Vec2,
 	Size: Vec2,
 	WorkPos: Vec2,
 	WorkSize: Vec2,
+	DpiScale: f32,
+	ParentViewportId: ID,
+	DrawData: ^DrawData,
+	RendererUserData: rawptr,
+	PlatformUserData: rawptr,
+	PlatformHandle: rawptr,
 	PlatformHandleRaw: rawptr,
+	PlatformWindowCreated: bool,
+	PlatformRequestMove: bool,
+	PlatformRequestResize: bool,
+	PlatformRequestClose: bool,
+}
+
+PlatformIO :: struct {
+	Platform_CreateWindow: proc "c" (vp: ^Viewport),
+	Platform_DestroyWindow: proc "c" (vp: ^Viewport),
+	Platform_ShowWindow: proc "c" (vp: ^Viewport),
+	Platform_SetWindowPos: proc "c" (vp: ^Viewport, pos: Vec2),
+	Platform_GetWindowPos: proc "c" (vp: ^Viewport) -> Vec2,
+	Platform_SetWindowSize: proc "c" (vp: ^Viewport, size: Vec2),
+	Platform_GetWindowSize: proc "c" (vp: ^Viewport) -> Vec2,
+	Platform_SetWindowFocus: proc "c" (vp: ^Viewport),
+	Platform_GetWindowFocus: proc "c" (vp: ^Viewport) -> bool,
+	Platform_GetWindowMinimized: proc "c" (vp: ^Viewport) -> bool,
+	Platform_SetWindowTitle: proc "c" (vp: ^Viewport, str: cstring),
+	Platform_SetWindowAlpha: proc "c" (vp: ^Viewport, alpha: f32),
+	Platform_UpdateWindow: proc "c" (vp: ^Viewport),
+	Platform_RenderWindow: proc "c" (vp: ^Viewport, render_arg: rawptr),
+	Platform_SwapBuffers: proc "c" (vp: ^Viewport, render_arg: rawptr),
+	Platform_GetWindowDpiScale: proc "c" (vp: ^Viewport) -> f32,
+	Platform_OnChangedViewport: proc "c" (vp: ^Viewport),
+	Platform_CreateVkSurface: proc "c" (vp: ^Viewport, vk_inst: U64, vk_allocators: rawptr, out_vk_surface: ^U64) -> c.int,
+	Renderer_CreateWindow: proc "c" (vp: ^Viewport),
+	Renderer_DestroyWindow: proc "c" (vp: ^Viewport),
+	Renderer_SetWindowSize: proc "c" (vp: ^Viewport, size: Vec2),
+	Renderer_RenderWindow: proc "c" (vp: ^Viewport, render_arg: rawptr),
+	Renderer_SwapBuffers: proc "c" (vp: ^Viewport, render_arg: rawptr),
+	Monitors: Vector_PlatformMonitor,
+	Viewports: Vector_ViewportPtr,
+}
+
+PlatformMonitor :: struct {
+	MainPos, MainSize: Vec2,
+	WorkPos, WorkSize: Vec2,
+	DpiScale: f32,
+	PlatformHandle: rawptr,
 }
 
 PlatformImeData :: struct {
@@ -1507,10 +1661,12 @@ foreign lib {
 	@(link_name="ImGui_IsWindowFocused") IsWindowFocused :: proc "c" (flags: FocusedFlags) -> bool ---
 	@(link_name="ImGui_IsWindowHovered") IsWindowHovered :: proc "c" (flags: HoveredFlags) -> bool ---
 	@(link_name="ImGui_GetWindowDrawList") GetWindowDrawList :: proc "c" () -> ^DrawList ---
+	@(link_name="ImGui_GetWindowDpiScale") GetWindowDpiScale :: proc "c" () -> f32 ---
 	@(link_name="ImGui_GetWindowPos") GetWindowPos :: proc "c" () -> Vec2 ---
 	@(link_name="ImGui_GetWindowSize") GetWindowSize :: proc "c" () -> Vec2 ---
 	@(link_name="ImGui_GetWindowWidth") GetWindowWidth :: proc "c" () -> f32 ---
 	@(link_name="ImGui_GetWindowHeight") GetWindowHeight :: proc "c" () -> f32 ---
+	@(link_name="ImGui_GetWindowViewport") GetWindowViewport :: proc "c" () -> ^Viewport ---
 	@(link_name="ImGui_SetNextWindowPos") SetNextWindowPos :: proc "c" (pos: Vec2, cond: Cond) ---
 	@(link_name="ImGui_SetNextWindowPosEx") SetNextWindowPosEx :: proc "c" (pos: Vec2, cond: Cond, pivot: Vec2) ---
 	@(link_name="ImGui_SetNextWindowSize") SetNextWindowSize :: proc "c" (size: Vec2, cond: Cond) ---
@@ -1520,6 +1676,7 @@ foreign lib {
 	@(link_name="ImGui_SetNextWindowFocus") SetNextWindowFocus :: proc "c" () ---
 	@(link_name="ImGui_SetNextWindowScroll") SetNextWindowScroll :: proc "c" (scroll: Vec2) ---
 	@(link_name="ImGui_SetNextWindowBgAlpha") SetNextWindowBgAlpha :: proc "c" (alpha: f32) ---
+	@(link_name="ImGui_SetNextWindowViewport") SetNextWindowViewport :: proc "c" (viewport_id: ID) ---
 	@(link_name="ImGui_SetWindowPos") SetWindowPos :: proc "c" (pos: Vec2, cond: Cond) ---
 	@(link_name="ImGui_SetWindowSize") SetWindowSize :: proc "c" (size: Vec2, cond: Cond) ---
 	@(link_name="ImGui_SetWindowCollapsed") SetWindowCollapsed :: proc "c" (collapsed: bool, cond: Cond) ---
@@ -1825,6 +1982,14 @@ foreign lib {
 	@(link_name="ImGui_EndTabItem") EndTabItem :: proc "c" () ---
 	@(link_name="ImGui_TabItemButton") TabItemButton :: proc "c" (label: cstring, flags: TabItemFlags) -> bool ---
 	@(link_name="ImGui_SetTabItemClosed") SetTabItemClosed :: proc "c" (tab_or_docked_window_label: cstring) ---
+	@(link_name="ImGui_DockSpace") DockSpace :: proc "c" (id: ID) -> ID ---
+	@(link_name="ImGui_DockSpaceEx") DockSpaceEx :: proc "c" (id: ID, size: Vec2, flags: DockNodeFlags, window_class: ^WindowClass) -> ID ---
+	@(link_name="ImGui_DockSpaceOverViewport") DockSpaceOverViewport :: proc "c" () -> ID ---
+	@(link_name="ImGui_DockSpaceOverViewportEx") DockSpaceOverViewportEx :: proc "c" (viewport: ^Viewport, flags: DockNodeFlags, window_class: ^WindowClass) -> ID ---
+	@(link_name="ImGui_SetNextWindowDockID") SetNextWindowDockID :: proc "c" (dock_id: ID, cond: Cond) ---
+	@(link_name="ImGui_SetNextWindowClass") SetNextWindowClass :: proc "c" (window_class: ^WindowClass) ---
+	@(link_name="ImGui_GetWindowDockID") GetWindowDockID :: proc "c" () -> ID ---
+	@(link_name="ImGui_IsWindowDocked") IsWindowDocked :: proc "c" () -> bool ---
 	@(link_name="ImGui_LogToTTY") LogToTTY :: proc "c" (auto_open_depth: c.int) ---
 	@(link_name="ImGui_LogToFile") LogToFile :: proc "c" (auto_open_depth: c.int, filename: cstring) ---
 	@(link_name="ImGui_LogToClipboard") LogToClipboard :: proc "c" (auto_open_depth: c.int) ---
@@ -1868,6 +2033,8 @@ foreign lib {
 	@(link_name="ImGui_GetMainViewport") GetMainViewport :: proc "c" () -> ^Viewport ---
 	@(link_name="ImGui_GetBackgroundDrawList") GetBackgroundDrawList :: proc "c" () -> ^DrawList ---
 	@(link_name="ImGui_GetForegroundDrawList") GetForegroundDrawList :: proc "c" () -> ^DrawList ---
+	@(link_name="ImGui_GetBackgroundDrawListImGuiViewportPtr") GetBackgroundDrawListImGuiViewportPtr :: proc "c" (viewport: ^Viewport) -> ^DrawList ---
+	@(link_name="ImGui_GetForegroundDrawListImGuiViewportPtr") GetForegroundDrawListImGuiViewportPtr :: proc "c" (viewport: ^Viewport) -> ^DrawList ---
 	@(link_name="ImGui_IsRectVisibleBySize") IsRectVisibleBySize :: proc "c" (size: Vec2) -> bool ---
 	@(link_name="ImGui_IsRectVisible") IsRectVisible :: proc "c" (rect_min: Vec2, rect_max: Vec2) -> bool ---
 	@(link_name="ImGui_GetTime") GetTime :: proc "c" () -> f64 ---
@@ -1920,6 +2087,13 @@ foreign lib {
 	@(link_name="ImGui_GetAllocatorFunctions") GetAllocatorFunctions :: proc "c" (p_alloc_func: ^MemAllocFunc, p_free_func: ^MemFreeFunc, p_user_data: ^rawptr) ---
 	@(link_name="ImGui_MemAlloc") MemAlloc :: proc "c" (size: c.size_t) -> rawptr ---
 	@(link_name="ImGui_MemFree") MemFree :: proc "c" (ptr: rawptr) ---
+	@(link_name="ImGui_GetPlatformIO") GetPlatformIO :: proc "c" () -> ^PlatformIO ---
+	@(link_name="ImGui_UpdatePlatformWindows") UpdatePlatformWindows :: proc "c" () ---
+	@(link_name="ImGui_RenderPlatformWindowsDefault") RenderPlatformWindowsDefault :: proc "c" () ---
+	@(link_name="ImGui_RenderPlatformWindowsDefaultEx") RenderPlatformWindowsDefaultEx :: proc "c" (platform_render_arg: rawptr, renderer_render_arg: rawptr) ---
+	@(link_name="ImGui_DestroyPlatformWindows") DestroyPlatformWindows :: proc "c" () ---
+	@(link_name="ImGui_FindViewportByID") FindViewportByID :: proc "c" (id: ID) -> ^Viewport ---
+	@(link_name="ImGui_FindViewportByPlatformHandle") FindViewportByPlatformHandle :: proc "c" (platform_handle: rawptr) -> ^Viewport ---
 	@(link_name="ImVector_Construct") Vector_Construct :: proc "c" (vector: rawptr) ---
 	@(link_name="ImVector_Destruct") Vector_Destruct :: proc "c" (vector: rawptr) ---
 	@(link_name="ImGuiStyle_ScaleAllSizes") Style_ScaleAllSizes :: proc "c" (self: ^Style, scale_factor: f32) ---
@@ -1928,6 +2102,8 @@ foreign lib {
 	@(link_name="ImGuiIO_AddMousePosEvent") IO_AddMousePosEvent :: proc "c" (self: ^IO, x: f32, y: f32) ---
 	@(link_name="ImGuiIO_AddMouseButtonEvent") IO_AddMouseButtonEvent :: proc "c" (self: ^IO, button: c.int, down: bool) ---
 	@(link_name="ImGuiIO_AddMouseWheelEvent") IO_AddMouseWheelEvent :: proc "c" (self: ^IO, wheel_x: f32, wheel_y: f32) ---
+	@(link_name="ImGuiIO_AddMouseSourceEvent") IO_AddMouseSourceEvent :: proc "c" (self: ^IO, source: MouseSource) ---
+	@(link_name="ImGuiIO_AddMouseViewportEvent") IO_AddMouseViewportEvent :: proc "c" (self: ^IO, id: ID) ---
 	@(link_name="ImGuiIO_AddFocusEvent") IO_AddFocusEvent :: proc "c" (self: ^IO, focused: bool) ---
 	@(link_name="ImGuiIO_AddInputCharacter") IO_AddInputCharacter :: proc "c" (self: ^IO, c: c.uint) ---
 	@(link_name="ImGuiIO_AddInputCharacterUTF16") IO_AddInputCharacterUTF16 :: proc "c" (self: ^IO, c: Wchar16) ---
@@ -1966,7 +2142,8 @@ foreign lib {
 	@(link_name="ImGuiListClipper_Begin") ListClipper_Begin :: proc "c" (self: ^ListClipper, items_count: c.int, items_height: f32) ---
 	@(link_name="ImGuiListClipper_End") ListClipper_End :: proc "c" (self: ^ListClipper) ---
 	@(link_name="ImGuiListClipper_Step") ListClipper_Step :: proc "c" (self: ^ListClipper) -> bool ---
-	@(link_name="ImGuiListClipper_ForceDisplayRangeByIndices") ListClipper_ForceDisplayRangeByIndices :: proc "c" (self: ^ListClipper, item_min: c.int, item_max: c.int) ---
+	@(link_name="ImGuiListClipper_IncludeRangeByIndices") ListClipper_IncludeRangeByIndices :: proc "c" (self: ^ListClipper, item_begin: c.int, item_end: c.int) ---
+	@(link_name="ImGuiListClipper_ForceDisplayRangeByIndices") ListClipper_ForceDisplayRangeByIndices :: proc "c" (self: ^ListClipper, item_begin: c.int, item_end: c.int) ---
 	@(link_name="ImColor_SetHSV") Color_SetHSV :: proc "c" (self: ^Color, h: f32, s: f32, v: f32, a: f32) ---
 	@(link_name="ImColor_HSV") Color_HSV :: proc "c" (self: ^Color, h: f32, s: f32, v: f32, a: f32) -> Color ---
 	@(link_name="ImDrawCmd_GetTexID") DrawCmd_GetTexID :: proc "c" (self: ^DrawCmd) -> TextureID ---
@@ -2115,9 +2292,6 @@ foreign lib {
 	@(link_name="ImGui_CaptureMouseFromApp") CaptureMouseFromApp :: proc "c" (want_capture_mouse: bool) ---
 	@(link_name="ImGui_CalcListClipping") CalcListClipping :: proc "c" (items_count: c.int, items_height: f32, out_items_display_start: ^c.int, out_items_display_end: ^c.int) ---
 	@(link_name="ImGui_GetWindowContentRegionWidth") GetWindowContentRegionWidth :: proc "c" () -> f32 ---
-	@(link_name="ImGui_ListBoxHeaderInt") ListBoxHeaderInt :: proc "c" (label: cstring, items_count: c.int, height_in_items: c.int) -> bool ---
-	@(link_name="ImGui_ListBoxHeader") ListBoxHeader :: proc "c" (label: cstring, size: Vec2) -> bool ---
-	@(link_name="ImGui_ListBoxFooter") ListBoxFooter :: proc "c" () ---
 }
 
 ////////////////////////////////////////////////////////////
@@ -2134,6 +2308,8 @@ S16 :: c.short
 U16 :: c.ushort
 S32 :: c.int
 U32 :: c.uint
+S64 :: c.longlong
+U64 :: c.ulonglong
 Wchar16 :: c.ushort
 Wchar32 :: c.uint
 InputTextCallback :: proc "c" (data: ^InputTextCallbackData) -> c.int
