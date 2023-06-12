@@ -28,7 +28,7 @@ Simply import, a version of the bindings + lib are already comitted. (Windows on
 # git clone https://github.com/dearimgui/dear_bindings.git
 
 # Delete remaining files from potential old build
-rm -f c_imgui.*
+rm -f c_imgui.* imgui/c_imgui.*
 # Generate C imgui wrapper and reflection data
 python dear_bindings/dear_bindings.py -o c_imgui imgui/imgui.h
 # Use reflection data to generate Odin bindings for C wrapper
