@@ -51,6 +51,10 @@ def make_identifier_valid(ident: str) -> str:
 	return ident
 
 
+# Create a name declaring a set of names of type `type`. Eg:
+# thing: int
+# thing, other_thing: f32
+# thing, other_thing: [2]char
 def make_field_list(names: typing.List[str], type: str, array_count: int, in_function: bool = False) -> str:
 	names = list(map(lambda s: make_identifier_valid(s), names))
 	array_type_extension = ""
@@ -66,13 +70,21 @@ def make_field_list(names: typing.List[str], type: str, array_count: int, in_fun
 
 	return ", ".join(names) + ": " + array_type_extension + type
 
-# Try strippiung prefixes from the list, returns tuple of [prefix, remainder]
+def adjust_name_if_in_list(name: str, list: typing.List[str]) -> str:
+	pass
+
+# Try stripping prefixes from the list, returns tuple of [prefix, remainder]
 def strip_list(name: str, prefix_list: typing.List[str]) -> typing.List[str]:
 	for prefix in prefix_list:
 		if name.startswith(prefix):
 			return [prefix, name.removeprefix(prefix)]
 
 	return ["", name]
+
+# Check if name has an override from `overrides`, and apply it if so
+def apply_override(name: str, overrides: typing.Dict[str, str]) -> str:
+	if name in overrides: return overrides[name]
+	else: return name
 
 _imgui_prefixes = [
 	"ImGui",
@@ -225,7 +237,6 @@ CHECKVERSION :: proc() {
 # DEFINES
 
 _imgui_define_prefixes = [
-	""
 ]
 
 # Defines have special prefixes
@@ -413,6 +424,7 @@ _imgui_enum_as_constants = [
 	# This can be solved by figuring out which of the elements are an actual bitmask
 	"ImGuiTableFlags_",
 	"ImDrawFlags_",
+	"ImGuiHoveredFlags_",
 	# This one is special, because it doesn't actually define a single flag of its own...
 	# It's also deprecated
 	"ImDrawCornerFlags_",
@@ -471,6 +483,14 @@ _imgui_struct_override = {
 	"ImVec4": "Vec4 :: [4]f32",
 }
 
+_imgui_struct_field_name_override = {
+	# We have a field called `ID` of type `ID`. In Odin, field names can not
+	# have the same identifier as a type in the same struct.
+	# TODO[TS]: This can be fixed properly, by stringifying all the field types,
+	# then checking that our field name is not in that list.
+	"ID": "_ID",
+}
+
 def write_structs(file: typing.IO, structs):
 	write_section(file, "Structs")
 	for struct in structs:
@@ -516,10 +536,11 @@ def write_structs(file: typing.IO, structs):
 			if has_any_differing_types:
 				for field_name in field_names:
 					array_count = get_array_count(field_name)
-					write_line(f'\t{make_field_list([field_name["name"]], field_name["type"], array_count)},')
+					adjusted_name = apply_override(field_name["name"], _imgui_struct_field_name_override)
+					write_line(f'\t{make_field_list([adjusted_name], field_name["type"], array_count)},')
 			else:
 				array_count = get_array_count(field_names[0])
-				field_name_strings = map(lambda field_name: field_name["name"], field_names)
+				field_name_strings = map(lambda field_name: apply_override(field_name["name"], _imgui_struct_field_name_override), field_names)
 				write_line(file, f'\t{make_field_list(field_name_strings, field_type, array_count)},')
 		write_line(file, "}")
 		write_line(file)

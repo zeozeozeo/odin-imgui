@@ -1,63 +1,51 @@
-# Odin ImGui - Generated ImGui using dear_bindings
+# Odin ImGui - Generated ImGui bindings using dear_bindings
 
 ## Usage
-Simply import, a version of the bindings + lib are already comitted. (Windows only for now)
+If you don't want to configure and or build yourself, download the latest release.
+ - At the moment this release is only available for Windows, on the docking branch, and includes all supported backends.
 
 ## Building
 
- 1. Clone [Dear ImGui](https://github.com/ocornut/imgui), and [dear_bindings](https://github.com/dearimgui/dear_bindings)
- 2. Generate JSON data for `imgui.h`:
-	- Note that `dear_bindings` requires [PLY](https://www.dabeaz.com/ply/). You can install it with `python -m pip install ply`
-	- Example: `python dear_bindings.py -o c_imgui imgui/imgui.h`
-		- This generates `c_imgui.[json|h|cpp]`
-		- See dear_bindings project for more info
- 3. Generate Odin from `c_imgui.json`:
-	- Example: `python gen_odin.py c_imgui.json imgui/imgui.odin`
- 4. Compile ImGui bindings C code:
-	- Put `c_imgui.h, c_imgui.cpp` in your Dear ImGui folder
-	- Compile ImGui alongside the C bindings.
-	- Replace the `imgui.lib` (or platform equivalent) with your compiled file.
+Building is entirely automated, using `build.py`. Currently however there is only windows support, although compiling for another platform shouldn't be too difficult. Again see `build.py`.
 
-## Example script for generating sources:
-```sh
-#!/bin/bash
+ 1. Clone this repository into a clean directory `parent_directory`.
+	- Optionally configure build at the top of `build.py`
+	- Building some backends require external dependencies. Again check `build.py`.
+ 2. From *outside* of the `odin-imgui` folder, run `python odin-imgui/build.py`
+ 3. Folder `build/` is importable. Copy into your project.
 
-# Uncomment for initial setup
-# git clone https://gitlab.com/L-4/odin-imgui.git
-# git clone https://github.com/ocornut/imgui.git
-# git clone https://github.com/dearimgui/dear_bindings.git
+## Configuring
 
-# Delete remaining files from potential old build
-rm -f c_imgui.* imgui/c_imgui.*
-# Generate C imgui wrapper and reflection data
-python dear_bindings/dear_bindings.py -o c_imgui imgui/imgui.h
-# Use reflection data to generate Odin bindings for C wrapper
-python odin-imgui/gen_odin.py c_imgui.json odin-imgui/imgui.odin
-# Remove c_imgui sources from imgui in case they were there before
-rm -f imgui/c_imgui.h imgui/c_imgui.cpp
-# Move c_imgui sources to imgui
-mv c_imgui.cpp imgui/
-mv c_imgui.h imgui/
-```
+Search for `@CONFIGURE` to see everything configurable.
 
-## Example scripts for compiling imgui wrapper
-### Windows:
-```bat
-set sources=imgui.cpp imgui_demo.cpp imgui_draw.cpp imgui_tables.cpp imgui_widgets.cpp c_imgui.cpp
-set objects=imgui.obj imgui_demo.obj imgui_draw.obj imgui_tables.obj imgui_widgets.obj c_imgui.obj
-set compile_flags=/O2
+### `active_branch`
+The bindings have been tested against the main two branches of Dear ImGui: `master` and `docking`.
+You can choose between the two by changing `active_branch`
 
-del imgui.lib
-cl /c %sources% %compile_flags%
-lib %objects%
-del %objects%
-```
+### `wanted_backends`
+This project allows you to compile ImGui backends alongside imgui itself, which is what Dear ImGui recommends you do [1].
+Bindings have been written for a subset of the backends provided by ImGui
+ - You can see if a backend is supported by checking the `backends` table in `build.py`.
+ - If a backend is supported it means that:
+	- Bindings have been written to `imgui_impl.odin`
+	- It has been successfully compiled in the latest revision, for both supported branches.
+ - Some backends have external dependencies. These should be cloned into a folder called `backend_deps`, with the given revision.
+	- Eg: Vulkan requires that you clone `https://github.com/KhronosGroup/Vulkan-Headers.git` at commit `4f51aac` into `parent_directory/backend_deps/Vulkan-Headers`
+ - You can enable a backend by adding it to `wanted_backends`
+ - You can enable backends not officially supported. (If it works, please MR!)
 
-### Linux:
-```sh
-#!/bin/bash
-mkdir build
-cd build
-clang -c ../imgui_demo.cpp ../imgui_draw.cpp ../imgui_tables.cpp ../imgui_widgets.cpp ../imgui.cpp ../cimgui.cpp -O2 -fPIC -fno-exceptions -fno-rtti -fno-threadsafe-statics
-ar rcs imgui.a  imgui_demo.o imgui_draw.o imgui_tables.o imgui_widgets.o imgui.o cimgui.o
-```
+### `compile_debug`
+If set to true, will compile with debug flags
+
+## Updating
+
+The Dear ImGui commits which have been tested against are listed in `build.py`.
+You can mess with these all you want and see if it works.
+
+Additionally, when updating, all backends in `imgui_impl.odin` should be checked for new commits, and updated where necessary.
+
+## NOTE
+
+## TODO
+
+[1]: TODO
