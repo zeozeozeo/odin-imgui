@@ -4,9 +4,18 @@ import ast
 import math
 import argparse
 
+# TODO:
+# - Align comments
+#		ImGui has nicely aligned comments, and we just dump them with no special
+#		indentation. Fixing this would increase readability, especially in cases
+#		with inline tables spanning multiple lines (see: comments on `Font` struct)
+# - Get rid of any special handling of values
+#		There are many cases where we override or disable different structs/enums etc.
+#		This is done for a variety of reasons. We should continuously try to fix these where possible.
+
 # HELPERS
-def write_line(file: typing.IO, line: str = ""):
-	file.writelines([line, "\n"])
+def write_line(file: typing.IO, line: str = "", indent = 0):
+	file.writelines(["\t" * indent, line, "\n"])
 
 def strip_prefix_optional(prefix: str, string: str) -> str:
 	if string.startswith(prefix):
@@ -223,6 +232,19 @@ def write_section(file: typing.IO, section_name: str):
 	write_line(file, "////////////////////////////////////////////////////////////")
 	write_line(file)
 
+# Writes a line with associated comments.
+# `comment_parent` should be an item from the json file which might have a "comments" field.
+def write_line_with_comments(file, str, comment_parent, indent = 0):
+	comment = comment_parent.get("comments", {})
+	for preceding_comment in comment.get("preceding", []):
+		write_line(file, preceding_comment, indent)
+
+	attached_comment = ""
+	if "attached" in comment:
+		attached_comment = " " + comment["attached"]
+
+	write_line(file, str + attached_comment, indent)
+
 # HEADER
 def write_header(file: typing.IO):
 	write_line(file, """package imgui
@@ -230,13 +252,15 @@ def write_header(file: typing.IO):
 import "core:c"
 
 CHECKVERSION :: proc() {
-	DebugCheckVersionAndDataLayout(IMGUI_VERSION, size_of(IO), size_of(Style), size_of(Vec2), size_of(Vec4), size_of(DrawVert), size_of(DrawIdx))
+	DebugCheckVersionAndDataLayout(VERSION, size_of(IO), size_of(Style), size_of(Vec2), size_of(Vec4), size_of(DrawVert), size_of(DrawIdx))
 }
 """)
 
 # DEFINES
 
 _imgui_define_prefixes = [
+	"IMGUI_",
+	"IM_",
 ]
 
 # Defines have special prefixes
@@ -248,7 +272,8 @@ def define_strip_prefix(name: str) -> str:
 	return name
 
 _imgui_define_include = [
-	"IMGUI_VERSION"
+	"IMGUI_VERSION",
+	"IMGUI_VERSION_NUM",
 ]
 
 def write_defines(file: typing.IO, defines):
@@ -259,7 +284,7 @@ def write_defines(file: typing.IO, defines):
 		if entire_name in _imgui_define_include:
 			name = define_strip_prefix(entire_name)
 
-			write_line(file, f'{name} :: {define["content"]}')
+			write_line_with_comments(file, f'{name} :: {define["content"]}', define)
 
 	write_line(file)
 
@@ -318,7 +343,7 @@ def enum_parse_flag_combination(value: str, expected_prefix: str) -> typing.List
 	return combined_enums
 
 def write_enum_as_flags(file, enum, enum_field_prefix, name):
-	write_line(file, f'{name} :: bit_set[{name.removesuffix("s")}; c.int]')
+	write_line_with_comments(file, f'{name} :: bit_set[{name.removesuffix("s")}; c.int]', enum)
 	write_line(file, f'{name.removesuffix("s")} :: enum c.int {{')
 
 	for element in enum["elements"]:
@@ -340,7 +365,7 @@ def write_enum_as_flags(file, enum, enum_field_prefix, name):
 
 		field_base_name = element["name"]
 		field_name = enum_parse_field_name(field_base_name, enum_field_prefix)
-		write_line(file, f'\t{field_name} = {bit_index},')
+		write_line_with_comments(file, f'{field_name} = {bit_index},', element, 1)
 
 	write_line(file, "}")
 	write_line(file)
@@ -373,7 +398,7 @@ def write_enum_as_flags(file, enum, enum_field_prefix, name):
 	write_line(file)
 
 def write_enum_as_constants(file, enum, enum_field_prefix, name):
-	write_line(file, f'{name} :: distinct c.int')
+	write_line_with_comments(file, f'{name} :: distinct c.int', enum)
 
 	for element in enum["elements"]:
 		field_base_name = element["name"]
@@ -382,11 +407,11 @@ def write_enum_as_constants(file, enum, enum_field_prefix, name):
 
 		field_value_evald = try_eval(field_value)
 		if field_value_evald != None:
-			write_line(file, f'{name}_{field_name} :: {name}({field_value})')
+			write_line_with_comments(file, f'{name}_{field_name} :: {name}({field_value})', element)
 		else:
 			enums = enum_split_value(field_value)
 			enums = list(map(lambda s: strip_imgui_branding(s), enums))
-			write_line(file, f'{name}_{field_name} :: {name}({" | ".join(enums)})')
+			write_line_with_comments(file, f'{name}_{field_name} :: {name}({" | ".join(enums)})', element)
 
 	write_line(file)
 
@@ -478,6 +503,7 @@ _imgui_struct_skip = [
 	"ImGuiStorage",
 ]
 
+# We can generate these structs just fine, but we have a better Odin equivalent.
 _imgui_struct_override = {
 	"ImVec2": "Vec2 :: [2]f32",
 	"ImVec4": "Vec4 :: [4]f32",
@@ -519,7 +545,7 @@ def write_structs(file: typing.IO, structs):
 		name = strip_imgui_branding(entire_name)
 		# name = entire_name
 
-		write_line(file, f'{name} :: struct {{')
+		write_line_with_comments(file, f'{name} :: struct {{', struct)
 		for field in struct["fields"]:
 			field_names = field["names"]
 
@@ -537,11 +563,11 @@ def write_structs(file: typing.IO, structs):
 				for field_name in field_names:
 					array_count = get_array_count(field_name)
 					adjusted_name = apply_override(field_name["name"], _imgui_struct_field_name_override)
-					write_line(f'\t{make_field_list([adjusted_name], field_name["type"], array_count)},')
+					write_line_with_comments(file, f'{make_field_list([adjusted_name], field_name["type"], array_count)},', field, 1)
 			else:
 				array_count = get_array_count(field_names[0])
 				field_name_strings = map(lambda field_name: apply_override(field_name["name"], _imgui_struct_field_name_override), field_names)
-				write_line(file, f'\t{make_field_list(field_name_strings, field_type, array_count)},')
+				write_line_with_comments(file, f'{make_field_list(field_name_strings, field_type, array_count)},', field, 1)
 		write_line(file, "}")
 		write_line(file)
 
@@ -645,7 +671,7 @@ else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
 
 		[prefix, remainder] = strip_list(entire_name, _imgui_function_prefixes)
 
-		decl = "\t"
+		decl = ""
 
 		if function_uses_va_list(function):
 			 # Functions with va_list always have a vararg counterpart, and va_list cannot be constructed from Odin
@@ -659,7 +685,7 @@ else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
 		decl += function_to_string(function)
 		decl += " ---"
 
-		write_line(file, decl)
+		write_line_with_comments(file, decl, function, 1)
 
 	write_line(file, "}")
 
@@ -703,7 +729,7 @@ def write_typedefs(file: typing.IO, typedefs):
 
 		name = strip_imgui_branding(entire_name)
 
-		write_line(file, f'{name} :: {parse_type(typedef["type"])}')
+		write_line_with_comments(file, f'{name} :: {parse_type(typedef["type"])}', typedef)
 
 def main():
 	parser = argparse.ArgumentParser()

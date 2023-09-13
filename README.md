@@ -23,7 +23,7 @@ The bindings have been tested against the main two branches of Dear ImGui: `mast
 You can choose between the two by changing `active_branch`
 
 ### `wanted_backends`
-This project allows you to compile ImGui backends alongside imgui itself, which is what Dear ImGui recommends you do [1].
+This project allows you to compile ImGui backends alongside imgui itself, which is what Dear ImGui recommends you do.
 Bindings have been written for a subset of the backends provided by ImGui
  - You can see if a backend is supported by checking the `backends` table in `build.py`.
  - If a backend is supported it means that:
@@ -43,9 +43,3 @@ The Dear ImGui commits which have been tested against are listed in `build.py`.
 You can mess with these all you want and see if it works.
 
 Additionally, when updating, all backends in `imgui_impl.odin` should be checked for new commits, and updated where necessary.
-
-## NOTE
-
-## TODO
-
-[1]: TODO

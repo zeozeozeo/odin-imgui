@@ -27,12 +27,12 @@ backends = {
 	"glut":         { "supported": False, "includes": [], "defines": [] },
 	"opengl2":      { "supported": False, "includes": [], "defines": [] },
 	"opengl3":      { "supported": True,  "includes": [], "defines": [] },
-	# Tested with https://github.com/libsdl-org/SDL.git at tag release-2.28.3/commit 8a5ba43
+	# Requires https://github.com/libsdl-org/SDL.git at tag release-2.28.3/commit 8a5ba43
 	"sdl2":         { "supported": True,  "includes": [["SDL", "include"]], "defines": [] },
 	"sdl3":         { "supported": False, "includes": [], "defines": [] },
 	"sdlrenderer2": { "supported": False, "includes": [], "defines": [] },
 	"sdlrenderer3": { "supported": False, "includes": [], "defines": [] },
-	# Tested with https://github.com/KhronosGroup/Vulkan-Headers.git commit 4f51aac
+	# Requires https://github.com/KhronosGroup/Vulkan-Headers.git commit 4f51aac
 	"vulkan":       { "supported": True,  "includes": [["Vulkan-Headers", "include"]], "defines": ["VK_NO_PROTOTYPES"] },
 	"wgpu":         { "supported": False, "includes": [], "defines": [] },
 	"win32":        { "supported": False, "includes": [], "defines": [] },
