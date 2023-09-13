@@ -653,10 +653,10 @@ _imgui_function_prefixes = [
 
 def write_functions(file: typing.IO, functions):
 	write_section(file, "Functions")
-	write_line(file, """// I'm not an expert on this, so the linux/osx imports may be incorrect!
+	write_line(file, """
 when      ODIN_OS == .Windows do foreign import lib "imgui.lib"
 else when ODIN_OS == .Linux   do foreign import lib "imgui.a"
-else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
+// else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
 """)
 	write_line(file, "foreign lib {")
 

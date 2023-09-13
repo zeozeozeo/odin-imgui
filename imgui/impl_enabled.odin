@@ -1,0 +1,22 @@
+package imgui
+
+// This file is generated with the rest of the imgui bindings, and enables
+// backend implementations in imgui_impl.odin
+
+BACKEND_ALLEGRO5_ENABLED :: false
+BACKEND_ANDROID_ENABLED :: false
+BACKEND_DX10_ENABLED :: false
+BACKEND_DX11_ENABLED :: false
+BACKEND_DX12_ENABLED :: false
+BACKEND_DX9_ENABLED :: false
+BACKEND_GLFW_ENABLED :: false
+BACKEND_GLUT_ENABLED :: false
+BACKEND_OPENGL2_ENABLED :: false
+BACKEND_OPENGL3_ENABLED :: true
+BACKEND_SDL2_ENABLED :: true
+BACKEND_SDL3_ENABLED :: false
+BACKEND_SDLRENDERER2_ENABLED :: false
+BACKEND_SDLRENDERER3_ENABLED :: false
+BACKEND_VULKAN_ENABLED :: true
+BACKEND_WGPU_ENABLED :: false
+BACKEND_WIN32_ENABLED :: false

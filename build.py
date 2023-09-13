@@ -124,7 +124,7 @@ def main():
 
 	if compile_debug:
 		if platform ==   "win32": compile_flags += ["/Od", "/Z7"]
-		elif platform == "linux": compile_flags += ["-g", "-Od"]
+		elif platform == "linux": compile_flags += ["-g", "-O0"]
 	else:
 		if platform ==   "win32": compile_flags += ["/O2"]
 		elif platform == "linux": compile_flags += ["-O3"]

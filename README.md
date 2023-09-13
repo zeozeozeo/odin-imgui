@@ -1,8 +1,8 @@
 # Odin ImGui - Generated ImGui bindings using dear_bindings
 
 ## Usage
-If you don't want to configure and or build yourself, download the latest release.
- - At the moment this release is only available for Windows, on the docking branch, and includes all supported backends.
+If you don't want to configure and or build yourself, a prebuilt version of the pacakge can be found in `imgui/`
+ - This package has binaries for Windows and Linux, with the Vulkan, SDL2, and OpenGL 3 backends compiled in.
 
 ## Building
 
