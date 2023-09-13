@@ -6,8 +6,11 @@ If you don't want to configure and or build yourself, download the latest releas
 
 ## Building
 
-Building is entirely automated, using `build.py`. Currently however there is only windows support, although compiling for another platform shouldn't be too difficult. Again see `build.py`.
+Building is entirely automated, using `build.py`. Currently however there is only Windows and Linux, although compiling for other platforms shouldn't be too difficult, following the pattern in `build.py`.
 
+ 0. `dear_bindings` depends on a library called "`ply`"
+	- You can probably install this with `python -m pip install ply`
+	- On Arch Linux I had to install `python-ply` with pacman.
  1. Clone this repository into a clean directory `parent_directory`.
 	- Optionally configure build at the top of `build.py`
 	- Building some backends require external dependencies. Again check `build.py`.
