@@ -4,7 +4,7 @@ import os
 import shutil
 from glob import glob
 import typing
-from sys import platform
+from sys import platform, executable
 
 # TODO:
 # - Auto download backends deps
@@ -25,35 +25,35 @@ git_heads = {
 }
 
 # @CONFIGURE: Elements must be keys into below table
-wanted_backends = ["vulkan", "sdl2", "opengl3", "sdlrenderer2", "glfw", "dx11", "dx12", "win32"]
+wanted_backends = ["vulkan", "sdl2", "opengl3", "sdlrenderer2", "glfw", "dx11", "dx12", "win32", "osx", "metal"]
 # Supported means that an impl bindings file exists, and that it has been tested.
 # Some backends (like dx12, win32) have bindings but not been tested.
 backends = {
-	"allegro5":     { "supported": False, "includes": [], "defines": [] },
-	"android":      { "supported": False, "includes": [], "defines": [] },
-	"dx9":          { "supported": False, "includes": [], "defines": [] },
-	"dx10":         { "supported": False, "includes": [], "defines": [] },
-	"dx11":         { "supported": True,  "includes": [], "defines": [] },
+	"allegro5":     { "supported": False },
+	"android":      { "supported": False },
+	"dx9":          { "supported": False, "enabled_on": ["win32"] },
+	"dx10":         { "supported": False, "enabled_on": ["win32"] },
+	"dx11":         { "supported": True,  "enabled_on": ["win32"] },
 	# Bindings exist for DX12, but they are untested
-	"dx12":         { "supported": False, "includes": [], "defines": [] },
+	"dx12":         { "supported": False, "enabled_on": ["win32"] },
 	# Requires https://github.com/glfw/glfw.git at commit 3eaf125
-	"glfw":         { "supported": True,  "includes": [["glfw", "include"]], "defines": [] },
-	"glut":         { "supported": False, "includes": [], "defines": [] },
-	"metal":        { "supported": False, "includes": [], "defines": [] },
-	"opengl2":      { "supported": False, "includes": [], "defines": [] },
-	"opengl3":      { "supported": True,  "includes": [], "defines": [] },
-	"osx":          { "supported": False, "includes": [], "defines": [] },
+	"glfw":         { "supported": True,  "includes": [["glfw", "include"]] },
+	"glut":         { "supported": False },
+	"metal":        { "supported": False, "enabled_on": ["darwin"] },
+	"opengl2":      { "supported": False },
+	"opengl3":      { "supported": True  },
+	"osx":          { "supported": False, "enabled_on": ["darwin"] },
 	# Requires https://github.com/libsdl-org/SDL.git at tag release-2.28.3/commit 8a5ba43
-	"sdl2":         { "supported": True,  "includes": [["SDL", "include"]], "defines": [] },
-	"sdl3":         { "supported": False, "includes": [], "defines": [] },
+	"sdl2":         { "supported": True,  "includes": [["SDL", "include"]] },
+	"sdl3":         { "supported": False },
 	# Requires https://github.com/libsdl-org/SDL.git at tag release-2.28.3/commit 8a5ba43
-	"sdlrenderer2": { "supported": True,  "includes": [], "defines": [] },
-	"sdlrenderer3": { "supported": False, "includes": [], "defines": [] },
+	"sdlrenderer2": { "supported": True },
+	"sdlrenderer3": { "supported": False },
 	# Requires https://github.com/KhronosGroup/Vulkan-Headers.git commit 4f51aac
 	"vulkan":       { "supported": True,  "includes": [["Vulkan-Headers", "include"]], "defines": ["VK_NO_PROTOTYPES"] },
-	"wgpu":         { "supported": False, "includes": [], "defines": [] },
+	"wgpu":         { "supported": False },
 	# Bindings exist for win32, but they are untested
-	"win32":        { "supported": False, "includes": [], "defines": [] },
+	"win32":        { "supported": False, "enabled_on": ["win32"] },
 }
 
 # @CONFIGURE:
@@ -109,9 +109,9 @@ def main():
 	os.mkdir("build")
 
 	# Generate bindings for active ImGui branch
-	exec(["python", "dear_bindings/dear_bindings.py", "-o", "temp/c_imgui", "imgui/imgui.h"], "Running dear_bindings")
+	exec([executable, "dear_bindings/dear_bindings.py", "-o", "temp/c_imgui", "imgui/imgui.h"], "Running dear_bindings")
 	# Generate odin bindings from dear_bindings json file
-	exec(["python", "odin-imgui/gen_odin.py", "temp/c_imgui.json", "build/imgui.odin"], "Running odin-imgui")
+	exec([executable, "odin-imgui/gen_odin.py", "temp/c_imgui.json", "build/imgui.odin"], "Running odin-imgui")
 
 	# Find and copy imgui sources to temp folder
 	imgui_headers = glob(pathname="*.h", root_dir="imgui")
@@ -149,17 +149,21 @@ def main():
 	# Find and copy imgui backend sources to temp folder
 	for backend_name in wanted_backends:
 		backend = backends[backend_name]
+
+		if "enabled_on" in backend and not platform in backend["enabled_on"]:
+			continue
+
 		if not backend["supported"]:
 			print(f"Warning: compiling backend '{backend_name}' which is not officially supported")
 
 		copy("imgui/backends", [f"imgui_impl_{backend_name}.cpp", f"imgui_impl_{backend_name}.h"], "temp")
 		all_sources += [f"imgui_impl_{backend_name}.cpp"]
 
-		for define in backend["defines"]:
+		for define in backend.get("defines", []):
 			if platform   == "win32": compile_flags += [f"/D{define}"]
 			elif platform == "linux": compile_flags += [f"-D{define}"]
 
-		for include in backend["includes"]:
+		for include in backend.get("includes", []):
 			if platform   == "win32": compile_flags += ["/I" + path.join("..", "backend_deps", path.join(*include))]
 			elif platform == "linux": compile_flags += ["-I" + path.join("..", "backend_deps", path.join(*include))]
 
