@@ -47,7 +47,7 @@ There are some examples in `examples/`. They are runnable directly.
 
 ## Available backends
 
-All backends which can be supported with only `vendor`, with the exception of Metal and OSX have bindings now.
+All backends which can be supported with only `vendor` have bindings now.
 It seems likely to me that SDL3, maybe WebGPU (and Android?) will exist in vendor in the future, at which point I'll add support.
 
 | Backend        | Supported | Has example | Comment                                                                              |
