@@ -1,8 +1,9 @@
 # Odin ImGui - Generated ImGui bindings using dear_bindings
 
 ## Usage
-If you don't want to configure and or build yourself, a prebuilt version of the pacakge can be found in `imgui/`
- - This package has binaries for Windows and Linux, with the Vulkan, SDL2, and OpenGL 3 backends compiled in.
+If you don't want to configure and or build yourself, a prebuilt version of the pacakge can be found in `imgui/`.
+ - This package only has binaries for Windows at the moment. I've tested on Linux, it's just hard to manually get both binaries in there.
+ - It has all backends listed in `build.py` enabled, which almost definitely more than you need. I strongly suggest building yourself with your wanted backends.
 
 ## Building
 
@@ -40,9 +41,49 @@ Bindings have been written for a subset of the backends provided by ImGui
 ### `compile_debug`
 If set to true, will compile with debug flags
 
+## Examples
+
+There are some examples in `examples/`. They are runnable directly.
+
+## Available backends
+
+All backends which can be supported with only `vendor`, with the exception of Metal and OSX have bindings now.
+It seems likely to me that SDL3, maybe WebGPU (and Android?) will exist in vendor in the future, at which point I'll add support.
+
+| Backend        | Supported | Has example | Comment                                                                              |
+|----------------|:---------:|:-----------:|--------------------------------------------------------------------------------------|
+| Allegro 5      |    No     |     No      | No odin bindings in vendor                                                           |
+| Android        |    No     |     No      | No odin bindings in vendor                                                           |
+| Directx 9      |    No     |     No      | No odin bindings in vendor                                                           |
+| Directx 10     |    No     |     No      | No odin bindings in vendor                                                           |
+| Directx 11     |    Yes    |     Yes     |                                                                                      |
+| Directx 12     |    Yes    |     No      | Bindings created, but not tested                                                     |
+| GLFW           |    Yes    |     Yes     |                                                                                      |
+| GLUT           |    No     |     No      | Obsolete. Likely will never be implemented.                                          |
+| Metal          |    No     |     No      |                                                                                      |
+| OpenGL 2       |    No     |     No      |                                                                                      |
+| OpenGL 3       |    Yes    |     Yes     |                                                                                      |
+| OSX            |    No     |     No      |                                                                                      |
+| SDL 2          |    Yes    |     Yes     |                                                                                      |
+| SDL 3          |    No     |     No      | No odin bindings in vendor (yet)                                                     |
+| SDL_Renderer 2 |    Yes    |     Yes     | Is implemented with example, but Odin vendor library lacks required version (2.0.18) |
+| SDL_Renderer 3 |    No     |     No      | No odin bindings in vendor (yet)                                                     |
+| Vulkan         |    Yes    |     No      | Implemented and tested in my own engine, but no Example yet due to size              |
+| WebGPU         |    No     |     No      | No odin bindings in vendor                                                           |
+| win32          |    No     |     No      | Bindings created, but not tested                                                     |
+
 ## Updating
 
 The Dear ImGui commits which have been tested against are listed in `build.py`.
 You can mess with these all you want and see if it works.
 
 Additionally, when updating, all backends in `imgui_impl.odin` should be checked for new commits, and updated where necessary.
+
+## Help wanted!
+
+ - If there are any issues, or this package doesn't do everything you want it to, feel free to make an issue, or message me on Discord @ldash4.
+ - I have not yet tested on Apple devices (though I intend to). If someone with more knowledge about OSX started this initiative though, it would be appreciated!
+ - A few useful examples have yet to be created in `examples/`.
+	- Vulkan - This is implicitly tested against my own private project, but it would be good to have an example.
+	- Win32 - This should be quite easy, I just haven't had the time.
+	- DX12 - I'm not a DX12 expert, and this is one of the more complicated examples.

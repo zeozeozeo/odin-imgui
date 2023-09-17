@@ -25,26 +25,34 @@ git_heads = {
 }
 
 # @CONFIGURE: Elements must be keys into below table
-wanted_backends = ["vulkan", "sdl2", "opengl3"]
+wanted_backends = ["vulkan", "sdl2", "opengl3", "sdlrenderer2", "glfw", "dx11", "dx12", "win32"]
+# Supported means that an impl bindings file exists, and that it has been tested.
+# Some backends (like dx12, win32) have bindings but not been tested.
 backends = {
 	"allegro5":     { "supported": False, "includes": [], "defines": [] },
 	"android":      { "supported": False, "includes": [], "defines": [] },
-	"dx10":         { "supported": False, "includes": [], "defines": [] },
-	"dx11":         { "supported": False, "includes": [], "defines": [] },
-	"dx12":         { "supported": False, "includes": [], "defines": [] },
 	"dx9":          { "supported": False, "includes": [], "defines": [] },
-	"glfw":         { "supported": False, "includes": [], "defines": [] },
+	"dx10":         { "supported": False, "includes": [], "defines": [] },
+	"dx11":         { "supported": True,  "includes": [], "defines": [] },
+	# Bindings exist for DX12, but they are untested
+	"dx12":         { "supported": False, "includes": [], "defines": [] },
+	# Requires https://github.com/glfw/glfw.git at commit 3eaf125
+	"glfw":         { "supported": True,  "includes": [["glfw", "include"]], "defines": [] },
 	"glut":         { "supported": False, "includes": [], "defines": [] },
+	"metal":        { "supported": False, "includes": [], "defines": [] },
 	"opengl2":      { "supported": False, "includes": [], "defines": [] },
 	"opengl3":      { "supported": True,  "includes": [], "defines": [] },
+	"osx":          { "supported": False, "includes": [], "defines": [] },
 	# Requires https://github.com/libsdl-org/SDL.git at tag release-2.28.3/commit 8a5ba43
 	"sdl2":         { "supported": True,  "includes": [["SDL", "include"]], "defines": [] },
 	"sdl3":         { "supported": False, "includes": [], "defines": [] },
-	"sdlrenderer2": { "supported": False, "includes": [], "defines": [] },
+	# Requires https://github.com/libsdl-org/SDL.git at tag release-2.28.3/commit 8a5ba43
+	"sdlrenderer2": { "supported": True,  "includes": [], "defines": [] },
 	"sdlrenderer3": { "supported": False, "includes": [], "defines": [] },
 	# Requires https://github.com/KhronosGroup/Vulkan-Headers.git commit 4f51aac
 	"vulkan":       { "supported": True,  "includes": [["Vulkan-Headers", "include"]], "defines": ["VK_NO_PROTOTYPES"] },
 	"wgpu":         { "supported": False, "includes": [], "defines": [] },
+	# Bindings exist for win32, but they are untested
 	"win32":        { "supported": False, "includes": [], "defines": [] },
 }
 
@@ -111,9 +119,6 @@ def main():
 	copy("imgui", imgui_headers, "temp")
 	copy("imgui", imgui_sources, "temp")
 
-	# Copy pre-made implementation file
-	shutil.copy(path.join("odin-imgui", "imgui_impl.odin"), "build")
-
 	# Gather sources, defines, includes etc
 	all_sources = imgui_sources
 	compile_flags = []
@@ -133,8 +138,8 @@ def main():
 	f.writelines([
 		"package imgui\n",
 		"\n",
-		"// This file is generated with the rest of the imgui bindings, and enables\n",
-		"// backend implementations in imgui_impl.odin\n",
+		"// This is a generated helper file which you can use to know which\n",
+		"// implementations have been compiled into the bindings.\n",
 		"\n",
 	])
 
@@ -158,7 +163,12 @@ def main():
 			if platform   == "win32": compile_flags += ["/I" + path.join("..", "backend_deps", path.join(*include))]
 			elif platform == "linux": compile_flags += ["-I" + path.join("..", "backend_deps", path.join(*include))]
 
+	odin_impl_files = glob(pathname="imgui_impl_*.odin", root_dir="odin-imgui")
+	copy("odin-imgui", odin_impl_files, "build")
+
 	# Opengl 3 is the only backend that has a special auxiliary file. So we just copy it manually in this case.
+	# TODO[TS]: We should instead just copy everything matching `imgui_impl_{backend}*`.
+	# This would account for this header, but also .mm files for the OSX files.
 	if "opengl3" in wanted_backends:
 		shutil.copy(path.join("imgui", "backends", "imgui_impl_opengl3_loader.h"), "temp")
 
@@ -176,7 +186,7 @@ def main():
 	if platform   == "win32": run_vcvars(["lib", "/OUT:" + path.join("build", "imgui.lib")] + map_to_folder(all_objects, "temp"))
 	elif platform == "linux": exec(["ar", "rcs", path.join("build", "imgui.a")] + map_to_folder(all_objects, "temp"), "Making library from objects")
 
-	expected_files = ["imgui_impl.odin", "imgui.odin", "impl_enabled.odin"]
+	expected_files = ["imgui.odin", "impl_enabled.odin"]
 	if platform   == "win32": expected_files += ["imgui.lib"]
 	elif platform == "linux": expected_files += ["imgui.a"]
 
