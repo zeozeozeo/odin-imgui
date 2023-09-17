@@ -59,6 +59,9 @@ backends = {
 # @CONFIGURE:
 compile_debug = False
 
+platform_win32_like = platform == "win32"
+platform_unix_like = platform == "linux" or platform == "darwin"
+
 # Assert which doesn't clutter the output
 def assertx(cond: bool, msg: str):
 	if not cond:
@@ -124,16 +127,17 @@ def main():
 	compile_flags = []
 
 	all_sources += ["c_imgui.cpp"]
-	if platform ==   "win32": compile_flags += ['/DIMGUI_IMPL_API=extern\\\"C\\\"']
-	elif platform == "linux": compile_flags += ['-DIMGUI_IMPL_API=extern\"C\"', "-fPIC", "-fno-exceptions", "-fno-rtti", "-fno-threadsafe-statics"]
+	if platform_win32_like:  compile_flags += ['/DIMGUI_IMPL_API=extern\\\"C\\\"']
+	elif platform_unix_like: compile_flags += ['-DIMGUI_IMPL_API=extern\"C\"', "-fPIC", "-fno-exceptions", "-fno-rtti", "-fno-threadsafe-statics"]
 
 	if compile_debug:
-		if platform ==   "win32": compile_flags += ["/Od", "/Z7"]
-		elif platform == "linux": compile_flags += ["-g", "-O0"]
+		if platform_win32_like:  compile_flags += ["/Od", "/Z7"]
+		elif platform_unix_like: compile_flags += ["-g", "-O0"]
 	else:
-		if platform ==   "win32": compile_flags += ["/O2"]
-		elif platform == "linux": compile_flags += ["-O3"]
+		if platform_win32_like:  compile_flags += ["/O2"]
+		elif platform_unix_like: compile_flags += ["-O3"]
 
+	# Write file describing the enabled backends
 	f = open(path.join("build", "impl_enabled.odin"), "w+")
 	f.writelines([
 		"package imgui\n",
@@ -156,43 +160,44 @@ def main():
 		if not backend["supported"]:
 			print(f"Warning: compiling backend '{backend_name}' which is not officially supported")
 
-		copy("imgui/backends", [f"imgui_impl_{backend_name}.cpp", f"imgui_impl_{backend_name}.h"], "temp")
-		all_sources += [f"imgui_impl_{backend_name}.cpp"]
+		backend_files = glob(pathname=f"imgui_impl_{backend_name}.*", root_dir="imgui/backends")
+		copy("imgui/backends", backend_files, "temp")
+
+		if backend_name in ["osx", "metal"]: all_sources += [f"imgui_impl_{backend_name}.mm"]
+		else:                                all_sources += [f"imgui_impl_{backend_name}.cpp"]
+
+		if backend_name == "opengl3":
+			shutil.copy(path.join("imgui", "backends", "imgui_impl_opengl3_loader.h"), "temp")
 
 		for define in backend.get("defines", []):
-			if platform   == "win32": compile_flags += [f"/D{define}"]
-			elif platform == "linux": compile_flags += [f"-D{define}"]
+			if platform_win32_like:  compile_flags += [f"/D{define}"]
+			elif platform_unix_like: compile_flags += [f"-D{define}"]
 
 		for include in backend.get("includes", []):
-			if platform   == "win32": compile_flags += ["/I" + path.join("..", "backend_deps", path.join(*include))]
-			elif platform == "linux": compile_flags += ["-I" + path.join("..", "backend_deps", path.join(*include))]
+			if platform_win32_like:  compile_flags += ["/I" + path.join("..", "backend_deps", path.join(*include))]
+			elif platform_unix_like: compile_flags += ["-I" + path.join("..", "backend_deps", path.join(*include))]
 
+	# Copy implementation files
 	odin_impl_files = glob(pathname="imgui_impl_*.odin", root_dir="odin-imgui")
 	copy("odin-imgui", odin_impl_files, "build")
 
-	# Opengl 3 is the only backend that has a special auxiliary file. So we just copy it manually in this case.
-	# TODO[TS]: We should instead just copy everything matching `imgui_impl_{backend}*`.
-	# This would account for this header, but also .mm files for the OSX files.
-	if "opengl3" in wanted_backends:
-		shutil.copy(path.join("imgui", "backends", "imgui_impl_opengl3_loader.h"), "temp")
-
 	all_objects = []
-	if platform   == "win32": all_objects += map(lambda file: file.removesuffix(".cpp") + ".obj", all_sources)
-	elif platform == "linux": all_objects += map(lambda file: file.removesuffix(".cpp") + ".o", all_sources)
+	if platform_win32_like:  all_objects += map(lambda file: file.removesuffix(".cpp") + ".obj", all_sources)
+	elif platform_unix_like: all_objects += map(lambda file: file.removesuffix(".cpp") + ".o", all_sources)
 
 	os.chdir("temp")
 
-	if platform   == "win32": run_vcvars(["cl"] + compile_flags + ["/c"] + all_sources)
-	elif platform == "linux": exec(["clang"] + compile_flags + ["-c"] + all_sources, "Compiling sources")
+	if platform_win32_like:  run_vcvars(["cl"] + compile_flags + ["/c"] + all_sources)
+	elif platform_unix_like: exec(["clang"] + compile_flags + ["-c"] + all_sources, "Compiling sources")
 
 	os.chdir("..")
 
-	if platform   == "win32": run_vcvars(["lib", "/OUT:" + path.join("build", "imgui.lib")] + map_to_folder(all_objects, "temp"))
-	elif platform == "linux": exec(["ar", "rcs", path.join("build", "imgui.a")] + map_to_folder(all_objects, "temp"), "Making library from objects")
+	if platform_win32_like:  run_vcvars(["lib", "/OUT:" + path.join("build", "imgui.lib")] + map_to_folder(all_objects, "temp"))
+	elif platform_unix_like: exec(["ar", "rcs", path.join("build", "imgui.a")] + map_to_folder(all_objects, "temp"), "Making library from objects")
 
 	expected_files = ["imgui.odin", "impl_enabled.odin"]
-	if platform   == "win32": expected_files += ["imgui.lib"]
-	elif platform == "linux": expected_files += ["imgui.a"]
+	if platform_win32_like:  expected_files += ["imgui.lib"]
+	elif platform_unix_like: expected_files += ["imgui.a"]
 
 	for file in expected_files:
 		assertx(path.isfile(path.join("build", file)), f"Missing file '{file}' in build folder! Something went wrong..")
