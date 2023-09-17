@@ -11,7 +11,7 @@ else when ODIN_OS == .Linux   do foreign import lib "imgui.a"
 else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
 
 // imgui_impl_dx12.h
-// Last checked f8f805f
+// Last checked 357f752b
 foreign lib {
 	// cmd_list is the command list that the implementation will use to render imgui draw lists.
 	// Before calling the render function, caller must prepare cmd_list by resetting it and setting the appropriate

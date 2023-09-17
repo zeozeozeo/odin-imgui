@@ -60,7 +60,7 @@ main :: proc() {
 
 		if imgui.Begin("Window containing a quit button", nil, {}) {
 			if imgui.Button("The quit button in question") {
-				glfw.WindowShouldClose(window)
+				glfw.SetWindowShouldClose(window, true)
 			}
 		}
 		imgui.End()

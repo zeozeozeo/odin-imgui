@@ -14,14 +14,15 @@ from sys import platform, executable
 #		for clang or gcc to output .o files into another folder.
 #		We should probably instead run one compile command per source file.
 #		This lets us specify the output file, as well as compiling in paralell
+# - Make this file never show it's call stack. Call stacks should mean that a child script failed.
 
 # @CONFIGURE: Must be key into below table
 active_branch = "docking"
 git_heads = {
 	# Default Dear ImGui branch
-	"master": { "imgui": "b9ab6e201", "dear_bindings": "5c15ae4" },
+	"master": { "imgui": "6addf28c4", "dear_bindings": "364a9572532705" },
 	# Docking branch
-	"docking": { "imgui": "72dbe45ad", "dear_bindings": "5c15ae4" },
+	"docking": { "imgui": "7e246a7bb", "dear_bindings": "364a9572532705" },
 }
 
 # @CONFIGURE: Elements must be keys into below table
@@ -68,6 +69,11 @@ def assertx(cond: bool, msg: str):
 		print(msg)
 		exit(1)
 
+def hashes_are_same_ish(first: str, second: str) -> bool:
+	smallest_hash_size = min(len(first), len(second))
+	assertx(smallest_hash_size >= 7, "Hashes not long enough to be sure")
+	return first[:smallest_hash_size] == second[:smallest_hash_size]
+
 def exec(cmd: typing.List[str], what: str) -> str:
 	max_what_len = 40
 	if len(what) > max_what_len:
@@ -94,11 +100,11 @@ def ensure_checked_out_with_commit(dir: str, repo: str, wanted_commit: str):
 		exec(["git", "clone", repo], f"Checking out {dir}")
 
 	active_commit = exec(["git", "-C", dir, "rev-parse", "--short", "HEAD"], f"Checking active commit for {dir}")
-	if active_commit == wanted_commit:
+	if hashes_are_same_ish(active_commit, wanted_commit):
 		return
 	else:
 		print(f"{dir} on unwanted commit {active_commit}")
-		exec(["git", "-C", dir, "reset", "--hard", wanted_commit], f"Checking out wanted commit {wanted_commit}")
+		exec(["git", "-C", dir, "checkout", wanted_commit], f"Checking out wanted commit {wanted_commit}")
 
 def main():
 	ensure_outside_of_repo()

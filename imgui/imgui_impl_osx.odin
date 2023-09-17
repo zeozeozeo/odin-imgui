@@ -8,7 +8,7 @@ else when ODIN_OS == .Linux   do foreign import lib "imgui.a"
 else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
 
 // imgui_impl_osx.h
-// Last checked 33e13c8
+// Last checked 357f752b
 foreign lib {
 	ImGui_ImplOSX_Init     :: proc(view: rawptr) -> bool ---
 	ImGui_ImplOSX_Shutdown :: proc() ---

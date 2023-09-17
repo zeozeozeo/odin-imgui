@@ -9,7 +9,7 @@ else when ODIN_OS == .Linux   do foreign import lib "imgui.a"
 else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
 
 // imgui_impl_sdl2.h
-// Last checked 357f752
+// Last checked 357f752b
 foreign lib {
 	ImGui_ImplSDL2_InitForOpenGL      :: proc(window: ^sdl.Window, sdl_gl_context: rawptr) -> c.bool ---
 	ImGui_ImplSDL2_InitForVulkan      :: proc(window: ^sdl.Window) -> c.bool ---

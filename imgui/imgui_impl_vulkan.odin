@@ -9,7 +9,7 @@ else when ODIN_OS == .Linux   do foreign import lib "imgui.a"
 else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
 
 // imgui_impl_vulkan.h
-// Last checked 357f752
+// Last checked 357f752b
 ImGui_ImplVulkan_InitInfo :: struct {
 	Instance:        vk.Instance,
 	PhysicalDevice:  vk.PhysicalDevice,

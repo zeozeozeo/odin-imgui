@@ -12,6 +12,10 @@ import argparse
 # - Get rid of any special handling of values
 #		There are many cases where we override or disable different structs/enums etc.
 #		This is done for a variety of reasons. We should continuously try to fix these where possible.
+# - Use enum value field
+#		A recent change in dear_bindings allows knowing the exact evaluated value of enum fields.
+#		This might be very good for some enums which can't be written as flags
+#		See: https://github.com/dearimgui/dear_bindings/blob/main/docs/Changelog.txt
 
 # HELPERS
 def write_line(file: typing.IO, line: str = "", indent = 0):
@@ -40,10 +44,7 @@ def try_eval(string: str):
 	if string.startswith("1<<"):
 		return 1 << try_eval(string.removeprefix("1<<"))
 
-	try:
-		return ast.literal_eval(string)
-	except Exception:
-		return None
+	return str_to_int(string)
 
 _odin_keywords = [
 	"in",
@@ -58,29 +59,6 @@ def make_identifier_valid(ident: str) -> str:
 			return "_" + ident
 
 	return ident
-
-
-# Create a name declaring a set of names of type `type`. Eg:
-# thing: int
-# thing, other_thing: f32
-# thing, other_thing: [2]char
-def make_field_list(names: typing.List[str], type: str, array_count: int, in_function: bool = False) -> str:
-	names = list(map(lambda s: make_identifier_valid(s), names))
-	array_type_extension = ""
-	if array_count != None:
-		if in_function:
-			if array_count == "func_arg_pointer_decay":
-				# At least we know that it's meant to be an array...
-				array_type_extension = "[^]"
-			else:
-				array_type_extension = f'^[{array_count}]'
-		else:
-			array_type_extension = f'[{array_count}]'
-
-	return ", ".join(names) + ": " + array_type_extension + type
-
-def adjust_name_if_in_list(name: str, list: typing.List[str]) -> str:
-	pass
 
 # Try stripping prefixes from the list, returns tuple of [prefix, remainder]
 def strip_list(name: str, prefix_list: typing.List[str]) -> typing.List[str]:
@@ -120,58 +98,85 @@ def strip_imgui_branding(name: str) -> str:
 _type_aliases = {
 	"float": "f32",
 	"double": "f64",
+
+	"long_long": "c.longlong",
+	"unsigned_long_long": "c.ulonglong",
 	"int": "c.int",
-	"void*": "rawptr",
-	"const char*": "cstring",
-	"char*": "cstring",
-	"char": "c.char",
-	"unsigned char": "c.uchar",
-	"unsigned short": "c.ushort",
-	"unsigned int": "c.uint",
-	"signed char": "c.char",
-	"signed short": "c.short",
-	"signed int": "c.int",
-	"signed long long": "c.longlong",
-	"unsigned long long": "c.ulonglong",
+	"unsigned_int": "c.uint",
 	"short": "c.short",
+	"unsigned_short": "c.ushort",
+	"char": "c.char",
+	"unsigned_char": "c.uchar",
+
 	"size_t": "c.size_t",
+	# "bool": "c.bool",
+
 	"va_list": "libc.va_list",
 }
 
-def parse_type_str(type_str: str) -> str:
-	 # TODO: This could potentially remove `const` from the middle of a name
-	type_str = type_str.replace("const", "")
-	type_str = type_str.replace(" *", "*")
-	type_str = type_str.replace("* ", "*")
+_pointer_aliases = {
+	"char": "cstring",
+	"void": "rawptr",
+}
 
-	prev_str = type_str
-	while True:
-		type_str = prev_str.replace("  ", " ")
-		if type_str == prev_str:
-			break
-		prev_str = type_str
-
-	type_str = type_str.strip()
-
-	return _parse_type_str(type_str)
-
-def _parse_type_str(type_str: str) -> str:
+def make_type_odiney(type_str: str) -> str:
 	if type_str in _type_aliases:
 		return _type_aliases[type_str]
 
-	if type_str.endswith("*"):
-		return "^" + _parse_type_str(type_str.removesuffix("*"))
-
 	return strip_imgui_branding(type_str)
 
-def parse_type(type_dict) -> str:
+# Returns named type if kind is builtin or user.
+def peek_named_type(type_desc) -> str:
+	if   type_desc["kind"] == "Builtin": return type_desc["builtin_type"]
+	elif type_desc["kind"] == "User": return type_desc["name"]
+	else: return None
+
+def parse_type2(type_dict, in_function=False) -> str:
 	if "type_details" in type_dict:
 		details = type_dict["type_details"]
 		assert(details["flavour"] == "function_pointer")
 
 		return function_to_string(details)
 
-	return parse_type_str(type_dict["declaration"])
+	return parse_type_desc(type_dict["description"], in_function)
+
+# TODO[TS]: Clean this up a bit
+def parse_type_desc(type_desc, in_function=False) -> str:
+	match type_desc["kind"]:
+		case "Builtin":
+			return make_type_odiney(type_desc["builtin_type"])
+
+		case "User":
+			return make_type_odiney(type_desc["name"])
+
+		case "Pointer":
+			named_type = peek_named_type(type_desc["inner_type"])
+			if named_type != None:
+				if named_type in _pointer_aliases:
+					return _pointer_aliases[named_type]
+
+			return "^" + parse_type_desc(type_desc["inner_type"], in_function)
+
+		case "Array":
+			array_bounds = get_array_count(type_desc["bounds"])
+			array_str = None
+			if in_function:
+				if array_bounds == "None": # TODO[TS]: Workaround for https://github.com/dearimgui/dear_bindings/issues/41
+					array_str = f'[^]' # Pointer decay
+				else:
+					array_str = f'^[{array_bounds}]'
+			else:
+				if array_bounds == "None":
+					raise "This should never happen!"
+				else:
+					array_str = f'[{array_bounds}]'
+
+			assert array_str != None
+
+			return array_str + parse_type_desc(type_desc["inner_type"], in_function)
+
+		case kind:
+			raise Exception(f'Unhandled type kind "{kind}"')
 
 # Try to parse a string containing an imgui enum, and convert it to an odin imgui enum
 def try_convert_enum_literal(name: str) -> str:
@@ -197,31 +202,20 @@ _imgui_bounds_value_overrides = {
 }
 
 # Get array count for name. If not array, returns None
-def get_array_count(name_dict) -> str:
-	if not name_dict["is_array"]:
-		assert "array_bounds" not in name_dict, "This is awkward..."
-		return None
+def get_array_count(bounds_value) -> str:
+	if str_to_int(bounds_value) != None: return bounds_value
 
-	bounds_value = name_dict["array_bounds"]
-
-	# TODO:
 	if bounds_value in _imgui_bounds_value_overrides:
 		return _imgui_bounds_value_overrides[bounds_value]
 
 	if bounds_value == "None":
-		# The fact that we get "None" probably indicates a bug in the generator.
-		# This indicates an arg like `float foo[]`.
-		return "func_arg_pointer_decay"
-
-	if try_eval(bounds_value) != None:
-		return bounds_value
+		return "None" # https://github.com/dearimgui/dear_bindings/issues/41
 
 	enum_value = try_convert_enum_literal(bounds_value)
 	if enum_value != None:
 		return enum_value
 
-	print(f'Couldn\'t parse array bounds "{name_dict["array_bounds"]}"')
-	# assert array_count != None, f'Couldn\'t parse array bounds for "{name_dict["array_bounds"]}"'
+	print(f'Couldn\'t parse array bounds "{bounds_value}"')
 
 	return None
 
@@ -234,7 +228,7 @@ def write_section(file: typing.IO, section_name: str):
 
 # Writes a line with associated comments.
 # `comment_parent` should be an item from the json file which might have a "comments" field.
-def write_line_with_comments(file, str, comment_parent, indent = 0):
+def write_line_with_comments(file: typing.IO, str: str, comment_parent, indent = 0):
 	comment = comment_parent.get("comments", {})
 	for preceding_comment in comment.get("preceding", []):
 		write_line(file, preceding_comment, indent)
@@ -342,12 +336,13 @@ def enum_parse_flag_combination(value: str, expected_prefix: str) -> typing.List
 
 	return combined_enums
 
+# TODO[TS]: Don't bother parsing value expressions, use value directly.
 def write_enum_as_flags(file, enum, enum_field_prefix, name):
 	write_line_with_comments(file, f'{name} :: bit_set[{name.removesuffix("s")}; c.int]', enum)
 	write_line(file, f'{name.removesuffix("s")} :: enum c.int {{')
 
 	for element in enum["elements"]:
-		element_value = element["value"]
+		element_value = element["value_expression"]
 		bit_index = strip_prefix_optional("1<<", element_value)
 
 		if bit_index == None:
@@ -373,7 +368,7 @@ def write_enum_as_flags(file, enum, enum_field_prefix, name):
 	for element in enum["elements"]:
 		element_base_name = element["name"]
 		element_name = enum_parse_field_name(element_base_name, enum_field_prefix)
-		element_value = element["value"]
+		element_value = element["value_expression"]
 
 		value_string = ""
 		value_is_stupid_dumb_garbage_literal = False
@@ -403,7 +398,7 @@ def write_enum_as_constants(file, enum, enum_field_prefix, name):
 	for element in enum["elements"]:
 		field_base_name = element["name"]
 		field_name = enum_parse_field_name(field_base_name, enum_field_prefix)
-		field_value = element["value"]
+		field_value = element["value_expression"]
 
 		field_value_evald = try_eval(field_value)
 		if field_value_evald != None:
@@ -431,8 +426,8 @@ def write_enum(file: typing.IO, enum, enum_field_prefix: str, name: str, stop_af
 		field_name = enum_parse_field_name(field_base_name, enum_field_prefix)
 		field_name = make_identifier_valid(field_name)
 
-		if "value" in element:
-			base_value = element["value"]
+		if "value_expression" in element:
+			base_value = element["value_expression"]
 			value = enum_parse_value(base_value, name, enum_field_prefix)
 			write_line(file, f'\t{stop_comment}{field_name} = {value},')
 		else:
@@ -530,7 +525,7 @@ def write_structs(file: typing.IO, structs):
 			continue
 
 		# ANONYMOUS TODO:
-		if entire_name.startswith("<anonymous"):
+		if entire_name.startswith("__anonymous_type"):
 			continue
 
 		any_anonymous = False
@@ -543,31 +538,13 @@ def write_structs(file: typing.IO, structs):
 		# /ANONYMOUS
 
 		name = strip_imgui_branding(entire_name)
-		# name = entire_name
 
 		write_line_with_comments(file, f'{name} :: struct {{', struct)
 		for field in struct["fields"]:
-			field_names = field["names"]
+			adjusted_name = apply_override(field["name"], _imgui_struct_field_name_override)
+			field_type = parse_type2(field["type"])
+			write_line_with_comments(file, f'{adjusted_name}: {field_type},', field, 1)
 
-			# Check if there is a mix of array and non array fields
-			expects_array_types = field_names[0]["is_array"]
-			has_any_differing_types = False
-			for field_name in field_names:
-				if field_name["is_array"] != expects_array_types:
-					has_any_differing_types = True
-					break
-
-			field_type = parse_type(field["type"])
-
-			if has_any_differing_types:
-				for field_name in field_names:
-					array_count = get_array_count(field_name)
-					adjusted_name = apply_override(field_name["name"], _imgui_struct_field_name_override)
-					write_line_with_comments(file, f'{make_field_list([adjusted_name], field_name["type"], array_count)},', field, 1)
-			else:
-				array_count = get_array_count(field_names[0])
-				field_name_strings = map(lambda field_name: apply_override(field_name["name"], _imgui_struct_field_name_override), field_names)
-				write_line_with_comments(file, f'{make_field_list(field_name_strings, field_type, array_count)},', field, 1)
 		write_line(file, "}")
 		write_line(file)
 
@@ -589,16 +566,16 @@ def function_to_string(function) -> str:
 			argument_name = "#c_vararg args"
 			argument_type = "..any"
 		else:
-			argument_type = parse_type(argument["type"])
+			argument_name = make_identifier_valid(argument_name)
+			argument_type = parse_type2(argument["type"], in_function=True)
 
-		array_count = get_array_count(argument)
-		argument_list.append(make_field_list([argument_name], argument_type, array_count, in_function=True))
+		argument_list.append(f'{argument_name}: {argument_type}')
 
 	proc_decl += ", ".join(argument_list)
 
 	proc_decl += ")"
 
-	return_type = parse_type(function["return_type"])
+	return_type = parse_type2(function["return_type"])
 	if return_type != "void":
 		proc_decl += f' -> {return_type}'
 
@@ -729,7 +706,7 @@ def write_typedefs(file: typing.IO, typedefs):
 
 		name = strip_imgui_branding(entire_name)
 
-		write_line_with_comments(file, f'{name} :: {parse_type(typedef["type"])}', typedef)
+		write_line_with_comments(file, f'{name} :: {parse_type2(typedef["type"])}', typedef)
 
 def main():
 	parser = argparse.ArgumentParser()

@@ -10,7 +10,7 @@ else when ODIN_OS == .Linux   do foreign import lib "imgui.a"
 else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
 
 // imgui_impl_metal.h
-// Last checked 33e13c8
+// Last checked 357f752b
 foreign lib {
 	ImGui_ImplMetal_Init           :: proc(device: ^mtl.Device) -> c.bool ---
 	ImGui_ImplMetal_Shutdown       :: proc() ---

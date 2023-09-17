@@ -10,7 +10,7 @@ else when ODIN_OS == .Linux   do foreign import lib "imgui.a"
 else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
 
 // imgui_impl_dx11.h
-// Last checked f8f805f
+// Last checked 357f752b
 foreign lib {
 	ImGui_ImplDX11_Init           :: proc(device: ^d3d11.IDevice, device_context: ^d3d11.IDeviceContext) -> c.bool ---
 	ImGui_ImplDX11_Shutdown       :: proc() ---

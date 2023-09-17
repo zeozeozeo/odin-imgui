@@ -10,7 +10,7 @@ else when ODIN_OS == .Linux   do foreign import lib "imgui.a"
 else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
 
 // imgui_impl_win32.h
-// Last checked f8f805f
+// Last checked 357f752b
 
 // Note a difference between the bindings an the actual impl:
 // In the impl they didn't want to pull in <windows.h>, so they just used void*

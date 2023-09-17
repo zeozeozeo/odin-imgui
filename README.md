@@ -77,6 +77,7 @@ It seems likely to me that SDL3, maybe WebGPU (and Android?) will exist in vendo
 The Dear ImGui commits which have been tested against are listed in `build.py`.
 You can mess with these all you want and see if it works.
 
+When updating, a new commit should be chosen for `master` which is right before `master` was merged into `docking`. The `docking` commit should be the following merge commit.
 Additionally, when updating, all backends in `imgui_impl.odin` should be checked for new commits, and updated where necessary.
 
 ## Help wanted!

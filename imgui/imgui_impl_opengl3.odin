@@ -7,7 +7,7 @@ else when ODIN_OS == .Linux   do foreign import lib "imgui.a"
 else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
 
 // imgui_impl_opengl3.h
-// Last checked 357f752
+// Last checked 357f752b
 foreign lib {
 	// Backend API
 	ImGui_ImplOpenGL3_Init           :: proc(glsl_version: cstring /*=nullptr*/) -> c.bool ---

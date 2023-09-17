@@ -12,7 +12,7 @@ CHECKVERSION :: proc() {
 ////////////////////////////////////////////////////////////
 
 VERSION :: "1.90 WIP"
-VERSION_NUM :: 18991
+VERSION_NUM :: 18992
 
 
 ////////////////////////////////////////////////////////////
@@ -484,13 +484,13 @@ HoveredFlags_NoSharedDelay :: HoveredFlags(1<<17) // IsItemHovered() only: Disab
 // FIXME-DOCK: Also see ImGuiDockNodeFlagsPrivate_ which may involve using the WIP and internal DockBuilder api.
 DockNodeFlags :: bit_set[DockNodeFlag; c.int]
 DockNodeFlag :: enum c.int {
-	KeepAliveOnly = 0, // Shared       // Don't display the dockspace node but keep it alive. Windows docked into this dockspace node won't be undocked.
-	//ImGuiDockNodeFlags_NoCentralNode              = 1 << 1,   // Shared       // Disable Central Node (the node which can stay empty)
-	NoDockingInCentralNode = 2, // Shared       // Disable docking inside the Central Node, which will be always kept empty.
-	PassthruCentralNode = 3, // Shared       // Enable passthru dockspace: 1) DockSpace() will render a ImGuiCol_WindowBg background covering everything excepted the Central Node when empty. Meaning the host window should probably use SetNextWindowBgAlpha(0.0f) prior to Begin() when using this. 2) When Central Node is empty: let inputs pass-through + won't display a DockingEmptyBg background. See demo for details.
-	NoSplit = 4, // Shared/Local // Disable splitting the node into smaller nodes. Useful e.g. when embedding dockspaces into a main root one (the root one may have splitting disabled to reduce confusion). Note: when turned off, existing splits will be preserved.
-	NoResize = 5, // Shared/Local // Disable resizing node using the splitter/separators. Useful with programmatically setup dockspaces.
-	AutoHideTabBar = 6, // Shared/Local // Tab bar will automatically hide when there is a single window in the dock node.
+	KeepAliveOnly = 0, //       // Don't display the dockspace node but keep it alive. Windows docked into this dockspace node won't be undocked.
+	//ImGuiDockNodeFlags_NoCentralNode              = 1 << 1,   //       // Disable Central Node (the node which can stay empty)
+	NoDockingInCentralNode = 2, //       // Disable docking inside the Central Node, which will be always kept empty.
+	PassthruCentralNode = 3, //       // Enable passthru dockspace: 1) DockSpace() will render a ImGuiCol_WindowBg background covering everything excepted the Central Node when empty. Meaning the host window should probably use SetNextWindowBgAlpha(0.0f) prior to Begin() when using this. 2) When Central Node is empty: let inputs pass-through + won't display a DockingEmptyBg background. See demo for details.
+	NoSplit = 4, //       // Disable splitting the node into smaller nodes. Useful e.g. when embedding dockspaces into a main root one (the root one may have splitting disabled to reduce confusion). Note: when turned off, existing splits will be preserved.
+	NoResize = 5, // Saved // Disable resizing node using the splitter/separators. Useful with programmatically setup dockspaces.
+	AutoHideTabBar = 6, //       // Tab bar will automatically hide when there is a single window in the dock node.
 }
 
 DockNodeFlags_None :: DockNodeFlags{}
@@ -1502,7 +1502,7 @@ TableColumnSortSpecs :: struct {
 	ColumnUserID: ID, // User id of the column (if specified by a TableSetupColumn() call)
 	ColumnIndex: S16, // Index of the column
 	SortOrder: S16, // Index within parent ImGuiTableSortSpecs (always stored in order starting from 0, tables sorted on a single criteria will always have a 0 here)
-	SortDirection: SortDirection, // ImGuiSortDirection_Ascending or ImGuiSortDirection_Descending (you can use this or SortSign, whichever is more convenient for your sort function)
+	SortDirection: SortDirection, // ImGuiSortDirection_Ascending or ImGuiSortDirection_Descending
 }
 
 // Sorting specifications for a table (often handling sort specs for a single column, occasionally more)
@@ -1688,8 +1688,14 @@ FontGlyph :: struct {
 	Visible: c.uint, // Flag to indicate glyph has no visible pixels (e.g. space). Allow early out when rendering.
 	Codepoint: c.uint, // 0x0000..0x10FFFF
 	AdvanceX: f32, // Distance to next character (= data from font + ImFontConfig::GlyphExtraSpacing.x baked in)
-	X0, Y0, X1, Y1: f32, // Glyph corners
-	U0, V0, U1, V1: f32, // Texture coordinates
+	X0: f32, // Glyph corners
+	Y0: f32, // Glyph corners
+	X1: f32, // Glyph corners
+	Y1: f32, // Glyph corners
+	U0: f32, // Texture coordinates
+	V0: f32, // Texture coordinates
+	U1: f32, // Texture coordinates
+	V1: f32, // Texture coordinates
 }
 
 // Helper to build glyph ranges from text/string data. Feed your application strings/characters to it then call BuildRanges().
@@ -1700,8 +1706,10 @@ FontGlyphRangesBuilder :: struct {
 
 // See ImFontAtlas::AddCustomRectXXX functions.
 FontAtlasCustomRect :: struct {
-	Width, Height: c.ushort, // Input    // Desired rectangle dimension
-	X, Y: c.ushort, // Output   // Packed position in Atlas
+	Width: c.ushort, // Input    // Desired rectangle dimension
+	Height: c.ushort, // Input    // Desired rectangle dimension
+	X: c.ushort, // Output   // Packed position in Atlas
+	Y: c.ushort, // Output   // Packed position in Atlas
 	GlyphID: c.uint, // Input    // For custom font glyphs only (ID < 0x110000)
 	GlyphAdvanceX: f32, // Input    // For custom font glyphs only: glyph xadvance
 	GlyphOffset: Vec2, // Input    // For custom font glyphs only: glyph display offset
@@ -1776,7 +1784,8 @@ Font :: struct {
 	EllipsisCharStep: f32, // 4     // out               // Step between characters when EllipsisCount > 0
 	DirtyLookupTables: bool, // 1     // out //
 	Scale: f32, // 4     // in  // = 1.f      // Base font scale, multiplied by the per-window font scale which you can adjust with SetWindowFontScale()
-	Ascent, Descent: f32, // 4+4   // out //            // Ascent: distance from top to bottom of e.g. 'A' [0..FontSize]
+	Ascent: f32, // 4+4   // out //            // Ascent: distance from top to bottom of e.g. 'A' [0..FontSize]
+	Descent: f32, // 4+4   // out //            // Ascent: distance from top to bottom of e.g. 'A' [0..FontSize]
 	MetricsTotalSurface: c.int, // 4     // out //            // Total surface in pixels to get an idea of the font rasterization/texture cost (not exact, we approximate the cost of padding between glyphs)
 	Used4kPagesMap: [2]U8, // 2 bytes if ImWchar=ImWchar16, 34 bytes if ImWchar==ImWchar32. Store 1-bit for each block of 4K codepoints that has one active glyph. This is mainly used to facilitate iterations across all used codepoints.
 }
@@ -1852,8 +1861,10 @@ PlatformIO :: struct {
 // (Optional) This is required when enabling multi-viewport. Represent the bounds of each connected monitor/display and their DPI.
 // We use this information for multiple DPI support + clamping the position of popups and tooltips so they don't straddle multiple monitors.
 PlatformMonitor :: struct {
-	MainPos, MainSize: Vec2, // Coordinates of the area displayed on this monitor (Min = upper left, Max = bottom right)
-	WorkPos, WorkSize: Vec2, // Coordinates without task bars / side bars / menu bars. Used to avoid positioning popups/tooltips inside this region. If you don't have this info, please copy the value for MainPos/MainSize.
+	MainPos: Vec2, // Coordinates of the area displayed on this monitor (Min = upper left, Max = bottom right)
+	MainSize: Vec2, // Coordinates of the area displayed on this monitor (Min = upper left, Max = bottom right)
+	WorkPos: Vec2, // Coordinates without task bars / side bars / menu bars. Used to avoid positioning popups/tooltips inside this region. If you don't have this info, please copy the value for MainPos/MainSize.
+	WorkSize: Vec2, // Coordinates without task bars / side bars / menu bars. Used to avoid positioning popups/tooltips inside this region. If you don't have this info, please copy the value for MainPos/MainSize.
 	DpiScale: f32, // 1.0f = 96 DPI
 	PlatformHandle: rawptr, // Backend dependant data (e.g. HMONITOR, GLFWmonitor*, SDL Display Index, NSScreen*)
 }
@@ -2115,8 +2126,8 @@ foreign lib {
 	@(link_name="ImGui_ComboCharEx") ComboCharEx :: proc "c" (label: cstring, current_item: ^c.int, items: [^]cstring, items_count: c.int, popup_max_height_in_items: c.int) -> bool ---
 	@(link_name="ImGui_Combo") Combo :: proc "c" (label: cstring, current_item: ^c.int, items_separated_by_zeros: cstring) -> bool --- // Implied popup_max_height_in_items = -1
 	@(link_name="ImGui_ComboEx") ComboEx :: proc "c" (label: cstring, current_item: ^c.int, items_separated_by_zeros: cstring, popup_max_height_in_items: c.int) -> bool --- // Separate items with \0 within a string, end item-list with \0\0. e.g. "One\0Two\0Three\0"
-	@(link_name="ImGui_ComboCallback") ComboCallback :: proc "c" (label: cstring, current_item: ^c.int, items_getter: proc "c" (data: rawptr, idx: c.int, out_text: ^cstring) -> bool, data: rawptr, items_count: c.int) -> bool --- // Implied popup_max_height_in_items = -1
-	@(link_name="ImGui_ComboCallbackEx") ComboCallbackEx :: proc "c" (label: cstring, current_item: ^c.int, items_getter: proc "c" (data: rawptr, idx: c.int, out_text: ^cstring) -> bool, data: rawptr, items_count: c.int, popup_max_height_in_items: c.int) -> bool ---
+	@(link_name="ImGui_ComboCallback") ComboCallback :: proc "c" (label: cstring, current_item: ^c.int, getter: proc "c" (user_data: rawptr, idx: c.int) -> cstring, user_data: rawptr, items_count: c.int) -> bool --- // Implied popup_max_height_in_items = -1
+	@(link_name="ImGui_ComboCallbackEx") ComboCallbackEx :: proc "c" (label: cstring, current_item: ^c.int, getter: proc "c" (user_data: rawptr, idx: c.int) -> cstring, user_data: rawptr, items_count: c.int, popup_max_height_in_items: c.int) -> bool ---
 	// Widgets: Drag Sliders
 	// - CTRL+Click on any drag box to turn them into an input box. Manually input values aren't clamped by default and can go off-bounds. Use ImGuiSliderFlags_AlwaysClamp to always clamp.
 	// - For all the Float2/Float3/Float4/Int2/Int3/Int4 versions of every function, note that a 'float v[X]' function argument is the same as 'float* v',
@@ -2260,8 +2271,8 @@ foreign lib {
 	@(link_name="ImGui_BeginListBox") BeginListBox :: proc "c" (label: cstring, size: Vec2) -> bool --- // open a framed scrolling region
 	@(link_name="ImGui_EndListBox") EndListBox :: proc "c" () --- // only call EndListBox() if BeginListBox() returned true!
 	@(link_name="ImGui_ListBox") ListBox :: proc "c" (label: cstring, current_item: ^c.int, items: [^]cstring, items_count: c.int, height_in_items: c.int) -> bool ---
-	@(link_name="ImGui_ListBoxCallback") ListBoxCallback :: proc "c" (label: cstring, current_item: ^c.int, items_getter: proc "c" (data: rawptr, idx: c.int, out_text: ^cstring) -> bool, data: rawptr, items_count: c.int) -> bool --- // Implied height_in_items = -1
-	@(link_name="ImGui_ListBoxCallbackEx") ListBoxCallbackEx :: proc "c" (label: cstring, current_item: ^c.int, items_getter: proc "c" (data: rawptr, idx: c.int, out_text: ^cstring) -> bool, data: rawptr, items_count: c.int, height_in_items: c.int) -> bool ---
+	@(link_name="ImGui_ListBoxCallback") ListBoxCallback :: proc "c" (label: cstring, current_item: ^c.int, getter: proc "c" (user_data: rawptr, idx: c.int) -> cstring, user_data: rawptr, items_count: c.int) -> bool --- // Implied height_in_items = -1
+	@(link_name="ImGui_ListBoxCallbackEx") ListBoxCallbackEx :: proc "c" (label: cstring, current_item: ^c.int, getter: proc "c" (user_data: rawptr, idx: c.int) -> cstring, user_data: rawptr, items_count: c.int, height_in_items: c.int) -> bool ---
 	// Widgets: Data Plotting
 	// - Consider using ImPlot (https://github.com/epezent/implot) which is much better!
 	@(link_name="ImGui_PlotLines") PlotLines :: proc "c" (label: cstring, values: ^f32, values_count: c.int) --- // Implied values_offset = 0, overlay_text = NULL, scale_min = FLT_MAX, scale_max = FLT_MAX, graph_size = ImVec2(0, 0), stride = sizeof(float)
@@ -2414,9 +2425,9 @@ foreign lib {
 	// Docking
 	// [BETA API] Enable with io.ConfigFlags |= ImGuiConfigFlags_DockingEnable.
 	// Note: You can use most Docking facilities without calling any API. You DO NOT need to call DockSpace() to use Docking!
-	// - Drag from window title bar or their tab to dock/undock. Hold SHIFT to disable docking/undocking.
+	// - Drag from window title bar or their tab to dock/undock. Hold SHIFT to disable docking.
 	// - Drag from window menu button (upper-left button) to undock an entire node (all windows).
-	// - When io.ConfigDockingWithShift == true, you instead need to hold SHIFT to _enable_ docking/undocking.
+	// - When io.ConfigDockingWithShift == true, you instead need to hold SHIFT to enable docking.
 	// About dockspaces:
 	// - Use DockSpaceOverViewport() to create an explicit dock node covering the screen or a specific viewport.
 	//   This is often used with ImGuiDockNodeFlags_PassthruCentralNode to make it transparent.
@@ -2770,8 +2781,8 @@ foreign lib {
 	@(link_name="ImFontAtlas_AddFont") FontAtlas_AddFont :: proc "c" (self: ^FontAtlas, font_cfg: ^FontConfig) -> ^Font ---
 	@(link_name="ImFontAtlas_AddFontDefault") FontAtlas_AddFontDefault :: proc "c" (self: ^FontAtlas, font_cfg: ^FontConfig) -> ^Font ---
 	@(link_name="ImFontAtlas_AddFontFromFileTTF") FontAtlas_AddFontFromFileTTF :: proc "c" (self: ^FontAtlas, filename: cstring, size_pixels: f32, font_cfg: ^FontConfig, glyph_ranges: ^Wchar) -> ^Font ---
-	@(link_name="ImFontAtlas_AddFontFromMemoryTTF") FontAtlas_AddFontFromMemoryTTF :: proc "c" (self: ^FontAtlas, font_data: rawptr, font_size: c.int, size_pixels: f32, font_cfg: ^FontConfig, glyph_ranges: ^Wchar) -> ^Font --- // Note: Transfer ownership of 'ttf_data' to ImFontAtlas! Will be deleted after destruction of the atlas. Set font_cfg->FontDataOwnedByAtlas=false to keep ownership of your data and it won't be freed.
-	@(link_name="ImFontAtlas_AddFontFromMemoryCompressedTTF") FontAtlas_AddFontFromMemoryCompressedTTF :: proc "c" (self: ^FontAtlas, compressed_font_data: rawptr, compressed_font_size: c.int, size_pixels: f32, font_cfg: ^FontConfig, glyph_ranges: ^Wchar) -> ^Font --- // 'compressed_font_data' still owned by caller. Compress with binary_to_compressed_c.cpp.
+	@(link_name="ImFontAtlas_AddFontFromMemoryTTF") FontAtlas_AddFontFromMemoryTTF :: proc "c" (self: ^FontAtlas, font_data: rawptr, font_data_size: c.int, size_pixels: f32, font_cfg: ^FontConfig, glyph_ranges: ^Wchar) -> ^Font --- // Note: Transfer ownership of 'ttf_data' to ImFontAtlas! Will be deleted after destruction of the atlas. Set font_cfg->FontDataOwnedByAtlas=false to keep ownership of your data and it won't be freed.
+	@(link_name="ImFontAtlas_AddFontFromMemoryCompressedTTF") FontAtlas_AddFontFromMemoryCompressedTTF :: proc "c" (self: ^FontAtlas, compressed_font_data: rawptr, compressed_font_data_size: c.int, size_pixels: f32, font_cfg: ^FontConfig, glyph_ranges: ^Wchar) -> ^Font --- // 'compressed_font_data' still owned by caller. Compress with binary_to_compressed_c.cpp.
 	@(link_name="ImFontAtlas_AddFontFromMemoryCompressedBase85TTF") FontAtlas_AddFontFromMemoryCompressedBase85TTF :: proc "c" (self: ^FontAtlas, compressed_font_data_base85: cstring, size_pixels: f32, font_cfg: ^FontConfig, glyph_ranges: ^Wchar) -> ^Font --- // 'compressed_font_data_base85' still owned by caller. Compress with binary_to_compressed_c.cpp with -base85 parameter.
 	@(link_name="ImFontAtlas_ClearInputData") FontAtlas_ClearInputData :: proc "c" (self: ^FontAtlas) --- // Clear input data (all ImFontConfig structures including sizes, TTF data, glyph ranges, etc.) = all the data used to build the texture and fonts.
 	@(link_name="ImFontAtlas_ClearTexData") FontAtlas_ClearTexData :: proc "c" (self: ^FontAtlas) --- // Clear output texture data (CPU side). Saves RAM once the texture has been copied to graphics memory.
@@ -2837,6 +2848,11 @@ foreign lib {
 	@(link_name="ImGuiViewport_GetCenter") Viewport_GetCenter :: proc "c" (self: ^Viewport) -> Vec2 ---
 	@(link_name="ImGuiViewport_GetWorkCenter") Viewport_GetWorkCenter :: proc "c" (self: ^Viewport) -> Vec2 ---
 	@(link_name="GetKeyIndex") GetKeyIndex :: proc "c" (key: Key) -> Key --- // map ImGuiKey_* values into legacy native key index. == io.KeyMap[key]
+	// OBSOLETED in 1.90.0 (from September 2023)
+	@(link_name="ImGui_ListBoxObsolete") ListBoxObsolete :: proc "c" (label: cstring, current_item: ^c.int, old_callback: proc "c" (user_data: rawptr, idx: c.int, out_text: ^cstring) -> bool, user_data: rawptr, items_count: c.int) -> bool --- // Implied height_in_items = -1
+	@(link_name="ImGui_ListBoxObsoleteEx") ListBoxObsoleteEx :: proc "c" (label: cstring, current_item: ^c.int, old_callback: proc "c" (user_data: rawptr, idx: c.int, out_text: ^cstring) -> bool, user_data: rawptr, items_count: c.int, height_in_items: c.int) -> bool ---
+	@(link_name="ImGui_ComboObsolete") ComboObsolete :: proc "c" (label: cstring, current_item: ^c.int, old_callback: proc "c" (user_data: rawptr, idx: c.int, out_text: ^cstring) -> bool, user_data: rawptr, items_count: c.int) -> bool --- // Implied popup_max_height_in_items = -1
+	@(link_name="ImGui_ComboObsoleteEx") ComboObsoleteEx :: proc "c" (label: cstring, current_item: ^c.int, old_callback: proc "c" (user_data: rawptr, idx: c.int, out_text: ^cstring) -> bool, user_data: rawptr, items_count: c.int, popup_max_height_in_items: c.int) -> bool ---
 	// OBSOLETED in 1.89.7 (from June 2023)
 	@(link_name="ImGui_SetItemAllowOverlap") SetItemAllowOverlap :: proc "c" () --- // Use SetNextItemAllowOverlap() before item.
 	// OBSOLETED in 1.89.4 (from March 2023)
@@ -2870,8 +2886,8 @@ S64 :: c.longlong // 64-bit signed integer
 U64 :: c.ulonglong // 64-bit unsigned integer
 // Character types
 // (we generally use UTF-8 encoded string in the API. This is storage specifically for a decoded character used for keyboard input and display)
-Wchar16 :: c.ushort // A single decoded U16 character/code point. We encode them as multi bytes UTF-8 when used in strings.
 Wchar32 :: c.uint // A single decoded U32 character/code point. We encode them as multi bytes UTF-8 when used in strings.
+Wchar16 :: c.ushort // A single decoded U16 character/code point. We encode them as multi bytes UTF-8 when used in strings.
 // Callback and functions types
 InputTextCallback :: proc "c" (data: ^InputTextCallbackData) -> c.int // Callback function for ImGui::InputText()
 SizeCallback :: proc "c" (data: ^SizeCallbackData) // Callback function for ImGui::SetNextWindowSizeConstraints()

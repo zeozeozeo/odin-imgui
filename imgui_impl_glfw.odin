@@ -9,7 +9,7 @@ else when ODIN_OS == .Linux   do foreign import lib "imgui.a"
 else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
 
 // imgui_impl_glfw.h
-// Last checked f8f805f
+// Last checked 357f752b
 foreign lib {
 	ImGui_ImplGlfw_InitForOpenGL :: proc(window: glfw.WindowHandle, install_callbacks: c.bool) -> c.bool ---
 	ImGui_ImplGlfw_InitForVulkan :: proc(window: glfw.WindowHandle, install_callbacks: c.bool) -> c.bool ---
