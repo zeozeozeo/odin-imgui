@@ -631,9 +631,11 @@ _imgui_function_prefixes = [
 def write_functions(file: typing.IO, functions):
 	write_section(file, "Functions")
 	write_line(file, """
-when      ODIN_OS == .Windows do foreign import lib "imgui.lib"
-else when ODIN_OS == .Linux   do foreign import lib "imgui.a"
-// else when ODIN_OS == .Darwin  do foreign import lib "imgui.a"
+when      ODIN_OS == .Windows do foreign import lib "imgui_windows_x64.lib"
+else when ODIN_OS == .Linux   do foreign import lib "imgui_linux_x64.a"
+else when ODIN_OS == .Darwin {
+	when ODIN_ARCH == .amd64 { foreign import lib "imgui_darwin_x64.a" } else { foreign import lib "imgui_darwin_arm64.a" }
+}
 """)
 	write_line(file, "foreign lib {")
 

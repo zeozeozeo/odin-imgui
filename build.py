@@ -4,7 +4,8 @@ import os
 import shutil
 from glob import glob
 import typing
-from sys import platform, executable
+import sys
+import platform
 
 # TODO:
 # - Auto download backends deps
@@ -32,11 +33,11 @@ wanted_backends = ["vulkan", "sdl2", "opengl3", "sdlrenderer2", "glfw", "dx11", 
 backends = {
 	"allegro5":     { "supported": False },
 	"android":      { "supported": False },
-	"dx9":          { "supported": False, "enabled_on": ["win32"] },
-	"dx10":         { "supported": False, "enabled_on": ["win32"] },
-	"dx11":         { "supported": True,  "enabled_on": ["win32"] },
+	"dx9":          { "supported": False, "enabled_on": ["windows"] },
+	"dx10":         { "supported": False, "enabled_on": ["windows"] },
+	"dx11":         { "supported": True,  "enabled_on": ["windows"] },
 	# Bindings exist for DX12, but they are untested
-	"dx12":         { "supported": False, "enabled_on": ["win32"] },
+	"dx12":         { "supported": False, "enabled_on": ["windows"] },
 	# Requires https://github.com/glfw/glfw.git at commit 3eaf125
 	"glfw":         { "supported": True,  "includes": [["glfw", "include"]] },
 	"glut":         { "supported": False },
@@ -54,14 +55,14 @@ backends = {
 	"vulkan":       { "supported": True,  "includes": [["Vulkan-Headers", "include"]], "defines": ["VK_NO_PROTOTYPES"] },
 	"wgpu":         { "supported": False },
 	# Bindings exist for win32, but they are untested
-	"win32":        { "supported": False, "enabled_on": ["win32"] },
+	"win32":        { "supported": False, "enabled_on": ["windows"] },
 }
 
 # @CONFIGURE:
 compile_debug = False
 
-platform_win32_like = platform == "win32"
-platform_unix_like = platform == "linux" or platform == "darwin"
+platform_win32_like = platform.system() == "Windows"
+platform_unix_like = platform.system() == "Linux" or platform.system() == "Darwin"
 
 # Assert which doesn't clutter the output
 def assertx(cond: bool, msg: str):
@@ -85,6 +86,26 @@ def copy(from_path: str, files: typing.List[str], to_path: str):
 	for file in files:
 		shutil.copy(path.join(from_path, file), to_path)
 
+def glob_copy(root_dir: str, glob_pattern: str, dest_dir: str):
+	the_files = glob(root_dir=root_dir, pathname=glob_pattern)
+	copy(root_dir, the_files, dest_dir)
+	return the_files
+
+def platform_select(the_options):
+	""" Given a dict like eg. { "windows": "/DCOOL_DEFINE", "linux, darwin": "-DCOOL_DEFINE" }
+	Returns the correct value for the active platform. """
+	our_platform = platform.system().lower()
+	for platforms_string in the_options:
+		if platforms_string.lower().find(our_platform) != -1:
+			return the_options[platforms_string]
+
+	print(the_options)
+	assertx(False, f"Couldn't find active platform ({our_platform}) in the above options!")
+
+def pp(the_path: str) -> str:
+	""" Given a path with '/' as a delimiter, returns an appropriate sys.platform path """
+	return path.join(*the_path.split("/"))
+
 def map_to_folder(files: typing.List[str], folder: str) -> typing.List[str]:
 	return list(map(lambda file: path.join(folder, file), files))
 
@@ -106,6 +127,24 @@ def ensure_checked_out_with_commit(dir: str, repo: str, wanted_commit: str):
 		print(f"{dir} on unwanted commit {active_commit}")
 		exec(["git", "-C", dir, "checkout", wanted_commit], f"Checking out wanted commit {wanted_commit}")
 
+def get_platform_imgui_lib_name() -> str:
+	""" Returns imgui binary name for system/processor """
+
+	system = platform.system()
+
+	processor = None
+	if platform.machine().lower() in ["AMD64"]:
+		processor = "x64"
+	if platform.machine().lower() in ["arm64"]:
+		processor = "arm64"
+
+	binary_ext = "lib" if system == "Windows" else "a"
+
+	assertx(system != "", "System could not be determined")
+	assertx(processor != None, "Could not determine processor")
+
+	return f'imgui_{system.lower()}_{processor}.{binary_ext}'
+
 def main():
 	ensure_outside_of_repo()
 	ensure_checked_out_with_commit("imgui", "https://github.com/ocornut/imgui.git", git_heads[active_branch]["imgui"])
@@ -118,33 +157,30 @@ def main():
 	os.mkdir("build")
 
 	# Generate bindings for active ImGui branch
-	exec([executable, "dear_bindings/dear_bindings.py", "-o", "temp/c_imgui", "imgui/imgui.h"], "Running dear_bindings")
+	exec([sys.executable, pp("dear_bindings/dear_bindings.py"), "-o", pp("temp/c_imgui"), pp("imgui/imgui.h")], "Running dear_bindings")
 	# Generate odin bindings from dear_bindings json file
-	exec([executable, "odin-imgui/gen_odin.py", "temp/c_imgui.json", "build/imgui.odin"], "Running odin-imgui")
+	exec([sys.executable, pp("odin-imgui/gen_odin.py"), pp("temp/c_imgui.json"), pp("build/imgui.odin")], "Running odin-imgui")
 
 	# Find and copy imgui sources to temp folder
-	imgui_headers = glob(pathname="*.h", root_dir="imgui")
-	imgui_sources = glob(pathname="*.cpp", root_dir="imgui")
-	copy("imgui", imgui_headers, "temp")
-	copy("imgui", imgui_sources, "temp")
+	_imgui_headers = glob_copy("imgui", "*.h", "temp")
+	imgui_sources = glob_copy("imgui", "*.cpp", "temp")
 
 	# Gather sources, defines, includes etc
 	all_sources = imgui_sources
-	compile_flags = []
-
 	all_sources += ["c_imgui.cpp"]
-	if platform_win32_like:  compile_flags += ['/DIMGUI_IMPL_API=extern\\\"C\\\"']
-	elif platform_unix_like: compile_flags += ['-DIMGUI_IMPL_API=extern\"C\"', "-fPIC", "-fno-exceptions", "-fno-rtti", "-fno-threadsafe-statics"]
 
-	if compile_debug:
-		if platform_win32_like:  compile_flags += ["/Od", "/Z7"]
-		elif platform_unix_like: compile_flags += ["-g", "-O0"]
-	else:
-		if platform_win32_like:  compile_flags += ["/O2"]
-		elif platform_unix_like: compile_flags += ["-O3"]
+	# Basic flags
+	compile_flags = platform_select({
+		"windows": ['/DIMGUI_IMPL_API=extern\\\"C\\\"'],
+		"linux, darwin": ['-DIMGUI_IMPL_API=extern\"C\"', "-fPIC", "-fno-exceptions", "-fno-rtti", "-fno-threadsafe-statics"],
+	})
+
+	# Optimization flags
+	if compile_debug: compile_flags += platform_select({ "windows": ["/Od", "/Z7"], "linux, darwin": ["-g", "-O0"] })
+	else: compile_flags += platform_select({ "windows": ["/O2"], "linux, darwin": ["-O3"] })
 
 	# Write file describing the enabled backends
-	f = open(path.join("build", "impl_enabled.odin"), "w+")
+	f = open(pp("build/impl_enabled.odin"), "w+")
 	f.writelines([
 		"package imgui\n",
 		"\n",
@@ -160,32 +196,28 @@ def main():
 	for backend_name in wanted_backends:
 		backend = backends[backend_name]
 
-		if "enabled_on" in backend and not platform in backend["enabled_on"]:
+		if "enabled_on" in backend and not platform.system().lower() in backend["enabled_on"]:
 			continue
 
 		if not backend["supported"]:
 			print(f"Warning: compiling backend '{backend_name}' which is not officially supported")
 
-		backend_files = glob(pathname=f"imgui_impl_{backend_name}.*", root_dir="imgui/backends")
-		copy("imgui/backends", backend_files, "temp")
+		glob_copy(pp("imgui/backends"), f"imgui_impl_{backend_name}.*", "temp")
 
 		if backend_name in ["osx", "metal"]: all_sources += [f"imgui_impl_{backend_name}.mm"]
 		else:                                all_sources += [f"imgui_impl_{backend_name}.cpp"]
 
 		if backend_name == "opengl3":
-			shutil.copy(path.join("imgui", "backends", "imgui_impl_opengl3_loader.h"), "temp")
+			shutil.copy(pp("imgui/backends/imgui_impl_opengl3_loader.h"), "temp")
 
-		for define in backend.get("defines", []):
-			if platform_win32_like:  compile_flags += [f"/D{define}"]
-			elif platform_unix_like: compile_flags += [f"-D{define}"]
+		for define in backend.get("defines", []): compile_flags += [platform_select({ "windows": f"/D{define}", "linux, darwin": f"-D{define}" })]
 
 		for include in backend.get("includes", []):
 			if platform_win32_like:  compile_flags += ["/I" + path.join("..", "backend_deps", path.join(*include))]
 			elif platform_unix_like: compile_flags += ["-I" + path.join("..", "backend_deps", path.join(*include))]
 
 	# Copy implementation files
-	odin_impl_files = glob(pathname="imgui_impl_*.odin", root_dir="odin-imgui")
-	copy("odin-imgui", odin_impl_files, "build")
+	glob_copy("odin-imgui", "imgui_impl_*.odin", "build")
 
 	all_objects = []
 	if platform_win32_like:  all_objects += map(lambda file: file.removesuffix(".cpp") + ".obj", all_sources)
@@ -198,12 +230,12 @@ def main():
 
 	os.chdir("..")
 
-	if platform_win32_like:  run_vcvars(["lib", "/OUT:" + path.join("build", "imgui.lib")] + map_to_folder(all_objects, "temp"))
-	elif platform_unix_like: exec(["ar", "rcs", path.join("build", "imgui.a")] + map_to_folder(all_objects, "temp"), "Making library from objects")
+	dest_binary = get_platform_imgui_lib_name()
 
-	expected_files = ["imgui.odin", "impl_enabled.odin"]
-	if platform_win32_like:  expected_files += ["imgui.lib"]
-	elif platform_unix_like: expected_files += ["imgui.a"]
+	if platform_win32_like:  run_vcvars(["lib", "/OUT:" + path.join("build", dest_binary)] + map_to_folder(all_objects, "temp"))
+	elif platform_unix_like: exec(["ar", "rcs", path.join("build", dest_binary)] + map_to_folder(all_objects, "temp"), "Making library from objects")
+
+	expected_files = ["imgui.odin", "impl_enabled.odin", dest_binary]
 
 	for file in expected_files:
 		assertx(path.isfile(path.join("build", file)), f"Missing file '{file}' in build folder! Something went wrong..")
