@@ -47,15 +47,16 @@ def try_eval(string: str):
 
 	return str_to_int(string)
 
-_odin_keywords = [
-	"in",
+_disallowed_identifiers = [
+	"in", # Odin keyword
+	"c", # Shadows import "core:c"
 ]
 
 def make_identifier_valid(ident: str) -> str:
 	if str_to_int(ident[0]) != None:
 		return "_" + ident
 
-	for keyword in _odin_keywords:
+	for keyword in _disallowed_identifiers:
 		if ident == keyword:
 			return "_" + ident
 

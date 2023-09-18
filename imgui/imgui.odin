@@ -2611,8 +2611,8 @@ foreign lib {
 	@(link_name="ImGuiIO_AddMouseSourceEvent") IO_AddMouseSourceEvent :: proc "c" (self: ^IO, source: MouseSource) --- // Queue a mouse source change (Mouse/TouchScreen/Pen)
 	@(link_name="ImGuiIO_AddMouseViewportEvent") IO_AddMouseViewportEvent :: proc "c" (self: ^IO, id: ID) --- // Queue a mouse hovered viewport. Requires backend to set ImGuiBackendFlags_HasMouseHoveredViewport to call this (for multi-viewport support).
 	@(link_name="ImGuiIO_AddFocusEvent") IO_AddFocusEvent :: proc "c" (self: ^IO, focused: c.bool) --- // Queue a gain/loss of focus for the application (generally based on OS/platform focus of your window)
-	@(link_name="ImGuiIO_AddInputCharacter") IO_AddInputCharacter :: proc "c" (self: ^IO, c: c.uint) --- // Queue a new character input
-	@(link_name="ImGuiIO_AddInputCharacterUTF16") IO_AddInputCharacterUTF16 :: proc "c" (self: ^IO, c: Wchar16) --- // Queue a new character input from a UTF-16 character, it can be a surrogate
+	@(link_name="ImGuiIO_AddInputCharacter") IO_AddInputCharacter :: proc "c" (self: ^IO, _c: c.uint) --- // Queue a new character input
+	@(link_name="ImGuiIO_AddInputCharacterUTF16") IO_AddInputCharacterUTF16 :: proc "c" (self: ^IO, _c: Wchar16) --- // Queue a new character input from a UTF-16 character, it can be a surrogate
 	@(link_name="ImGuiIO_AddInputCharactersUTF8") IO_AddInputCharactersUTF8 :: proc "c" (self: ^IO, str: cstring) --- // Queue a new characters input from a UTF-8 string
 	@(link_name="ImGuiIO_SetKeyEventNativeData") IO_SetKeyEventNativeData :: proc "c" (self: ^IO, key: Key, native_keycode: c.int, native_scancode: c.int) --- // Implied native_legacy_index = -1
 	@(link_name="ImGuiIO_SetKeyEventNativeDataEx") IO_SetKeyEventNativeDataEx :: proc "c" (self: ^IO, key: Key, native_keycode: c.int, native_scancode: c.int, native_legacy_index: c.int) --- // [Optional] Specify index for legacy <1.87 IsKeyXXX() functions with native indices + specify native keycode, scancode.
@@ -2753,7 +2753,7 @@ foreign lib {
 	@(link_name="ImDrawList_PrimUnreserve") DrawList_PrimUnreserve :: proc "c" (self: ^DrawList, idx_count: c.int, vtx_count: c.int) ---
 	@(link_name="ImDrawList_PrimRect") DrawList_PrimRect :: proc "c" (self: ^DrawList, a: Vec2, b: Vec2, col: u32) --- // Axis aligned rectangle (composed of two triangles)
 	@(link_name="ImDrawList_PrimRectUV") DrawList_PrimRectUV :: proc "c" (self: ^DrawList, a: Vec2, b: Vec2, uv_a: Vec2, uv_b: Vec2, col: u32) ---
-	@(link_name="ImDrawList_PrimQuadUV") DrawList_PrimQuadUV :: proc "c" (self: ^DrawList, a: Vec2, b: Vec2, c: Vec2, d: Vec2, uv_a: Vec2, uv_b: Vec2, uv_c: Vec2, uv_d: Vec2, col: u32) ---
+	@(link_name="ImDrawList_PrimQuadUV") DrawList_PrimQuadUV :: proc "c" (self: ^DrawList, a: Vec2, b: Vec2, _c: Vec2, d: Vec2, uv_a: Vec2, uv_b: Vec2, uv_c: Vec2, uv_d: Vec2, col: u32) ---
 	@(link_name="ImDrawList_PrimWriteVtx") DrawList_PrimWriteVtx :: proc "c" (self: ^DrawList, pos: Vec2, uv: Vec2, col: u32) ---
 	@(link_name="ImDrawList_PrimWriteIdx") DrawList_PrimWriteIdx :: proc "c" (self: ^DrawList, idx: DrawIdx) ---
 	@(link_name="ImDrawList_PrimVtx") DrawList_PrimVtx :: proc "c" (self: ^DrawList, pos: Vec2, uv: Vec2, col: u32) --- // Write vertex with unique index
@@ -2775,7 +2775,7 @@ foreign lib {
 	@(link_name="ImFontGlyphRangesBuilder_Clear") FontGlyphRangesBuilder_Clear :: proc "c" (self: ^FontGlyphRangesBuilder) ---
 	@(link_name="ImFontGlyphRangesBuilder_GetBit") FontGlyphRangesBuilder_GetBit :: proc "c" (self: ^FontGlyphRangesBuilder, n: c.size_t) -> c.bool --- // Get bit n in the array
 	@(link_name="ImFontGlyphRangesBuilder_SetBit") FontGlyphRangesBuilder_SetBit :: proc "c" (self: ^FontGlyphRangesBuilder, n: c.size_t) --- // Set bit n in the array
-	@(link_name="ImFontGlyphRangesBuilder_AddChar") FontGlyphRangesBuilder_AddChar :: proc "c" (self: ^FontGlyphRangesBuilder, c: Wchar) --- // Add character
+	@(link_name="ImFontGlyphRangesBuilder_AddChar") FontGlyphRangesBuilder_AddChar :: proc "c" (self: ^FontGlyphRangesBuilder, _c: Wchar) --- // Add character
 	@(link_name="ImFontGlyphRangesBuilder_AddText") FontGlyphRangesBuilder_AddText :: proc "c" (self: ^FontGlyphRangesBuilder, text: cstring, text_end: cstring) --- // Add string (each character of the UTF-8 string are added)
 	@(link_name="ImFontGlyphRangesBuilder_AddRanges") FontGlyphRangesBuilder_AddRanges :: proc "c" (self: ^FontGlyphRangesBuilder, ranges: ^Wchar) --- // Add ranges, e.g. builder.AddRanges(ImFontAtlas::GetGlyphRangesDefault()) to force add all of ASCII/Latin+Ext
 	@(link_name="ImFontGlyphRangesBuilder_BuildRanges") FontGlyphRangesBuilder_BuildRanges :: proc "c" (self: ^FontGlyphRangesBuilder, out_ranges: ^Vector_Wchar) --- // Output new ranges (ImVector_Construct()/ImVector_Destruct() can be used to safely construct out_ranges)
@@ -2826,9 +2826,9 @@ foreign lib {
 	// [Internal]
 	@(link_name="ImFontAtlas_CalcCustomRectUV") FontAtlas_CalcCustomRectUV :: proc "c" (self: ^FontAtlas, rect: ^FontAtlasCustomRect, out_uv_min: ^Vec2, out_uv_max: ^Vec2) ---
 	@(link_name="ImFontAtlas_GetMouseCursorTexData") FontAtlas_GetMouseCursorTexData :: proc "c" (self: ^FontAtlas, cursor: MouseCursor, out_offset: ^Vec2, out_size: ^Vec2, out_uv_border: ^[2]Vec2, out_uv_fill: ^[2]Vec2) -> c.bool ---
-	@(link_name="ImFont_FindGlyph") Font_FindGlyph :: proc "c" (self: ^Font, c: Wchar) -> ^FontGlyph ---
-	@(link_name="ImFont_FindGlyphNoFallback") Font_FindGlyphNoFallback :: proc "c" (self: ^Font, c: Wchar) -> ^FontGlyph ---
-	@(link_name="ImFont_GetCharAdvance") Font_GetCharAdvance :: proc "c" (self: ^Font, c: Wchar) -> f32 ---
+	@(link_name="ImFont_FindGlyph") Font_FindGlyph :: proc "c" (self: ^Font, _c: Wchar) -> ^FontGlyph ---
+	@(link_name="ImFont_FindGlyphNoFallback") Font_FindGlyphNoFallback :: proc "c" (self: ^Font, _c: Wchar) -> ^FontGlyph ---
+	@(link_name="ImFont_GetCharAdvance") Font_GetCharAdvance :: proc "c" (self: ^Font, _c: Wchar) -> f32 ---
 	@(link_name="ImFont_IsLoaded") Font_IsLoaded :: proc "c" (self: ^Font) -> c.bool ---
 	@(link_name="ImFont_GetDebugName") Font_GetDebugName :: proc "c" (self: ^Font) -> cstring ---
 	// 'max_width' stops rendering after a certain width (could be turned into a 2d size). FLT_MAX to disable.
@@ -2836,15 +2836,15 @@ foreign lib {
 	@(link_name="ImFont_CalcTextSizeA") Font_CalcTextSizeA :: proc "c" (self: ^Font, size: f32, max_width: f32, wrap_width: f32, text_begin: cstring) -> Vec2 --- // Implied text_end = NULL, remaining = NULL
 	@(link_name="ImFont_CalcTextSizeAEx") Font_CalcTextSizeAEx :: proc "c" (self: ^Font, size: f32, max_width: f32, wrap_width: f32, text_begin: cstring, text_end: cstring, remaining: ^cstring) -> Vec2 --- // utf8
 	@(link_name="ImFont_CalcWordWrapPositionA") Font_CalcWordWrapPositionA :: proc "c" (self: ^Font, scale: f32, text: cstring, text_end: cstring, wrap_width: f32) -> cstring ---
-	@(link_name="ImFont_RenderChar") Font_RenderChar :: proc "c" (self: ^Font, draw_list: ^DrawList, size: f32, pos: Vec2, col: u32, c: Wchar) ---
+	@(link_name="ImFont_RenderChar") Font_RenderChar :: proc "c" (self: ^Font, draw_list: ^DrawList, size: f32, pos: Vec2, col: u32, _c: Wchar) ---
 	@(link_name="ImFont_RenderText") Font_RenderText :: proc "c" (self: ^Font, draw_list: ^DrawList, size: f32, pos: Vec2, col: u32, clip_rect: Vec4, text_begin: cstring, text_end: cstring, wrap_width: f32, cpu_fine_clip: c.bool) ---
 	// [Internal] Don't use!
 	@(link_name="ImFont_BuildLookupTable") Font_BuildLookupTable :: proc "c" (self: ^Font) ---
 	@(link_name="ImFont_ClearOutputData") Font_ClearOutputData :: proc "c" (self: ^Font) ---
 	@(link_name="ImFont_GrowIndex") Font_GrowIndex :: proc "c" (self: ^Font, new_size: c.int) ---
-	@(link_name="ImFont_AddGlyph") Font_AddGlyph :: proc "c" (self: ^Font, src_cfg: ^FontConfig, c: Wchar, x0: f32, y0: f32, x1: f32, y1: f32, u0: f32, v0: f32, u1: f32, v1: f32, advance_x: f32) ---
+	@(link_name="ImFont_AddGlyph") Font_AddGlyph :: proc "c" (self: ^Font, src_cfg: ^FontConfig, _c: Wchar, x0: f32, y0: f32, x1: f32, y1: f32, u0: f32, v0: f32, u1: f32, v1: f32, advance_x: f32) ---
 	@(link_name="ImFont_AddRemapChar") Font_AddRemapChar :: proc "c" (self: ^Font, dst: Wchar, src: Wchar, overwrite_dst: c.bool) --- // Makes 'dst' character/glyph points to 'src' character/glyph. Currently needs to be called AFTER fonts have been built.
-	@(link_name="ImFont_SetGlyphVisible") Font_SetGlyphVisible :: proc "c" (self: ^Font, c: Wchar, visible: c.bool) ---
+	@(link_name="ImFont_SetGlyphVisible") Font_SetGlyphVisible :: proc "c" (self: ^Font, _c: Wchar, visible: c.bool) ---
 	@(link_name="ImFont_IsGlyphRangeUnused") Font_IsGlyphRangeUnused :: proc "c" (self: ^Font, c_begin: c.uint, c_last: c.uint) -> c.bool ---
 	// Helpers
 	@(link_name="ImGuiViewport_GetCenter") Viewport_GetCenter :: proc "c" (self: ^Viewport) -> Vec2 ---
