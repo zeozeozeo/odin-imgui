@@ -133,9 +133,9 @@ def get_platform_imgui_lib_name() -> str:
 	system = platform.system()
 
 	processor = None
-	if platform.machine().lower() in ["AMD64"]:
+	if platform.machine() in ["AMD64", "x86_64"]:
 		processor = "x64"
-	if platform.machine().lower() in ["arm64"]:
+	if platform.machine() in ["arm64"]:
 		processor = "arm64"
 
 	binary_ext = "lib" if system == "Windows" else "a"
