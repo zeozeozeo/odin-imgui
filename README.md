@@ -14,7 +14,6 @@ Building is entirely automated, using `build.py`. Currently however there is onl
 	- On Arch Linux I had to install `python-ply` with pacman.
  1. Clone this repository into a clean directory `parent_directory`.
 	- Optionally configure build at the top of `build.py`
-	- Building some backends require external dependencies. Again check `build.py`.
  2. From *outside* of the `odin-imgui` folder, run `python odin-imgui/build.py`
  3. Folder `build/` is importable. Copy into your project.
 
@@ -33,8 +32,7 @@ Bindings have been written for a subset of the backends provided by ImGui
  - If a backend is supported it means that:
 	- Bindings have been written to `imgui_impl.odin`
 	- It has been successfully compiled in the latest revision, for both supported branches.
- - Some backends have external dependencies. These should be cloned into a folder called `backend_deps`, with the given revision.
-	- Eg: Vulkan requires that you clone `https://github.com/KhronosGroup/Vulkan-Headers.git` at commit `4f51aac` into `parent_directory/backend_deps/Vulkan-Headers`
+ - Some backends have external dependencies. These will automatically be cloned into `backend_deps` if necessary.
  - You can enable a backend by adding it to `wanted_backends`
  - You can enable backends not officially supported. (If it works, please MR!)
 

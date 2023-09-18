@@ -8,14 +8,13 @@ import sys
 import platform
 
 # TODO:
-# - Auto download backends deps
-#		It should be relatively easy to automatically clone any deps.
 # - Don't `cd` into temp folder
 #		When compiling, we `cd` into the temp folder, as there's no option
 #		for clang or gcc to output .o files into another folder.
 #		We should probably instead run one compile command per source file.
 #		This lets us specify the output file, as well as compiling in paralell
 # - Make this file never show it's call stack. Call stacks should mean that a child script failed.
+# - Write directly into `odin-imgui/imgui` instead of `build`
 
 # @CONFIGURE: Must be key into below table
 active_branch = "docking"
@@ -38,24 +37,27 @@ backends = {
 	"dx11":         { "supported": True,  "enabled_on": ["windows"] },
 	# Bindings exist for DX12, but they are untested
 	"dx12":         { "supported": False, "enabled_on": ["windows"] },
-	# Requires https://github.com/glfw/glfw.git at commit 3eaf125
-	"glfw":         { "supported": True,  "includes": [["glfw", "include"]] },
+	"glfw":         { "supported": True,  "deps": ["glfw"] },
 	"glut":         { "supported": False },
 	"metal":        { "supported": False, "enabled_on": ["darwin"] },
 	"opengl2":      { "supported": False },
 	"opengl3":      { "supported": True  },
 	"osx":          { "supported": False, "enabled_on": ["darwin"] },
-	# Requires https://github.com/libsdl-org/SDL.git at tag release-2.28.3/commit 8a5ba43
-	"sdl2":         { "supported": True,  "includes": [["SDL", "include"]] },
+	"sdl2":         { "supported": True,  "deps": ["sdl2"] },
 	"sdl3":         { "supported": False },
-	# Requires https://github.com/libsdl-org/SDL.git at tag release-2.28.3/commit 8a5ba43
-	"sdlrenderer2": { "supported": True },
+	"sdlrenderer2": { "supported": True,  "deps": ["sdl2"] },
 	"sdlrenderer3": { "supported": False },
-	# Requires https://github.com/KhronosGroup/Vulkan-Headers.git commit 4f51aac
-	"vulkan":       { "supported": True,  "includes": [["Vulkan-Headers", "include"]], "defines": ["VK_NO_PROTOTYPES"] },
+	"vulkan":       { "supported": True,  "defines": ["VK_NO_PROTOTYPES"], "deps": ["vulkan"] },
 	"wgpu":         { "supported": False },
 	# Bindings exist for win32, but they are untested
 	"win32":        { "supported": False, "enabled_on": ["windows"] },
+}
+
+# Indirection for backend dependencies, as some might have the same dependency, and their commits can't get out of sync.
+backend_deps = {
+	"sdl2":   { "repo": "https://github.com/libsdl-org/SDL.git",              "commit": "release-2.28.3", "path": "SDL2" },
+	"glfw":   { "repo": "https://github.com/glfw/glfw.git",                   "commit": "3eaf125",        "path": "glfw" },
+	"vulkan": { "repo": "https://github.com/KhronosGroup/Vulkan-Headers.git", "commit": "4f51aac",        "path": "Vulkan-Headers" },
 }
 
 # @CONFIGURE:
@@ -116,16 +118,10 @@ def run_vcvars(cmd: typing.List[str]):
 	assertx(subprocess.run(f"vcvarsall.bat x64 && {' '.join(cmd)}").returncode == 0, f"Failed to run command '{cmd}'")
 
 def ensure_checked_out_with_commit(dir: str, repo: str, wanted_commit: str):
-	# We assume that we are at least not using a completely wrong git repo
-	if not path.isdir(dir):
-		exec(["git", "clone", repo], f"Checking out {dir}")
+	if not path.exists(dir):
+		exec(["git", "clone", repo, dir], f"Cloning {dir}")
 
-	active_commit = exec(["git", "-C", dir, "rev-parse", "--short", "HEAD"], f"Checking active commit for {dir}")
-	if hashes_are_same_ish(active_commit, wanted_commit):
-		return
-	else:
-		print(f"{dir} on unwanted commit {active_commit}")
-		exec(["git", "-C", dir, "checkout", wanted_commit], f"Checking out wanted commit {wanted_commit}")
+	exec(["git", "-C", dir, "checkout", wanted_commit], f"Checking out {dir}")
 
 def get_platform_imgui_lib_name() -> str:
 	""" Returns imgui binary name for system/processor """
@@ -141,14 +137,29 @@ def get_platform_imgui_lib_name() -> str:
 	binary_ext = "lib" if system == "Windows" else "a"
 
 	assertx(system != "", "System could not be determined")
-	assertx(processor != None, "Could not determine processor")
+	assertx(processor != None, f"Unexpected processor: {platform.machine()}")
 
 	return f'imgui_{system.lower()}_{processor}.{binary_ext}'
 
 def main():
 	ensure_outside_of_repo()
+
+	# Check out bindings generator tools
 	ensure_checked_out_with_commit("imgui", "https://github.com/ocornut/imgui.git", git_heads[active_branch]["imgui"])
 	ensure_checked_out_with_commit("dear_bindings", "https://github.com/dearimgui/dear_bindings.git", git_heads[active_branch]["dear_bindings"])
+
+	# Check out backend dependencies
+	if not path.isdir("backend_deps"): os.mkdir("backend_deps")
+	backend_deps_names = set()
+	for backend_name in wanted_backends:
+		backend = backends[backend_name]
+
+		for dep in backend.get("deps", []):
+			backend_deps_names.add(dep)
+
+	for backend_dep in backend_deps_names:
+		full_dep = backend_deps[backend_dep]
+		ensure_checked_out_with_commit(path.join("backend_deps", full_dep["path"]), full_dep["repo"], full_dep["commit"])
 
 	# Clear our temp and build folder
 	shutil.rmtree(path="temp", ignore_errors=True)
@@ -212,9 +223,12 @@ def main():
 
 		for define in backend.get("defines", []): compile_flags += [platform_select({ "windows": f"/D{define}", "linux, darwin": f"-D{define}" })]
 
-		for include in backend.get("includes", []):
-			if platform_win32_like:  compile_flags += ["/I" + path.join("..", "backend_deps", path.join(*include))]
-			elif platform_unix_like: compile_flags += ["-I" + path.join("..", "backend_deps", path.join(*include))]
+	# Add backend dependency include paths
+	for backend_dep in backend_deps_names:
+		# NOTE: For all backend deps so far, the include path is simply repo/include.
+		# So we just hard code this here. One day we might have to specify this in `backend_deps`
+		if platform_win32_like:  compile_flags += ["/I" + path.join("..", "backend_deps", backend_deps[backend_dep]["path"], "include")]
+		elif platform_unix_like: compile_flags += ["-I" + path.join("..", "backend_deps", backend_deps[backend_dep]["path"], "include")]
 
 	# Copy implementation files
 	glob_copy("odin-imgui", "imgui_impl_*.odin", "build")
