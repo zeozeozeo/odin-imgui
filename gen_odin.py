@@ -16,6 +16,7 @@ import argparse
 #		A recent change in dear_bindings allows knowing the exact evaluated value of enum fields.
 #		This might be very good for some enums which can't be written as flags
 #		See: https://github.com/dearimgui/dear_bindings/blob/main/docs/Changelog.txt
+# - Check for IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 
 # HELPERS
 def write_line(file: typing.IO, line: str = "", indent = 0):
@@ -107,6 +108,15 @@ _type_aliases = {
 	"unsigned_short": "c.ushort",
 	"char": "c.char",
 	"unsigned_char": "c.uchar",
+
+	"ImS8": "i8",
+	"ImU8": "u8",
+	"ImS16": "i16",
+	"ImU16": "u16",
+	"ImS32": "i32",
+	"ImU32": "u32",
+	"ImS64": "i64",
+	"ImU64": "u64",
 
 	"size_t": "c.size_t",
 	"bool": "c.bool",
@@ -671,15 +681,6 @@ else when ODIN_OS == .Darwin {
 # TYPEDEFS
 
 _imgui_allowed_typedefs = [
-	"ImS8",
-	"ImU8",
-	"ImS16",
-	"ImU16",
-	"ImS32",
-	"ImU32",
-	"ImS64",
-	"ImU64",
-
 	"ImWchar16",
 	"ImWchar32",
 	# "ImWchar",

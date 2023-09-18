@@ -1190,7 +1190,7 @@ Vector_DrawListPtr :: struct {
 Vector_U32 :: struct {
 	Size: c.int,
 	Capacity: c.int,
-	Data: ^U32,
+	Data: ^u32,
 }
 
 Vector_FontPtr :: struct {
@@ -1409,8 +1409,8 @@ IO :: struct {
 	MouseClickedTime: [5]f64, // Time of last click (used to figure out double-click)
 	MouseClicked: [5]c.bool, // Mouse button went from !Down to Down (same as MouseClickedCount[x] != 0)
 	MouseDoubleClicked: [5]c.bool, // Has mouse button been double-clicked? (same as MouseClickedCount[x] == 2)
-	MouseClickedCount: [5]U16, // == 0 (not clicked), == 1 (same as MouseClicked[]), == 2 (double-clicked), == 3 (triple-clicked) etc. when going from !Down to Down
-	MouseClickedLastCount: [5]U16, // Count successive number of clicks. Stays valid after mouse release. Reset after another click is done.
+	MouseClickedCount: [5]u16, // == 0 (not clicked), == 1 (same as MouseClicked[]), == 2 (double-clicked), == 3 (triple-clicked) etc. when going from !Down to Down
+	MouseClickedLastCount: [5]u16, // Count successive number of clicks. Stays valid after mouse release. Reset after another click is done.
 	MouseReleased: [5]c.bool, // Mouse button went from Down to !Down
 	MouseDownOwned: [5]c.bool, // Track if button was clicked inside a dear imgui window or over void blocked by a popup. We don't request mouse capture from the application if click started outside ImGui bounds.
 	MouseDownOwnedUnlessPopupClose: [5]c.bool, // Track if button was clicked inside a dear imgui window.
@@ -1422,7 +1422,7 @@ IO :: struct {
 	PenPressure: f32, // Touch/Pen pressure (0.0f to 1.0f, should be >0.0f only when MouseDown[0] == true). Helper storage currently unused by Dear ImGui.
 	AppFocusLost: c.bool, // Only modify via AddFocusEvent()
 	AppAcceptingEvents: c.bool, // Only modify via SetAppAcceptingEvents()
-	BackendUsingLegacyKeyArrays: S8, // -1: unknown, 0: using AddKeyEvent(), 1: using legacy io.KeysDown[]
+	BackendUsingLegacyKeyArrays: i8, // -1: unknown, 0: using AddKeyEvent(), 1: using legacy io.KeysDown[]
 	BackendUsingLegacyNavInputArray: c.bool, // 0: using AddKeyAnalogEvent(), 1: writing to legacy io.NavInputs[] directly
 	InputQueueSurrogate: Wchar16, // For AddInputCharacterUTF16()
 	InputQueueCharacters: Vector_Wchar, // Queue of _characters_ input (obtained by platform backend). Fill using AddInputCharacter() helper.
@@ -1500,8 +1500,8 @@ Payload :: struct {
 // Sorting specification for one column of a table (sizeof == 12 bytes)
 TableColumnSortSpecs :: struct {
 	ColumnUserID: ID, // User id of the column (if specified by a TableSetupColumn() call)
-	ColumnIndex: S16, // Index of the column
-	SortOrder: S16, // Index within parent ImGuiTableSortSpecs (always stored in order starting from 0, tables sorted on a single criteria will always have a 0 here)
+	ColumnIndex: i16, // Index of the column
+	SortOrder: i16, // Index within parent ImGuiTableSortSpecs (always stored in order starting from 0, tables sorted on a single criteria will always have a 0 here)
 	SortDirection: SortDirection, // ImGuiSortDirection_Ascending or ImGuiSortDirection_Descending
 }
 
@@ -1590,7 +1590,7 @@ DrawCmd :: struct {
 DrawVert :: struct {
 	pos: Vec2,
 	uv: Vec2,
-	col: U32,
+	col: u32,
 }
 
 // [Internal] For use by ImDrawList
@@ -1787,7 +1787,7 @@ Font :: struct {
 	Ascent: f32, // 4+4   // out //            // Ascent: distance from top to bottom of e.g. 'A' [0..FontSize]
 	Descent: f32, // 4+4   // out //            // Ascent: distance from top to bottom of e.g. 'A' [0..FontSize]
 	MetricsTotalSurface: c.int, // 4     // out //            // Total surface in pixels to get an idea of the font rasterization/texture cost (not exact, we approximate the cost of padding between glyphs)
-	Used4kPagesMap: [2]U8, // 2 bytes if ImWchar=ImWchar16, 34 bytes if ImWchar==ImWchar32. Store 1-bit for each block of 4K codepoints that has one active glyph. This is mainly used to facilitate iterations across all used codepoints.
+	Used4kPagesMap: [2]u8, // 2 bytes if ImWchar=ImWchar16, 34 bytes if ImWchar==ImWchar32. Store 1-bit for each block of 4K codepoints that has one active glyph. This is mainly used to facilitate iterations across all used codepoints.
 }
 
 // - Currently represents the Platform Window created by the application which is hosting our Dear ImGui windows.
@@ -1842,7 +1842,7 @@ PlatformIO :: struct {
 	Platform_SwapBuffers: proc "c" (vp: ^Viewport, render_arg: rawptr), // . . . R .  // (Optional) Call Present/SwapBuffers (platform side! This is often unused!). 'render_arg' is the value passed to RenderPlatformWindowsDefault().
 	Platform_GetWindowDpiScale: proc "c" (vp: ^Viewport) -> f32, // N . . . .  // (Optional) [BETA] FIXME-DPI: DPI handling: Return DPI scale for this viewport. 1.0f = 96 DPI.
 	Platform_OnChangedViewport: proc "c" (vp: ^Viewport), // . F . . .  // (Optional) [BETA] FIXME-DPI: DPI handling: Called during Begin() every time the viewport we are outputting into changes, so backend has a chance to swap fonts to adjust style.
-	Platform_CreateVkSurface: proc "c" (vp: ^Viewport, vk_inst: U64, vk_allocators: rawptr, out_vk_surface: ^U64) -> c.int, // (Optional) For a Vulkan Renderer to call into Platform code (since the surface creation needs to tie them both).
+	Platform_CreateVkSurface: proc "c" (vp: ^Viewport, vk_inst: u64, vk_allocators: rawptr, out_vk_surface: ^u64) -> c.int, // (Optional) For a Vulkan Renderer to call into Platform code (since the surface creation needs to tie them both).
 	// (Optional) Renderer functions (e.g. DirectX, OpenGL, Vulkan)
 	Renderer_CreateWindow: proc "c" (vp: ^Viewport), // . . U . .  // Create swap chain, frame buffers etc. (called after Platform_CreateWindow)
 	Renderer_DestroyWindow: proc "c" (vp: ^Viewport), // N . U . D  // Destroy swap chain, frame buffers etc. (called before Platform_DestroyWindow)
@@ -2001,7 +2001,7 @@ foreign lib {
 	// Parameters stacks (shared)
 	@(link_name="ImGui_PushFont") PushFont :: proc "c" (font: ^Font) --- // use NULL as a shortcut to push default font
 	@(link_name="ImGui_PopFont") PopFont :: proc "c" () ---
-	@(link_name="ImGui_PushStyleColor") PushStyleColor :: proc "c" (idx: Col, col: U32) --- // modify a style color. always use this if you modify the style after NewFrame().
+	@(link_name="ImGui_PushStyleColor") PushStyleColor :: proc "c" (idx: Col, col: u32) --- // modify a style color. always use this if you modify the style after NewFrame().
 	@(link_name="ImGui_PushStyleColorImVec4") PushStyleColorImVec4 :: proc "c" (idx: Col, col: Vec4) ---
 	@(link_name="ImGui_PopStyleColor") PopStyleColor :: proc "c" () --- // Implied count = 1
 	@(link_name="ImGui_PopStyleColorEx") PopStyleColorEx :: proc "c" (count: c.int) ---
@@ -2025,10 +2025,10 @@ foreign lib {
 	@(link_name="ImGui_GetFont") GetFont :: proc "c" () -> ^Font --- // get current font
 	@(link_name="ImGui_GetFontSize") GetFontSize :: proc "c" () -> f32 --- // get current font size (= height in pixels) of current font with current scale applied
 	@(link_name="ImGui_GetFontTexUvWhitePixel") GetFontTexUvWhitePixel :: proc "c" () -> Vec2 --- // get UV coordinate for a while pixel, useful to draw custom shapes via the ImDrawList API
-	@(link_name="ImGui_GetColorU32") GetColorU32 :: proc "c" (idx: Col) -> U32 --- // Implied alpha_mul = 1.0f
-	@(link_name="ImGui_GetColorU32Ex") GetColorU32Ex :: proc "c" (idx: Col, alpha_mul: f32) -> U32 --- // retrieve given style color with style alpha applied and optional extra alpha multiplier, packed as a 32-bit value suitable for ImDrawList
-	@(link_name="ImGui_GetColorU32ImVec4") GetColorU32ImVec4 :: proc "c" (col: Vec4) -> U32 --- // retrieve given color with style alpha applied, packed as a 32-bit value suitable for ImDrawList
-	@(link_name="ImGui_GetColorU32ImU32") GetColorU32ImU32 :: proc "c" (col: U32) -> U32 --- // retrieve given color with style alpha applied, packed as a 32-bit value suitable for ImDrawList
+	@(link_name="ImGui_GetColorU32") GetColorU32 :: proc "c" (idx: Col) -> u32 --- // Implied alpha_mul = 1.0f
+	@(link_name="ImGui_GetColorU32Ex") GetColorU32Ex :: proc "c" (idx: Col, alpha_mul: f32) -> u32 --- // retrieve given style color with style alpha applied and optional extra alpha multiplier, packed as a 32-bit value suitable for ImDrawList
+	@(link_name="ImGui_GetColorU32ImVec4") GetColorU32ImVec4 :: proc "c" (col: Vec4) -> u32 --- // retrieve given color with style alpha applied, packed as a 32-bit value suitable for ImDrawList
+	@(link_name="ImGui_GetColorU32ImU32") GetColorU32ImU32 :: proc "c" (col: u32) -> u32 --- // retrieve given color with style alpha applied, packed as a 32-bit value suitable for ImDrawList
 	@(link_name="ImGui_GetStyleColorVec4") GetStyleColorVec4 :: proc "c" (idx: Col) -> ^Vec4 --- // retrieve style color as stored in ImGuiStyle structure. use to feed back into PushStyleColor(), otherwise use GetColorU32() to get style color with style alpha baked in.
 	// Cursor / Layout
 	// - By "cursor" we mean the current output position.
@@ -2404,7 +2404,7 @@ foreign lib {
 	@(link_name="ImGui_TableGetColumnName") TableGetColumnName :: proc "c" (column_n: c.int) -> cstring --- // return "" if column didn't have a name declared by TableSetupColumn(). Pass -1 to use current column.
 	@(link_name="ImGui_TableGetColumnFlags") TableGetColumnFlags :: proc "c" (column_n: c.int) -> TableColumnFlags --- // return column flags so you can query their Enabled/Visible/Sorted/Hovered status flags. Pass -1 to use current column.
 	@(link_name="ImGui_TableSetColumnEnabled") TableSetColumnEnabled :: proc "c" (column_n: c.int, v: c.bool) --- // change user accessible enabled/disabled state of a column. Set to false to hide the column. User can use the context menu to change this themselves (right-click in headers, or right-click in columns body with ImGuiTableFlags_ContextMenuInBody)
-	@(link_name="ImGui_TableSetBgColor") TableSetBgColor :: proc "c" (target: TableBgTarget, color: U32, column_n: c.int) --- // change the color of a cell, row, or column. See ImGuiTableBgTarget_ flags for details.
+	@(link_name="ImGui_TableSetBgColor") TableSetBgColor :: proc "c" (target: TableBgTarget, color: u32, column_n: c.int) --- // change the color of a cell, row, or column. See ImGuiTableBgTarget_ flags for details.
 	// Legacy Columns API (prefer using Tables!)
 	// - You can also use SameLine(pos_x) to mimic simplified columns.
 	@(link_name="ImGui_Columns") Columns :: proc "c" () --- // Implied count = 1, id = NULL, border = true
@@ -2527,8 +2527,8 @@ foreign lib {
 	@(link_name="ImGui_CalcTextSize") CalcTextSize :: proc "c" (text: cstring) -> Vec2 --- // Implied text_end = NULL, hide_text_after_double_hash = false, wrap_width = -1.0f
 	@(link_name="ImGui_CalcTextSizeEx") CalcTextSizeEx :: proc "c" (text: cstring, text_end: cstring, hide_text_after_double_hash: c.bool, wrap_width: f32) -> Vec2 ---
 	// Color Utilities
-	@(link_name="ImGui_ColorConvertU32ToFloat4") ColorConvertU32ToFloat4 :: proc "c" (_in: U32) -> Vec4 ---
-	@(link_name="ImGui_ColorConvertFloat4ToU32") ColorConvertFloat4ToU32 :: proc "c" (_in: Vec4) -> U32 ---
+	@(link_name="ImGui_ColorConvertU32ToFloat4") ColorConvertU32ToFloat4 :: proc "c" (_in: u32) -> Vec4 ---
+	@(link_name="ImGui_ColorConvertFloat4ToU32") ColorConvertFloat4ToU32 :: proc "c" (_in: Vec4) -> u32 ---
 	@(link_name="ImGui_ColorConvertRGBtoHSV") ColorConvertRGBtoHSV :: proc "c" (r: f32, g: f32, b: f32, out_h: ^f32, out_s: ^f32, out_v: ^f32) ---
 	@(link_name="ImGui_ColorConvertHSVtoRGB") ColorConvertHSVtoRGB :: proc "c" (h: f32, s: f32, v: f32, out_r: ^f32, out_g: ^f32, out_b: ^f32) ---
 	// Inputs Utilities: Keyboard/Mouse/Gamepad
@@ -2679,53 +2679,53 @@ foreign lib {
 	//   In older versions (until Dear ImGui 1.77) the AddCircle functions defaulted to num_segments == 12.
 	//   In future versions we will use textures to provide cheaper and higher-quality circles.
 	//   Use AddNgon() and AddNgonFilled() functions if you need to guarantee a specific number of sides.
-	@(link_name="ImDrawList_AddLine") DrawList_AddLine :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, col: U32) --- // Implied thickness = 1.0f
-	@(link_name="ImDrawList_AddLineEx") DrawList_AddLineEx :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, col: U32, thickness: f32) ---
-	@(link_name="ImDrawList_AddRect") DrawList_AddRect :: proc "c" (self: ^DrawList, p_min: Vec2, p_max: Vec2, col: U32) --- // Implied rounding = 0.0f, flags = 0, thickness = 1.0f
-	@(link_name="ImDrawList_AddRectEx") DrawList_AddRectEx :: proc "c" (self: ^DrawList, p_min: Vec2, p_max: Vec2, col: U32, rounding: f32, flags: DrawFlags, thickness: f32) --- // a: upper-left, b: lower-right (== upper-left + size)
-	@(link_name="ImDrawList_AddRectFilled") DrawList_AddRectFilled :: proc "c" (self: ^DrawList, p_min: Vec2, p_max: Vec2, col: U32) --- // Implied rounding = 0.0f, flags = 0
-	@(link_name="ImDrawList_AddRectFilledEx") DrawList_AddRectFilledEx :: proc "c" (self: ^DrawList, p_min: Vec2, p_max: Vec2, col: U32, rounding: f32, flags: DrawFlags) --- // a: upper-left, b: lower-right (== upper-left + size)
-	@(link_name="ImDrawList_AddRectFilledMultiColor") DrawList_AddRectFilledMultiColor :: proc "c" (self: ^DrawList, p_min: Vec2, p_max: Vec2, col_upr_left: U32, col_upr_right: U32, col_bot_right: U32, col_bot_left: U32) ---
-	@(link_name="ImDrawList_AddQuad") DrawList_AddQuad :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: U32) --- // Implied thickness = 1.0f
-	@(link_name="ImDrawList_AddQuadEx") DrawList_AddQuadEx :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: U32, thickness: f32) ---
-	@(link_name="ImDrawList_AddQuadFilled") DrawList_AddQuadFilled :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: U32) ---
-	@(link_name="ImDrawList_AddTriangle") DrawList_AddTriangle :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, col: U32) --- // Implied thickness = 1.0f
-	@(link_name="ImDrawList_AddTriangleEx") DrawList_AddTriangleEx :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, col: U32, thickness: f32) ---
-	@(link_name="ImDrawList_AddTriangleFilled") DrawList_AddTriangleFilled :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, col: U32) ---
-	@(link_name="ImDrawList_AddCircle") DrawList_AddCircle :: proc "c" (self: ^DrawList, center: Vec2, radius: f32, col: U32) --- // Implied num_segments = 0, thickness = 1.0f
-	@(link_name="ImDrawList_AddCircleEx") DrawList_AddCircleEx :: proc "c" (self: ^DrawList, center: Vec2, radius: f32, col: U32, num_segments: c.int, thickness: f32) ---
-	@(link_name="ImDrawList_AddCircleFilled") DrawList_AddCircleFilled :: proc "c" (self: ^DrawList, center: Vec2, radius: f32, col: U32, num_segments: c.int) ---
-	@(link_name="ImDrawList_AddNgon") DrawList_AddNgon :: proc "c" (self: ^DrawList, center: Vec2, radius: f32, col: U32, num_segments: c.int) --- // Implied thickness = 1.0f
-	@(link_name="ImDrawList_AddNgonEx") DrawList_AddNgonEx :: proc "c" (self: ^DrawList, center: Vec2, radius: f32, col: U32, num_segments: c.int, thickness: f32) ---
-	@(link_name="ImDrawList_AddNgonFilled") DrawList_AddNgonFilled :: proc "c" (self: ^DrawList, center: Vec2, radius: f32, col: U32, num_segments: c.int) ---
-	@(link_name="ImDrawList_AddEllipse") DrawList_AddEllipse :: proc "c" (self: ^DrawList, center: Vec2, radius_x: f32, radius_y: f32, col: U32) --- // Implied rot = 0.0f, num_segments = 0, thickness = 1.0f
-	@(link_name="ImDrawList_AddEllipseEx") DrawList_AddEllipseEx :: proc "c" (self: ^DrawList, center: Vec2, radius_x: f32, radius_y: f32, col: U32, rot: f32, num_segments: c.int, thickness: f32) ---
-	@(link_name="ImDrawList_AddEllipseFilled") DrawList_AddEllipseFilled :: proc "c" (self: ^DrawList, center: Vec2, radius_x: f32, radius_y: f32, col: U32) --- // Implied rot = 0.0f, num_segments = 0
-	@(link_name="ImDrawList_AddEllipseFilledEx") DrawList_AddEllipseFilledEx :: proc "c" (self: ^DrawList, center: Vec2, radius_x: f32, radius_y: f32, col: U32, rot: f32, num_segments: c.int) ---
-	@(link_name="ImDrawList_AddText") DrawList_AddText :: proc "c" (self: ^DrawList, pos: Vec2, col: U32, text_begin: cstring) --- // Implied text_end = NULL
-	@(link_name="ImDrawList_AddTextEx") DrawList_AddTextEx :: proc "c" (self: ^DrawList, pos: Vec2, col: U32, text_begin: cstring, text_end: cstring) ---
-	@(link_name="ImDrawList_AddTextImFontPtr") DrawList_AddTextImFontPtr :: proc "c" (self: ^DrawList, font: ^Font, font_size: f32, pos: Vec2, col: U32, text_begin: cstring) --- // Implied text_end = NULL, wrap_width = 0.0f, cpu_fine_clip_rect = NULL
-	@(link_name="ImDrawList_AddTextImFontPtrEx") DrawList_AddTextImFontPtrEx :: proc "c" (self: ^DrawList, font: ^Font, font_size: f32, pos: Vec2, col: U32, text_begin: cstring, text_end: cstring, wrap_width: f32, cpu_fine_clip_rect: ^Vec4) ---
-	@(link_name="ImDrawList_AddPolyline") DrawList_AddPolyline :: proc "c" (self: ^DrawList, points: ^Vec2, num_points: c.int, col: U32, flags: DrawFlags, thickness: f32) ---
-	@(link_name="ImDrawList_AddConvexPolyFilled") DrawList_AddConvexPolyFilled :: proc "c" (self: ^DrawList, points: ^Vec2, num_points: c.int, col: U32) ---
-	@(link_name="ImDrawList_AddBezierCubic") DrawList_AddBezierCubic :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: U32, thickness: f32, num_segments: c.int) --- // Cubic Bezier (4 control points)
-	@(link_name="ImDrawList_AddBezierQuadratic") DrawList_AddBezierQuadratic :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, col: U32, thickness: f32, num_segments: c.int) --- // Quadratic Bezier (3 control points)
+	@(link_name="ImDrawList_AddLine") DrawList_AddLine :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, col: u32) --- // Implied thickness = 1.0f
+	@(link_name="ImDrawList_AddLineEx") DrawList_AddLineEx :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, col: u32, thickness: f32) ---
+	@(link_name="ImDrawList_AddRect") DrawList_AddRect :: proc "c" (self: ^DrawList, p_min: Vec2, p_max: Vec2, col: u32) --- // Implied rounding = 0.0f, flags = 0, thickness = 1.0f
+	@(link_name="ImDrawList_AddRectEx") DrawList_AddRectEx :: proc "c" (self: ^DrawList, p_min: Vec2, p_max: Vec2, col: u32, rounding: f32, flags: DrawFlags, thickness: f32) --- // a: upper-left, b: lower-right (== upper-left + size)
+	@(link_name="ImDrawList_AddRectFilled") DrawList_AddRectFilled :: proc "c" (self: ^DrawList, p_min: Vec2, p_max: Vec2, col: u32) --- // Implied rounding = 0.0f, flags = 0
+	@(link_name="ImDrawList_AddRectFilledEx") DrawList_AddRectFilledEx :: proc "c" (self: ^DrawList, p_min: Vec2, p_max: Vec2, col: u32, rounding: f32, flags: DrawFlags) --- // a: upper-left, b: lower-right (== upper-left + size)
+	@(link_name="ImDrawList_AddRectFilledMultiColor") DrawList_AddRectFilledMultiColor :: proc "c" (self: ^DrawList, p_min: Vec2, p_max: Vec2, col_upr_left: u32, col_upr_right: u32, col_bot_right: u32, col_bot_left: u32) ---
+	@(link_name="ImDrawList_AddQuad") DrawList_AddQuad :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: u32) --- // Implied thickness = 1.0f
+	@(link_name="ImDrawList_AddQuadEx") DrawList_AddQuadEx :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: u32, thickness: f32) ---
+	@(link_name="ImDrawList_AddQuadFilled") DrawList_AddQuadFilled :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: u32) ---
+	@(link_name="ImDrawList_AddTriangle") DrawList_AddTriangle :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, col: u32) --- // Implied thickness = 1.0f
+	@(link_name="ImDrawList_AddTriangleEx") DrawList_AddTriangleEx :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, col: u32, thickness: f32) ---
+	@(link_name="ImDrawList_AddTriangleFilled") DrawList_AddTriangleFilled :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, col: u32) ---
+	@(link_name="ImDrawList_AddCircle") DrawList_AddCircle :: proc "c" (self: ^DrawList, center: Vec2, radius: f32, col: u32) --- // Implied num_segments = 0, thickness = 1.0f
+	@(link_name="ImDrawList_AddCircleEx") DrawList_AddCircleEx :: proc "c" (self: ^DrawList, center: Vec2, radius: f32, col: u32, num_segments: c.int, thickness: f32) ---
+	@(link_name="ImDrawList_AddCircleFilled") DrawList_AddCircleFilled :: proc "c" (self: ^DrawList, center: Vec2, radius: f32, col: u32, num_segments: c.int) ---
+	@(link_name="ImDrawList_AddNgon") DrawList_AddNgon :: proc "c" (self: ^DrawList, center: Vec2, radius: f32, col: u32, num_segments: c.int) --- // Implied thickness = 1.0f
+	@(link_name="ImDrawList_AddNgonEx") DrawList_AddNgonEx :: proc "c" (self: ^DrawList, center: Vec2, radius: f32, col: u32, num_segments: c.int, thickness: f32) ---
+	@(link_name="ImDrawList_AddNgonFilled") DrawList_AddNgonFilled :: proc "c" (self: ^DrawList, center: Vec2, radius: f32, col: u32, num_segments: c.int) ---
+	@(link_name="ImDrawList_AddEllipse") DrawList_AddEllipse :: proc "c" (self: ^DrawList, center: Vec2, radius_x: f32, radius_y: f32, col: u32) --- // Implied rot = 0.0f, num_segments = 0, thickness = 1.0f
+	@(link_name="ImDrawList_AddEllipseEx") DrawList_AddEllipseEx :: proc "c" (self: ^DrawList, center: Vec2, radius_x: f32, radius_y: f32, col: u32, rot: f32, num_segments: c.int, thickness: f32) ---
+	@(link_name="ImDrawList_AddEllipseFilled") DrawList_AddEllipseFilled :: proc "c" (self: ^DrawList, center: Vec2, radius_x: f32, radius_y: f32, col: u32) --- // Implied rot = 0.0f, num_segments = 0
+	@(link_name="ImDrawList_AddEllipseFilledEx") DrawList_AddEllipseFilledEx :: proc "c" (self: ^DrawList, center: Vec2, radius_x: f32, radius_y: f32, col: u32, rot: f32, num_segments: c.int) ---
+	@(link_name="ImDrawList_AddText") DrawList_AddText :: proc "c" (self: ^DrawList, pos: Vec2, col: u32, text_begin: cstring) --- // Implied text_end = NULL
+	@(link_name="ImDrawList_AddTextEx") DrawList_AddTextEx :: proc "c" (self: ^DrawList, pos: Vec2, col: u32, text_begin: cstring, text_end: cstring) ---
+	@(link_name="ImDrawList_AddTextImFontPtr") DrawList_AddTextImFontPtr :: proc "c" (self: ^DrawList, font: ^Font, font_size: f32, pos: Vec2, col: u32, text_begin: cstring) --- // Implied text_end = NULL, wrap_width = 0.0f, cpu_fine_clip_rect = NULL
+	@(link_name="ImDrawList_AddTextImFontPtrEx") DrawList_AddTextImFontPtrEx :: proc "c" (self: ^DrawList, font: ^Font, font_size: f32, pos: Vec2, col: u32, text_begin: cstring, text_end: cstring, wrap_width: f32, cpu_fine_clip_rect: ^Vec4) ---
+	@(link_name="ImDrawList_AddPolyline") DrawList_AddPolyline :: proc "c" (self: ^DrawList, points: ^Vec2, num_points: c.int, col: u32, flags: DrawFlags, thickness: f32) ---
+	@(link_name="ImDrawList_AddConvexPolyFilled") DrawList_AddConvexPolyFilled :: proc "c" (self: ^DrawList, points: ^Vec2, num_points: c.int, col: u32) ---
+	@(link_name="ImDrawList_AddBezierCubic") DrawList_AddBezierCubic :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: u32, thickness: f32, num_segments: c.int) --- // Cubic Bezier (4 control points)
+	@(link_name="ImDrawList_AddBezierQuadratic") DrawList_AddBezierQuadratic :: proc "c" (self: ^DrawList, p1: Vec2, p2: Vec2, p3: Vec2, col: u32, thickness: f32, num_segments: c.int) --- // Quadratic Bezier (3 control points)
 	// Image primitives
 	// - Read FAQ to understand what ImTextureID is.
 	// - "p_min" and "p_max" represent the upper-left and lower-right corners of the rectangle.
 	// - "uv_min" and "uv_max" represent the normalized texture coordinates to use for those corners. Using (0,0)->(1,1) texture coordinates will generally display the entire texture.
 	@(link_name="ImDrawList_AddImage") DrawList_AddImage :: proc "c" (self: ^DrawList, user_texture_id: TextureID, p_min: Vec2, p_max: Vec2) --- // Implied uv_min = ImVec2(0, 0), uv_max = ImVec2(1, 1), col = IM_COL32_WHITE
-	@(link_name="ImDrawList_AddImageEx") DrawList_AddImageEx :: proc "c" (self: ^DrawList, user_texture_id: TextureID, p_min: Vec2, p_max: Vec2, uv_min: Vec2, uv_max: Vec2, col: U32) ---
+	@(link_name="ImDrawList_AddImageEx") DrawList_AddImageEx :: proc "c" (self: ^DrawList, user_texture_id: TextureID, p_min: Vec2, p_max: Vec2, uv_min: Vec2, uv_max: Vec2, col: u32) ---
 	@(link_name="ImDrawList_AddImageQuad") DrawList_AddImageQuad :: proc "c" (self: ^DrawList, user_texture_id: TextureID, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2) --- // Implied uv1 = ImVec2(0, 0), uv2 = ImVec2(1, 0), uv3 = ImVec2(1, 1), uv4 = ImVec2(0, 1), col = IM_COL32_WHITE
-	@(link_name="ImDrawList_AddImageQuadEx") DrawList_AddImageQuadEx :: proc "c" (self: ^DrawList, user_texture_id: TextureID, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, uv1: Vec2, uv2: Vec2, uv3: Vec2, uv4: Vec2, col: U32) ---
-	@(link_name="ImDrawList_AddImageRounded") DrawList_AddImageRounded :: proc "c" (self: ^DrawList, user_texture_id: TextureID, p_min: Vec2, p_max: Vec2, uv_min: Vec2, uv_max: Vec2, col: U32, rounding: f32, flags: DrawFlags) ---
+	@(link_name="ImDrawList_AddImageQuadEx") DrawList_AddImageQuadEx :: proc "c" (self: ^DrawList, user_texture_id: TextureID, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, uv1: Vec2, uv2: Vec2, uv3: Vec2, uv4: Vec2, col: u32) ---
+	@(link_name="ImDrawList_AddImageRounded") DrawList_AddImageRounded :: proc "c" (self: ^DrawList, user_texture_id: TextureID, p_min: Vec2, p_max: Vec2, uv_min: Vec2, uv_max: Vec2, col: u32, rounding: f32, flags: DrawFlags) ---
 	// Stateful path API, add points then finish with PathFillConvex() or PathStroke()
 	// - Filled shapes must always use clockwise winding order. The anti-aliasing fringe depends on it. Counter-clockwise shapes will have "inward" anti-aliasing.
 	@(link_name="ImDrawList_PathClear") DrawList_PathClear :: proc "c" (self: ^DrawList) ---
 	@(link_name="ImDrawList_PathLineTo") DrawList_PathLineTo :: proc "c" (self: ^DrawList, pos: Vec2) ---
 	@(link_name="ImDrawList_PathLineToMergeDuplicate") DrawList_PathLineToMergeDuplicate :: proc "c" (self: ^DrawList, pos: Vec2) ---
-	@(link_name="ImDrawList_PathFillConvex") DrawList_PathFillConvex :: proc "c" (self: ^DrawList, col: U32) ---
-	@(link_name="ImDrawList_PathStroke") DrawList_PathStroke :: proc "c" (self: ^DrawList, col: U32, flags: DrawFlags, thickness: f32) ---
+	@(link_name="ImDrawList_PathFillConvex") DrawList_PathFillConvex :: proc "c" (self: ^DrawList, col: u32) ---
+	@(link_name="ImDrawList_PathStroke") DrawList_PathStroke :: proc "c" (self: ^DrawList, col: u32, flags: DrawFlags, thickness: f32) ---
 	@(link_name="ImDrawList_PathArcTo") DrawList_PathArcTo :: proc "c" (self: ^DrawList, center: Vec2, radius: f32, a_min: f32, a_max: f32, num_segments: c.int) ---
 	@(link_name="ImDrawList_PathArcToFast") DrawList_PathArcToFast :: proc "c" (self: ^DrawList, center: Vec2, radius: f32, a_min_of_12: c.int, a_max_of_12: c.int) --- // Use precomputed angles for a 12 steps circle
 	@(link_name="ImDrawList_PathEllipticalArcTo") DrawList_PathEllipticalArcTo :: proc "c" (self: ^DrawList, center: Vec2, radius_x: f32, radius_y: f32, rot: f32, a_min: f32, a_max: f32) --- // Implied num_segments = 0
@@ -2751,12 +2751,12 @@ foreign lib {
 	// - All primitives needs to be reserved via PrimReserve() beforehand.
 	@(link_name="ImDrawList_PrimReserve") DrawList_PrimReserve :: proc "c" (self: ^DrawList, idx_count: c.int, vtx_count: c.int) ---
 	@(link_name="ImDrawList_PrimUnreserve") DrawList_PrimUnreserve :: proc "c" (self: ^DrawList, idx_count: c.int, vtx_count: c.int) ---
-	@(link_name="ImDrawList_PrimRect") DrawList_PrimRect :: proc "c" (self: ^DrawList, a: Vec2, b: Vec2, col: U32) --- // Axis aligned rectangle (composed of two triangles)
-	@(link_name="ImDrawList_PrimRectUV") DrawList_PrimRectUV :: proc "c" (self: ^DrawList, a: Vec2, b: Vec2, uv_a: Vec2, uv_b: Vec2, col: U32) ---
-	@(link_name="ImDrawList_PrimQuadUV") DrawList_PrimQuadUV :: proc "c" (self: ^DrawList, a: Vec2, b: Vec2, c: Vec2, d: Vec2, uv_a: Vec2, uv_b: Vec2, uv_c: Vec2, uv_d: Vec2, col: U32) ---
-	@(link_name="ImDrawList_PrimWriteVtx") DrawList_PrimWriteVtx :: proc "c" (self: ^DrawList, pos: Vec2, uv: Vec2, col: U32) ---
+	@(link_name="ImDrawList_PrimRect") DrawList_PrimRect :: proc "c" (self: ^DrawList, a: Vec2, b: Vec2, col: u32) --- // Axis aligned rectangle (composed of two triangles)
+	@(link_name="ImDrawList_PrimRectUV") DrawList_PrimRectUV :: proc "c" (self: ^DrawList, a: Vec2, b: Vec2, uv_a: Vec2, uv_b: Vec2, col: u32) ---
+	@(link_name="ImDrawList_PrimQuadUV") DrawList_PrimQuadUV :: proc "c" (self: ^DrawList, a: Vec2, b: Vec2, c: Vec2, d: Vec2, uv_a: Vec2, uv_b: Vec2, uv_c: Vec2, uv_d: Vec2, col: u32) ---
+	@(link_name="ImDrawList_PrimWriteVtx") DrawList_PrimWriteVtx :: proc "c" (self: ^DrawList, pos: Vec2, uv: Vec2, col: u32) ---
 	@(link_name="ImDrawList_PrimWriteIdx") DrawList_PrimWriteIdx :: proc "c" (self: ^DrawList, idx: DrawIdx) ---
-	@(link_name="ImDrawList_PrimVtx") DrawList_PrimVtx :: proc "c" (self: ^DrawList, pos: Vec2, uv: Vec2, col: U32) --- // Write vertex with unique index
+	@(link_name="ImDrawList_PrimVtx") DrawList_PrimVtx :: proc "c" (self: ^DrawList, pos: Vec2, uv: Vec2, col: u32) --- // Write vertex with unique index
 	// [Internal helpers]
 	@(link_name="ImDrawList__ResetForNewFrame") DrawList__ResetForNewFrame :: proc "c" (self: ^DrawList) ---
 	@(link_name="ImDrawList__ClearFreeMemory") DrawList__ClearFreeMemory :: proc "c" (self: ^DrawList) ---
@@ -2836,8 +2836,8 @@ foreign lib {
 	@(link_name="ImFont_CalcTextSizeA") Font_CalcTextSizeA :: proc "c" (self: ^Font, size: f32, max_width: f32, wrap_width: f32, text_begin: cstring) -> Vec2 --- // Implied text_end = NULL, remaining = NULL
 	@(link_name="ImFont_CalcTextSizeAEx") Font_CalcTextSizeAEx :: proc "c" (self: ^Font, size: f32, max_width: f32, wrap_width: f32, text_begin: cstring, text_end: cstring, remaining: ^cstring) -> Vec2 --- // utf8
 	@(link_name="ImFont_CalcWordWrapPositionA") Font_CalcWordWrapPositionA :: proc "c" (self: ^Font, scale: f32, text: cstring, text_end: cstring, wrap_width: f32) -> cstring ---
-	@(link_name="ImFont_RenderChar") Font_RenderChar :: proc "c" (self: ^Font, draw_list: ^DrawList, size: f32, pos: Vec2, col: U32, c: Wchar) ---
-	@(link_name="ImFont_RenderText") Font_RenderText :: proc "c" (self: ^Font, draw_list: ^DrawList, size: f32, pos: Vec2, col: U32, clip_rect: Vec4, text_begin: cstring, text_end: cstring, wrap_width: f32, cpu_fine_clip: c.bool) ---
+	@(link_name="ImFont_RenderChar") Font_RenderChar :: proc "c" (self: ^Font, draw_list: ^DrawList, size: f32, pos: Vec2, col: u32, c: Wchar) ---
+	@(link_name="ImFont_RenderText") Font_RenderText :: proc "c" (self: ^Font, draw_list: ^DrawList, size: f32, pos: Vec2, col: u32, clip_rect: Vec4, text_begin: cstring, text_end: cstring, wrap_width: f32, cpu_fine_clip: c.bool) ---
 	// [Internal] Don't use!
 	@(link_name="ImFont_BuildLookupTable") Font_BuildLookupTable :: proc "c" (self: ^Font) ---
 	@(link_name="ImFont_ClearOutputData") Font_ClearOutputData :: proc "c" (self: ^Font) ---
@@ -2878,14 +2878,6 @@ TextureID :: rawptr // Default: store a pointer or an integer fitting in a point
 DrawIdx :: c.ushort // Default: 16-bit (for maximum compatibility with renderer backends)
 // Scalar data types
 ID :: c.uint // A unique ID used by widgets (typically the result of hashing a stack of string)
-S8 :: c.char // 8-bit signed integer
-U8 :: c.uchar // 8-bit unsigned integer
-S16 :: c.short // 16-bit signed integer
-U16 :: c.ushort // 16-bit unsigned integer
-S32 :: c.int // 32-bit signed integer == int
-U32 :: c.uint // 32-bit unsigned integer (often used to store packed colors)
-S64 :: c.longlong // 64-bit signed integer
-U64 :: c.ulonglong // 64-bit unsigned integer
 // Character types
 // (we generally use UTF-8 encoded string in the API. This is storage specifically for a decoded character used for keyboard input and display)
 Wchar32 :: c.uint // A single decoded U32 character/code point. We encode them as multi bytes UTF-8 when used in strings.
