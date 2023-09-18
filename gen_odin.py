@@ -109,7 +109,7 @@ _type_aliases = {
 	"unsigned_char": "c.uchar",
 
 	"size_t": "c.size_t",
-	# "bool": "c.bool",
+	"bool": "c.bool",
 
 	"va_list": "libc.va_list",
 }
