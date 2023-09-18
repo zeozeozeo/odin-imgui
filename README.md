@@ -12,10 +12,10 @@ Building is entirely automated, using `build.py`. Currently however there is onl
  0. `dear_bindings` depends on a library called "`ply`"
 	- You can probably install this with `python -m pip install ply`
 	- On Arch Linux I had to install `python-ply` with pacman.
- 1. Clone this repository into a clean directory `parent_directory`.
+ 1. Clone this repository into a empty directory.
 	- Optionally configure build at the top of `build.py`
- 2. From *outside* of the `odin-imgui` folder, run `python odin-imgui/build.py`
- 3. Folder `build/` is importable. Copy into your project.
+ 2. From parent folder of `odin-imgui/`, run `python odin-imgui/build.py`
+ 3. Folder `odin-imgui/imgui/` is importable. Copy into your project, or import directly.
 
 ## Configuring
 

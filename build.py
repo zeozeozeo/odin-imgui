@@ -14,7 +14,11 @@ import platform
 #		We should probably instead run one compile command per source file.
 #		This lets us specify the output file, as well as compiling in paralell
 # - Make this file never show it's call stack. Call stacks should mean that a child script failed.
-# - Write directly into `odin-imgui/imgui` instead of `build`
+# - Move entire build process into odin-imgui/ folder.
+#		It might even be ideal to have odin-imgui be importable itself, though
+#		this would require moving a lot of things around first.
+# - Add self-documenting build.ini or similar, as to not require anyone to look
+#		at this file unless they want to add a new backend.
 
 # @CONFIGURE: Must be key into below table
 active_branch = "docking"
@@ -141,6 +145,9 @@ def get_platform_imgui_lib_name() -> str:
 
 	return f'imgui_{system.lower()}_{processor}.{binary_ext}'
 
+temp_path = "temp"
+dest_path = pp("odin-imgui/imgui")
+
 def main():
 	ensure_outside_of_repo()
 
@@ -162,19 +169,19 @@ def main():
 		ensure_checked_out_with_commit(path.join("backend_deps", full_dep["path"]), full_dep["repo"], full_dep["commit"])
 
 	# Clear our temp and build folder
-	shutil.rmtree(path="temp", ignore_errors=True)
-	os.mkdir("temp")
-	shutil.rmtree(path="build", ignore_errors=True)
-	os.mkdir("build")
+	shutil.rmtree(path=temp_path, ignore_errors=True)
+	os.mkdir(temp_path)
+	shutil.rmtree(path=dest_path, ignore_errors=True)
+	os.mkdir(dest_path)
 
 	# Generate bindings for active ImGui branch
-	exec([sys.executable, pp("dear_bindings/dear_bindings.py"), "-o", pp("temp/c_imgui"), pp("imgui/imgui.h")], "Running dear_bindings")
+	exec([sys.executable, pp("dear_bindings/dear_bindings.py"), "-o", path.join(temp_path, "c_imgui"), pp("imgui/imgui.h")], "Running dear_bindings")
 	# Generate odin bindings from dear_bindings json file
-	exec([sys.executable, pp("odin-imgui/gen_odin.py"), pp("temp/c_imgui.json"), pp("build/imgui.odin")], "Running odin-imgui")
+	exec([sys.executable, pp("odin-imgui/gen_odin.py"), path.join(temp_path, "c_imgui.json"), path.join(dest_path, "imgui.odin")], "Running odin-imgui")
 
 	# Find and copy imgui sources to temp folder
-	_imgui_headers = glob_copy("imgui", "*.h", "temp")
-	imgui_sources = glob_copy("imgui", "*.cpp", "temp")
+	_imgui_headers = glob_copy("imgui", "*.h", temp_path)
+	imgui_sources = glob_copy("imgui", "*.cpp", temp_path)
 
 	# Gather sources, defines, includes etc
 	all_sources = imgui_sources
@@ -191,7 +198,7 @@ def main():
 	else: compile_flags += platform_select({ "windows": ["/O2"], "linux, darwin": ["-O3"] })
 
 	# Write file describing the enabled backends
-	f = open(pp("build/impl_enabled.odin"), "w+")
+	f = open(path.join(dest_path, "impl_enabled.odin"), "w+")
 	f.writelines([
 		"package imgui\n",
 		"\n",
@@ -213,13 +220,13 @@ def main():
 		if not backend["supported"]:
 			print(f"Warning: compiling backend '{backend_name}' which is not officially supported")
 
-		glob_copy(pp("imgui/backends"), f"imgui_impl_{backend_name}.*", "temp")
+		glob_copy(pp("imgui/backends"), f"imgui_impl_{backend_name}.*", temp_path)
 
 		if backend_name in ["osx", "metal"]: all_sources += [f"imgui_impl_{backend_name}.mm"]
 		else:                                all_sources += [f"imgui_impl_{backend_name}.cpp"]
 
 		if backend_name == "opengl3":
-			shutil.copy(pp("imgui/backends/imgui_impl_opengl3_loader.h"), "temp")
+			shutil.copy(pp("imgui/backends/imgui_impl_opengl3_loader.h"), temp_path)
 
 		for define in backend.get("defines", []): compile_flags += [platform_select({ "windows": f"/D{define}", "linux, darwin": f"-D{define}" })]
 
@@ -231,13 +238,13 @@ def main():
 		elif platform_unix_like: compile_flags += ["-I" + path.join("..", "backend_deps", backend_deps[backend_dep]["path"], "include")]
 
 	# Copy implementation files
-	glob_copy("odin-imgui", "imgui_impl_*.odin", "build")
+	glob_copy("odin-imgui", "imgui_impl_*.odin", dest_path)
 
 	all_objects = []
 	if platform_win32_like:  all_objects += map(lambda file: file.removesuffix(".cpp") + ".obj", all_sources)
 	elif platform_unix_like: all_objects += map(lambda file: file.removesuffix(".cpp") + ".o", all_sources)
 
-	os.chdir("temp")
+	os.chdir(temp_path)
 
 	if platform_win32_like:  run_vcvars(["cl"] + compile_flags + ["/c"] + all_sources)
 	elif platform_unix_like: exec(["clang"] + compile_flags + ["-c"] + all_sources, "Compiling sources")
@@ -246,13 +253,13 @@ def main():
 
 	dest_binary = get_platform_imgui_lib_name()
 
-	if platform_win32_like:  run_vcvars(["lib", "/OUT:" + path.join("build", dest_binary)] + map_to_folder(all_objects, "temp"))
-	elif platform_unix_like: exec(["ar", "rcs", path.join("build", dest_binary)] + map_to_folder(all_objects, "temp"), "Making library from objects")
+	if platform_win32_like:  run_vcvars(["lib", "/OUT:" + path.join(dest_path, dest_binary)] + map_to_folder(all_objects, temp_path))
+	elif platform_unix_like: exec(["ar", "rcs", path.join(dest_path, dest_binary)] + map_to_folder(all_objects, temp_path), "Making library from objects")
 
 	expected_files = ["imgui.odin", "impl_enabled.odin", dest_binary]
 
 	for file in expected_files:
-		assertx(path.isfile(path.join("build", file)), f"Missing file '{file}' in build folder! Something went wrong..")
+		assertx(path.isfile(path.join(dest_path, file)), f"Missing file '{file}' in build folder! Something went wrong..")
 
 	print("Looks like everything went ok!")
 
