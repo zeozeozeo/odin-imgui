@@ -505,15 +505,7 @@ def write_enums(file: typing.IO, enums):
 				stop_after = _imgui_enum_stop_after[entire_name]
 			write_enum(file, enum, enum_field_prefix, name, stop_after)
 
-# TYPEDEFS
-
 # STRUCTS
-_imgui_struct_skip = [
-	# Has an anonymous field, which currently isn't handled
-	"ImVector_ImGuiStorage_ImGuiStoragePair",
-	# Depends on the above
-	"ImGuiStorage",
-]
 
 # We can generate these structs just fine, but we have a better Odin equivalent.
 _imgui_struct_override = {
@@ -590,25 +582,9 @@ def write_structs(file: typing.IO, structs):
 	for struct in structs:
 		entire_name = struct["name"]
 
-		if entire_name in _imgui_struct_skip:
-			continue
-
 		if entire_name in _imgui_struct_override:
 			write_line(file, _imgui_struct_override[entire_name])
 			continue
-
-		# ANONYMOUS TODO:
-		if entire_name.startswith("__anonymous_type"):
-			continue
-
-		any_anonymous = False
-		for field in struct["fields"]:
-			if field["is_anonymous"]:
-				any_anonymous = True
-				break
-		if any_anonymous:
-			continue
-		# /ANONYMOUS
 
 		name = strip_imgui_branding(entire_name)
 
@@ -672,24 +648,6 @@ def function_uses_va_list(function) -> bool:
 	return last_arg["type"]["declaration"] == "va_list"
 
 _imgui_functions_skip = [
-	# These depend on storage, which is currently skipped
-	"ImGui_SetStateStorage",
-	"ImGui_GetStateStorage",
-	"ImGuiStorage_Clear",
-	"ImGuiStorage_GetInt",
-	"ImGuiStorage_SetInt",
-	"ImGuiStorage_GetBool",
-	"ImGuiStorage_SetBool",
-	"ImGuiStorage_GetFloat",
-	"ImGuiStorage_SetFloat",
-	"ImGuiStorage_GetVoidPtr",
-	"ImGuiStorage_SetVoidPtr",
-	"ImGuiStorage_GetIntRef",
-	"ImGuiStorage_GetBoolRef",
-	"ImGuiStorage_GetFloatRef",
-	"ImGuiStorage_GetVoidPtrRef",
-	"ImGuiStorage_SetAllInt",
-	"ImGuiStorage_BuildSortByKey",
 	# Returns ImStr, which isn't defined anywhere?
 	"ImStr_FromCharStr",
 

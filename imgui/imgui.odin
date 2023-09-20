@@ -1156,6 +1156,12 @@ Vector_char :: struct {
 	Data:     cstring,
 }
 
+Vector_Storage_StoragePair :: struct {
+	Size:     c.int,
+	Capacity: c.int,
+	Data:     ^Storage_StoragePair,
+}
+
 Vector_DrawCmd :: struct {
 	Size:     c.int,
 	Capacity: c.int,
@@ -1549,6 +1555,30 @@ TextFilter :: struct {
 // (this could be called 'ImGuiTextBuilder' / 'ImGuiStringBuilder')
 TextBuffer :: struct {
 	Buf: Vector_char,
+}
+
+// [Internal]
+Storage_StoragePair :: struct {
+	key:               ID,
+	__anonymous_type0: __anonymous_type0,
+}
+
+__anonymous_type0 :: struct {
+	val_i: c.int,
+	val_f: f32,
+	val_p: rawptr,
+}
+
+// Helper: Key->Value storage
+// Typically you don't have to worry about this since a storage is held within each Window.
+// We use it to e.g. store collapse state for a tree (Int 0/1)
+// This is optimized for efficient lookup (dichotomy into a contiguous buffer) and rare insertion (typically tied to user interactions aka max once a frame)
+// You can use it as custom user storage for temporary values. Declare your own storage if, for example:
+// - You want to manipulate the open/close state of a particular sub-tree in your interface (tree node uses Int 0/1 to store their state).
+// - You want to store custom debug data easily without adding or editing structures in your code (probably not efficient, but convenient)
+// Types are NOT stored, so it is up to you to make sure your Key don't collide with different types.
+Storage :: struct {
+	Data: Vector_Storage_StoragePair,
 }
 
 // Helper: Manually clip large list of items.
@@ -2538,6 +2568,8 @@ foreign lib {
 	@(link_name="ImGui_GetFrameCount")         GetFrameCount         :: proc() -> c.int                                      --- // get global imgui frame count. incremented by 1 every frame.
 	@(link_name="ImGui_GetDrawListSharedData") GetDrawListSharedData :: proc() -> ^DrawListSharedData                        --- // you may use this when creating your own ImDrawList instances.
 	@(link_name="ImGui_GetStyleColorName")     GetStyleColorName     :: proc(idx: Col) -> cstring                            --- // get a string corresponding to the enum value (for display, saving, etc.).
+	@(link_name="ImGui_SetStateStorage")       SetStateStorage       :: proc(storage: ^Storage)                              --- // replace current window storage with our own (if you want to manipulate it yourself, typically clear subsection of it)
+	@(link_name="ImGui_GetStateStorage")       GetStateStorage       :: proc() -> ^Storage                                   ---
 	@(link_name="ImGui_BeginChildFrame")       BeginChildFrame       :: proc(id: ID, size: Vec2, flags: WindowFlags) -> bool --- // helper to create a child window / scrolling region that looks like a normal widget frame
 	@(link_name="ImGui_EndChildFrame")         EndChildFrame         :: proc()                                               --- // always call EndChildFrame() regardless of BeginChildFrame() return values (which indicates a collapsed/clipped window)
 	// Text Utilities
@@ -2663,9 +2695,33 @@ foreign lib {
 	@(link_name="ImGuiTextBuffer_append")                    TextBuffer_append                    :: proc(self: ^TextBuffer, str: cstring, str_end: cstring)                                              ---
 	@(link_name="ImGuiTextBuffer_appendf")                   TextBuffer_appendf                   :: proc(self: ^TextBuffer, fmt: cstring, #c_vararg args: ..any)                                         ---
 	// @(link_name="ImGuiTextBuffer_appendfv")               TextBuffer_appendfv                  :: proc(self: ^TextBuffer, fmt: cstring, args: libc.va_list)                                            ---
-	@(link_name="ImGuiListClipper_Begin")                    ListClipper_Begin                    :: proc(self: ^ListClipper, items_count: c.int, items_height: f32)                                      ---
-	@(link_name="ImGuiListClipper_End")                      ListClipper_End                      :: proc(self: ^ListClipper)                                                                             --- // Automatically called on the last call of Step() that returns false.
-	@(link_name="ImGuiListClipper_Step")                     ListClipper_Step                     :: proc(self: ^ListClipper) -> bool                                                                     --- // Call until it returns false. The DisplayStart/DisplayEnd fields will be set and you can process/draw those items.
+	// - Get***() functions find pair, never add/allocate. Pairs are sorted so a query is O(log N)
+	// - Set***() functions find pair, insertion on demand if missing.
+	// - Sorted insertion is costly, paid once. A typical frame shouldn't need to insert any new pair.
+	@(link_name="ImGuiStorage_Clear")      Storage_Clear      :: proc(self: ^Storage)                                       ---
+	@(link_name="ImGuiStorage_GetInt")     Storage_GetInt     :: proc(self: ^Storage, key: ID, default_val: c.int) -> c.int ---
+	@(link_name="ImGuiStorage_SetInt")     Storage_SetInt     :: proc(self: ^Storage, key: ID, val: c.int)                  ---
+	@(link_name="ImGuiStorage_GetBool")    Storage_GetBool    :: proc(self: ^Storage, key: ID, default_val: bool) -> bool   ---
+	@(link_name="ImGuiStorage_SetBool")    Storage_SetBool    :: proc(self: ^Storage, key: ID, val: bool)                   ---
+	@(link_name="ImGuiStorage_GetFloat")   Storage_GetFloat   :: proc(self: ^Storage, key: ID, default_val: f32) -> f32     ---
+	@(link_name="ImGuiStorage_SetFloat")   Storage_SetFloat   :: proc(self: ^Storage, key: ID, val: f32)                    ---
+	@(link_name="ImGuiStorage_GetVoidPtr") Storage_GetVoidPtr :: proc(self: ^Storage, key: ID) -> rawptr                    --- // default_val is NULL
+	@(link_name="ImGuiStorage_SetVoidPtr") Storage_SetVoidPtr :: proc(self: ^Storage, key: ID, val: rawptr)                 ---
+	// - Get***Ref() functions finds pair, insert on demand if missing, return pointer. Useful if you intend to do Get+Set.
+	// - References are only valid until a new value is added to the storage. Calling a Set***() function or a Get***Ref() function invalidates the pointer.
+	// - A typical use case where this is convenient for quick hacking (e.g. add storage during a live Edit&Continue session if you can't modify existing struct)
+	//      float* pvar = ImGui::GetFloatRef(key); ImGui::SliderFloat("var", pvar, 0, 100.0f); some_var += *pvar;
+	@(link_name="ImGuiStorage_GetIntRef")     Storage_GetIntRef     :: proc(self: ^Storage, key: ID, default_val: c.int) -> ^c.int   ---
+	@(link_name="ImGuiStorage_GetBoolRef")    Storage_GetBoolRef    :: proc(self: ^Storage, key: ID, default_val: bool) -> ^bool     ---
+	@(link_name="ImGuiStorage_GetFloatRef")   Storage_GetFloatRef   :: proc(self: ^Storage, key: ID, default_val: f32) -> ^f32       ---
+	@(link_name="ImGuiStorage_GetVoidPtrRef") Storage_GetVoidPtrRef :: proc(self: ^Storage, key: ID, default_val: rawptr) -> ^rawptr ---
+	// Use on your own storage if you know only integer are being stored (open/close all tree nodes)
+	@(link_name="ImGuiStorage_SetAllInt") Storage_SetAllInt :: proc(self: ^Storage, val: c.int) ---
+	// For quicker full rebuild of a storage (instead of an incremental one), you may add all your contents and then sort once.
+	@(link_name="ImGuiStorage_BuildSortByKey") Storage_BuildSortByKey :: proc(self: ^Storage)                                            ---
+	@(link_name="ImGuiListClipper_Begin")      ListClipper_Begin      :: proc(self: ^ListClipper, items_count: c.int, items_height: f32) ---
+	@(link_name="ImGuiListClipper_End")        ListClipper_End        :: proc(self: ^ListClipper)                                        --- // Automatically called on the last call of Step() that returns false.
+	@(link_name="ImGuiListClipper_Step")       ListClipper_Step       :: proc(self: ^ListClipper) -> bool                                --- // Call until it returns false. The DisplayStart/DisplayEnd fields will be set and you can process/draw those items.
 	// Call IncludeItemByIndex() or IncludeItemsByIndex() *BEFORE* first call to Step() if you need a range of items to not be clipped, regardless of their visibility.
 	// (Due to alignment / padding of certain items it is possible that an extra item may be included on either end of the display range).
 	@(link_name="ImGuiListClipper_IncludeItemByIndex")         ListClipper_IncludeItemByIndex         :: proc(self: ^ListClipper, item_index: c.int)                  ---
