@@ -200,7 +200,7 @@ _imgui_bounds_value_overrides = {
 	# The original value had to be removed (search for it to see why). Luckily this is equivalent
 	"ImGuiKey_KeysData_SIZE": "Key.COUNT",
 	# These are all resolvable using the data we have, but doing this for now.
-	# TODO:
+	# TODO: These can be evaluated with varying levels of effort
 	"32+1": "33",
 	"IM_DRAWLIST_TEX_LINES_WIDTH_MAX+1": str(int(IM_DRAWLIST_TEX_LINES_WIDTH_MAX+1)),
 	"(IM_UNICODE_CODEPOINT_MAX +1)/4096/8": str(int((IM_UNICODE_CODEPOINT_MAX +1)/4096/8)),
@@ -256,10 +256,7 @@ CHECKVERSION :: proc() {
 
 # DEFINES
 
-_imgui_define_prefixes = [
-	"IMGUI_",
-	"IM_",
-]
+_imgui_define_prefixes = ["IMGUI_", "IM_"]
 
 # Defines have special prefixes
 def define_strip_prefix(name: str) -> str:
@@ -695,12 +692,13 @@ _imgui_functions_skip = [
 	"ImGuiStorage_BuildSortByKey",
 	# Returns ImStr, which isn't defined anywhere?
 	"ImStr_FromCharStr",
-]
 
-# We have to keep track of seen functions, as currently one function (GetKeyIndex)
-# is present twice in the json
-# TODO[TS]: Still true?
-_imgui_functions_seen = {}
+	# This function appears in one of two forms in the json, depending on
+	# whether IMGUI_DISABLE_OBSOLETE_KEYIO is set.
+	# Since we don't evaluate this yet, it is safer to remove it entirely
+	# rather than guess which one is right.
+	"GetKeyIndex",
+]
 
 _imgui_function_prefixes = [ "ImGui_", "ImGui", "Im" ]
 
@@ -720,8 +718,6 @@ else when ODIN_OS == .Darwin {
 	for function in functions:
 		entire_name = function["name"]
 		if entire_name in _imgui_functions_skip: continue
-		if entire_name in _imgui_functions_seen: continue
-		_imgui_functions_seen[entire_name] = True
 
 		[_prefix, remainder] = strip_list(entire_name, _imgui_function_prefixes)
 

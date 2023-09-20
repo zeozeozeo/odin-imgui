@@ -2866,7 +2866,6 @@ foreign lib {
 	// Helpers
 	@(link_name="ImGuiViewport_GetCenter")     Viewport_GetCenter     :: proc(self: ^Viewport) -> Vec2 ---
 	@(link_name="ImGuiViewport_GetWorkCenter") Viewport_GetWorkCenter :: proc(self: ^Viewport) -> Vec2 ---
-	@(link_name="GetKeyIndex")                 GetKeyIndex            :: proc(key: Key) -> Key         --- // map ImGuiKey_* values into legacy native key index. == io.KeyMap[key]
 	// OBSOLETED in 1.90.0 (from September 2023)
 	@(link_name="ImGui_ListBoxObsolete")   ListBoxObsolete   :: proc(label: cstring, current_item: ^c.int, old_callback: proc "c" (user_data: rawptr, idx: c.int, out_text: ^cstring) -> bool, user_data: rawptr, items_count: c.int) -> bool                                   --- // Implied height_in_items = -1
 	@(link_name="ImGui_ListBoxObsoleteEx") ListBoxObsoleteEx :: proc(label: cstring, current_item: ^c.int, old_callback: proc "c" (user_data: rawptr, idx: c.int, out_text: ^cstring) -> bool, user_data: rawptr, items_count: c.int, height_in_items: c.int) -> bool           ---
