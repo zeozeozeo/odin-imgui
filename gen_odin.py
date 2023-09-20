@@ -305,7 +305,6 @@ def write_aligned_fields(file: typing.IO, aligned_fields, indent = 0):
 	if len(aligned_fields) > last_non_delimiter:
 		_write_aligned_fields_range(file, aligned_fields[last_non_delimiter:len(aligned_fields)], indent)
 
-
 # DEFINES
 
 _imgui_define_prefixes = ["IMGUI_", "IM_"]
@@ -340,12 +339,9 @@ def write_defines(file: typing.IO, defines):
 def enum_parse_name(original_name: str) -> typing.List[str]:
 	start_idx = -1
 	end_idx = -1
-	if original_name.startswith("ImGui"):
-		start_idx = 5
-	elif original_name.startswith("Im"):
-		start_idx = 2
-	else:
-		assert False, f'Invalid prefix on enum "{original_name}"'
+	if original_name.startswith("ImGui"): start_idx = 5
+	elif original_name.startswith("Im"):  start_idx = 2
+	else: assert False, f'Invalid prefix on enum "{original_name}"'
 
 	enum_field_prefix = original_name
 
@@ -359,10 +355,8 @@ def enum_parse_name(original_name: str) -> typing.List[str]:
 
 def enum_parse_field_name(field_base_name: str, expected_prefix: str) -> str:
 	field_name = strip_prefix_optional(expected_prefix, field_base_name)
-	if field_name == None:
-		return field_base_name
-	else:
-		return field_name
+	if field_name == None: return field_base_name
+	else:                  return field_name
 
 def enum_split_value(value: str) -> typing.List[str]:
 	return list(map(lambda s: s.strip(), value.split("|")))
@@ -390,71 +384,49 @@ def enum_parse_flag_combination(value: str, expected_prefix: str) -> typing.List
 
 	return combined_enums
 
-# TODO[TS]: Don't bother parsing value expressions, use value directly.
-# TODO[TS]: When writing enums as flags, we should try to elide flag constants
-# which add no additional info.
-# For instance, look at the output of `InputTextFlags`
-# TODO[TS]: We can elide any sequential enum values. Is this a good idea?
 def write_enum_as_flags(file, enum, enum_field_prefix, name):
-	write_line_with_comments(file, f'{name} :: bit_set[{name.removesuffix("s")}; c.int]', enum)
-	write_line(file, f'{name.removesuffix("s")} :: enum c.int {{')
 
 	aligned_enums = []
 	aligned_flags = []
 
-	# TODO[TS]: Join this and the next loop
 	for element in enum["elements"]:
+		element_entire_name = element["name"]
 		element_value = element["value_expression"]
+		element_name = enum_parse_field_name(element_entire_name, enum_field_prefix)
+		handled = False # To catch missed cases
+
 		bit_index = strip_prefix_optional("1<<", element_value)
+		if bit_index != None:
+			# We're definitely something that can be represented with a single bit
+			append_aligned_field(aligned_enums, [element_name, f' = {bit_index},'], element)
+			handled = True
+		else:
+			# We're something weird
+			if element_value == "0": continue # This is the _None variant, which can be represented in Odin by {}
 
-		disable_str = ""
-		if bit_index == None:
-			literal_value = try_eval(element_value)
+			if try_eval(element_value) != None:
+				extra_comment = f'Meant to be of type {name}'
+				append_aligned_field(aligned_flags, [f'{name}_{element_name}', f' :: c.int({element_value}) // {extra_comment}'], element)
+				handled = True
+			else:
+				flag_combination = ",".join(enum_parse_flag_combination(element_value, enum_field_prefix))
+				append_aligned_field(aligned_flags, [f'{name}_{element_name}', f' :: {name}{{{flag_combination}}}'], element)
+				handled = True
 
-			if literal_value == None or literal_value == 0:
-				 # Not a unique flag - either "none" (0) or a combination flag
-				continue
+		if not handled:
+			print("element_entire_name", element_entire_name)
+			print("element_value", element_value)
+			print("element_name", element_name)
 
-			bit_index = math.log2(literal_value)
-			if bit_index != int(bit_index):
-				disable_str = f"/* log2(val) was not even! (val={literal_value}) *///"
-
-		field_base_name = element["name"]
-		field_name = enum_parse_field_name(field_base_name, enum_field_prefix)
-		append_aligned_field(aligned_enums, [disable_str + field_name, f' = {bit_index},'], element)
-
+	# Flags
+	write_line_with_comments(file, f'{name} :: bit_set[{name.removesuffix("s")}; c.int]', enum)
+	write_line(file, f'{name.removesuffix("s")} :: enum c.int {{')
 	write_aligned_fields(file, aligned_enums, 1)
-
 	write_line(file, "}")
+
+	# Combination flags not representable by the above
 	write_line(file)
-
-	for element in enum["elements"]:
-		element_base_name = element["name"]
-		element_name = enum_parse_field_name(element_base_name, enum_field_prefix)
-		element_value = element["value_expression"]
-
-		value_string = ""
-		value_is_stupid_dumb_garbage_literal = False
-
-		if element_value == "0":
-			value_string = ""
-		elif element_value.startswith("1<<"):
-			value_string = "." + element_name
-		elif try_eval(element_value) != None:
-			value_is_stupid_dumb_garbage_literal = True
-			value_string = element_value
-		else:
-			flag_combination = enum_parse_flag_combination(element_value, enum_field_prefix)
-			value_string = ",".join(flag_combination)
-
-		if value_is_stupid_dumb_garbage_literal:
-			extra_comment = f'Meant to be of type {name}'
-			append_aligned_field(aligned_flags, [f'{name}_{element_name}', f' :: c.int({value_string}) // {extra_comment}'], element)
-		else:
-			append_aligned_field(aligned_flags, [f'{name}_{element_name}', f' :: {name}{{{value_string}}}'], element)
-
 	write_aligned_fields(file, aligned_flags, 0)
-
 	write_line(file)
 
 def write_enum_as_constants(file, enum, enum_field_prefix, name):
@@ -538,11 +510,7 @@ def write_enums(file: typing.IO, enums):
 		entire_name = enum["name"]
 		[enum_field_prefix, name] = enum_parse_name(entire_name)
 
-		if entire_name in _imgui_enum_skip:
-			continue
-
-		# if entire_name != "ImGuiPopupFlags_": continue
-		# if entire_name == "ImGuiKey": continue
+		if entire_name in _imgui_enum_skip: continue
 
 		# TODO[TS]: Just use "is_flags_enum"
 		if name.endswith("Flags"):

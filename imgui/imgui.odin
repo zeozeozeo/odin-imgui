@@ -52,39 +52,9 @@ WindowFlag :: enum c.int {
 	DockNodeHost = 29, // Don't use! For internal use by Begin()/NewFrame()
 }
 
-WindowFlags_None                      :: WindowFlags{}
-WindowFlags_NoTitleBar                :: WindowFlags{.NoTitleBar}                                    // Disable title-bar
-WindowFlags_NoResize                  :: WindowFlags{.NoResize}                                      // Disable user resizing with the lower-right grip
-WindowFlags_NoMove                    :: WindowFlags{.NoMove}                                        // Disable user moving the window
-WindowFlags_NoScrollbar               :: WindowFlags{.NoScrollbar}                                   // Disable scrollbars (window can still scroll with mouse or programmatically)
-WindowFlags_NoScrollWithMouse         :: WindowFlags{.NoScrollWithMouse}                             // Disable user vertically scrolling with mouse wheel. On child window, mouse wheel will be forwarded to the parent unless NoScrollbar is also set.
-WindowFlags_NoCollapse                :: WindowFlags{.NoCollapse}                                    // Disable user collapsing window by double-clicking on it. Also referred to as Window Menu Button (e.g. within a docking node).
-WindowFlags_AlwaysAutoResize          :: WindowFlags{.AlwaysAutoResize}                              // Resize every window to its content every frame
-WindowFlags_NoBackground              :: WindowFlags{.NoBackground}                                  // Disable drawing background color (WindowBg, etc.) and outside border. Similar as using SetNextWindowBgAlpha(0.0f).
-WindowFlags_NoSavedSettings           :: WindowFlags{.NoSavedSettings}                               // Never load/save settings in .ini file
-WindowFlags_NoMouseInputs             :: WindowFlags{.NoMouseInputs}                                 // Disable catching mouse, hovering test with pass through.
-WindowFlags_MenuBar                   :: WindowFlags{.MenuBar}                                       // Has a menu-bar
-WindowFlags_HorizontalScrollbar       :: WindowFlags{.HorizontalScrollbar}                           // Allow horizontal scrollbar to appear (off by default). You may use SetNextWindowContentSize(ImVec2(width,0.0f)); prior to calling Begin() to specify width. Read code in imgui_demo in the "Horizontal Scrolling" section.
-WindowFlags_NoFocusOnAppearing        :: WindowFlags{.NoFocusOnAppearing}                            // Disable taking focus when transitioning from hidden to visible state
-WindowFlags_NoBringToFrontOnFocus     :: WindowFlags{.NoBringToFrontOnFocus}                         // Disable bringing window to front when taking focus (e.g. clicking on it or programmatically giving it focus)
-WindowFlags_AlwaysVerticalScrollbar   :: WindowFlags{.AlwaysVerticalScrollbar}                       // Always show vertical scrollbar (even if ContentSize.y < Size.y)
-WindowFlags_AlwaysHorizontalScrollbar :: WindowFlags{.AlwaysHorizontalScrollbar}                     // Always show horizontal scrollbar (even if ContentSize.x < Size.x)
-WindowFlags_AlwaysUseWindowPadding    :: WindowFlags{.AlwaysUseWindowPadding}                        // Ensure child windows without border uses style.WindowPadding (ignored by default for non-bordered child windows, because more convenient)
-WindowFlags_NoNavInputs               :: WindowFlags{.NoNavInputs}                                   // No gamepad/keyboard navigation within the window
-WindowFlags_NoNavFocus                :: WindowFlags{.NoNavFocus}                                    // No focusing toward this window with gamepad/keyboard navigation (e.g. skipped by CTRL+TAB)
-WindowFlags_UnsavedDocument           :: WindowFlags{.UnsavedDocument}                               // Display a dot next to the title. When used in a tab/docking context, tab is selected when clicking the X + closure is not assumed (will wait for user to stop submitting the tab). Otherwise closure is assumed when pressing the X, so if you keep submitting the tab may reappear at end of tab bar.
-WindowFlags_NoDocking                 :: WindowFlags{.NoDocking}                                     // Disable docking of this window
-WindowFlags_NoNav                     :: WindowFlags{.NoNavInputs,.NoNavFocus}
-WindowFlags_NoDecoration              :: WindowFlags{.NoTitleBar,.NoResize,.NoScrollbar,.NoCollapse}
-WindowFlags_NoInputs                  :: WindowFlags{.NoMouseInputs,.NoNavInputs,.NoNavFocus}
-// [Internal]
-WindowFlags_NavFlattened :: WindowFlags{.NavFlattened} // [BETA] On child window: allow gamepad/keyboard navigation to cross over parent border to this child or between sibling child windows.
-WindowFlags_ChildWindow  :: WindowFlags{.ChildWindow}  // Don't use! For internal use by BeginChild()
-WindowFlags_Tooltip      :: WindowFlags{.Tooltip}      // Don't use! For internal use by BeginTooltip()
-WindowFlags_Popup        :: WindowFlags{.Popup}        // Don't use! For internal use by BeginPopup()
-WindowFlags_Modal        :: WindowFlags{.Modal}        // Don't use! For internal use by BeginPopupModal()
-WindowFlags_ChildMenu    :: WindowFlags{.ChildMenu}    // Don't use! For internal use by BeginMenu()
-WindowFlags_DockNodeHost :: WindowFlags{.DockNodeHost} // Don't use! For internal use by Begin()/NewFrame()
+WindowFlags_NoNav        :: WindowFlags{.NoNavInputs,.NoNavFocus}
+WindowFlags_NoDecoration :: WindowFlags{.NoTitleBar,.NoResize,.NoScrollbar,.NoCollapse}
+WindowFlags_NoInputs     :: WindowFlags{.NoMouseInputs,.NoNavInputs,.NoNavFocus}
 
 // Flags for ImGui::InputText()
 // (Those are per-item flags. There are shared flags in ImGuiIO: io.ConfigInputTextCursorBlink and io.ConfigInputTextEnterKeepActive)
@@ -113,28 +83,6 @@ InputTextFlag :: enum c.int {
 	EscapeClearsAll     = 20, // Escape key clears content if not empty, and deactivate otherwise (contrast to default behavior of Escape to revert)
 }
 
-InputTextFlags_None                :: InputTextFlags{}
-InputTextFlags_CharsDecimal        :: InputTextFlags{.CharsDecimal}        // Allow 0123456789.+-*/
-InputTextFlags_CharsHexadecimal    :: InputTextFlags{.CharsHexadecimal}    // Allow 0123456789ABCDEFabcdef
-InputTextFlags_CharsUppercase      :: InputTextFlags{.CharsUppercase}      // Turn a..z into A..Z
-InputTextFlags_CharsNoBlank        :: InputTextFlags{.CharsNoBlank}        // Filter out spaces, tabs
-InputTextFlags_AutoSelectAll       :: InputTextFlags{.AutoSelectAll}       // Select entire text when first taking mouse focus
-InputTextFlags_EnterReturnsTrue    :: InputTextFlags{.EnterReturnsTrue}    // Return 'true' when Enter is pressed (as opposed to every time the value was modified). Consider looking at the IsItemDeactivatedAfterEdit() function.
-InputTextFlags_CallbackCompletion  :: InputTextFlags{.CallbackCompletion}  // Callback on pressing TAB (for completion handling)
-InputTextFlags_CallbackHistory     :: InputTextFlags{.CallbackHistory}     // Callback on pressing Up/Down arrows (for history handling)
-InputTextFlags_CallbackAlways      :: InputTextFlags{.CallbackAlways}      // Callback on each iteration. User code may query cursor position, modify text buffer.
-InputTextFlags_CallbackCharFilter  :: InputTextFlags{.CallbackCharFilter}  // Callback on character inputs to replace or discard them. Modify 'EventChar' to replace or discard, or return 1 in callback to discard.
-InputTextFlags_AllowTabInput       :: InputTextFlags{.AllowTabInput}       // Pressing TAB input a '\t' character into the text field
-InputTextFlags_CtrlEnterForNewLine :: InputTextFlags{.CtrlEnterForNewLine} // In multi-line mode, unfocus with Enter, add new line with Ctrl+Enter (default is opposite: unfocus with Ctrl+Enter, add line with Enter).
-InputTextFlags_NoHorizontalScroll  :: InputTextFlags{.NoHorizontalScroll}  // Disable following the cursor horizontally
-InputTextFlags_AlwaysOverwrite     :: InputTextFlags{.AlwaysOverwrite}     // Overwrite mode
-InputTextFlags_ReadOnly            :: InputTextFlags{.ReadOnly}            // Read-only mode
-InputTextFlags_Password            :: InputTextFlags{.Password}            // Password mode, display all characters as '*'
-InputTextFlags_NoUndoRedo          :: InputTextFlags{.NoUndoRedo}          // Disable undo/redo. Note that input text owns the text data while active, if you want to provide your own undo/redo stack you need e.g. to call ClearActiveID().
-InputTextFlags_CharsScientific     :: InputTextFlags{.CharsScientific}     // Allow 0123456789.+-*/eE (Scientific notation input)
-InputTextFlags_CallbackResize      :: InputTextFlags{.CallbackResize}      // Callback on buffer capacity changes request (beyond 'buf_size' parameter value), allowing the string to grow. Notify when the string wants to be resized (for string types which hold a cache of their Size). You will be provided a new BufSize in the callback and NEED to honor it. (see misc/cpp/imgui_stdlib.h for an example of using this)
-InputTextFlags_CallbackEdit        :: InputTextFlags{.CallbackEdit}        // Callback on any edit (note that InputText() already returns true on edit, the callback is useful mainly to manipulate the underlying buffer while focus is active)
-InputTextFlags_EscapeClearsAll     :: InputTextFlags{.EscapeClearsAll}     // Escape key clears content if not empty, and deactivate otherwise (contrast to default behavior of Escape to revert)
 
 // Flags for ImGui::TreeNodeEx(), ImGui::CollapsingHeader*()
 TreeNodeFlags :: bit_set[TreeNodeFlag; c.int]
@@ -155,21 +103,6 @@ TreeNodeFlag :: enum c.int {
 	NavLeftJumpsBackHere = 13, // (WIP) Nav: left direction may move to this TreeNode() from any of its child (items submitted between TreeNode and TreePop)
 }
 
-TreeNodeFlags_None                 :: TreeNodeFlags{}
-TreeNodeFlags_Selected             :: TreeNodeFlags{.Selected}             // Draw as selected
-TreeNodeFlags_Framed               :: TreeNodeFlags{.Framed}               // Draw frame with background (e.g. for CollapsingHeader)
-TreeNodeFlags_AllowOverlap         :: TreeNodeFlags{.AllowOverlap}         // Hit testing to allow subsequent widgets to overlap this one
-TreeNodeFlags_NoTreePushOnOpen     :: TreeNodeFlags{.NoTreePushOnOpen}     // Don't do a TreePush() when open (e.g. for CollapsingHeader) = no extra indent nor pushing on ID stack
-TreeNodeFlags_NoAutoOpenOnLog      :: TreeNodeFlags{.NoAutoOpenOnLog}      // Don't automatically and temporarily open node when Logging is active (by default logging will automatically open tree nodes)
-TreeNodeFlags_DefaultOpen          :: TreeNodeFlags{.DefaultOpen}          // Default node to be open
-TreeNodeFlags_OpenOnDoubleClick    :: TreeNodeFlags{.OpenOnDoubleClick}    // Need double-click to open node
-TreeNodeFlags_OpenOnArrow          :: TreeNodeFlags{.OpenOnArrow}          // Only open when clicking on the arrow part. If ImGuiTreeNodeFlags_OpenOnDoubleClick is also set, single-click arrow or double-click all box to open.
-TreeNodeFlags_Leaf                 :: TreeNodeFlags{.Leaf}                 // No collapsing, no arrow (use as a convenience for leaf nodes).
-TreeNodeFlags_Bullet               :: TreeNodeFlags{.Bullet}               // Display a bullet instead of arrow. IMPORTANT: node can still be marked open/close if you don't set the _Leaf flag!
-TreeNodeFlags_FramePadding         :: TreeNodeFlags{.FramePadding}         // Use FramePadding (even for an unframed text node) to vertically align text baseline to regular widget height. Equivalent to calling AlignTextToFramePadding().
-TreeNodeFlags_SpanAvailWidth       :: TreeNodeFlags{.SpanAvailWidth}       // Extend hit box to the right-most edge, even if not framed. This is not the default in order to allow adding other items on the same line. In the future we may refactor the hit system to be front-to-back, allowing natural overlaps and then this can become the default.
-TreeNodeFlags_SpanFullWidth        :: TreeNodeFlags{.SpanFullWidth}        // Extend hit box to the left-most and right-most edges (bypass the indented area).
-TreeNodeFlags_NavLeftJumpsBackHere :: TreeNodeFlags{.NavLeftJumpsBackHere} // (WIP) Nav: left direction may move to this TreeNode() from any of its child (items submitted between TreeNode and TreePop)
 //ImGuiTreeNodeFlags_NoScrollOnOpen     = 1 << 14,  // FIXME: TODO: Disable automatic scroll on TreePop() if node got just open and contents is not visible
 TreeNodeFlags_CollapsingHeader :: TreeNodeFlags{.Framed,.NoTreePushOnOpen,.NoAutoOpenOnLog}
 TreeNodeFlags_AllowItemOverlap :: TreeNodeFlags{.AllowOverlap}                              // Renamed in 1.89.7
@@ -205,13 +138,7 @@ SelectableFlag :: enum c.int {
 	AllowOverlap     = 4, // (WIP) Hit testing to allow subsequent widgets to overlap this one
 }
 
-SelectableFlags_None             :: SelectableFlags{}
-SelectableFlags_DontClosePopups  :: SelectableFlags{.DontClosePopups}  // Clicking this doesn't close parent popup window
-SelectableFlags_SpanAllColumns   :: SelectableFlags{.SpanAllColumns}   // Selectable frame can span all columns (text will still fit in current column)
-SelectableFlags_AllowDoubleClick :: SelectableFlags{.AllowDoubleClick} // Generate press events on double clicks too
-SelectableFlags_Disabled         :: SelectableFlags{.Disabled}         // Cannot be selected, display grayed out text
-SelectableFlags_AllowOverlap     :: SelectableFlags{.AllowOverlap}     // (WIP) Hit testing to allow subsequent widgets to overlap this one
-SelectableFlags_AllowItemOverlap :: SelectableFlags{.AllowOverlap}     // Renamed in 1.89.7
+SelectableFlags_AllowItemOverlap :: SelectableFlags{.AllowOverlap} // Renamed in 1.89.7
 
 // Flags for ImGui::BeginCombo()
 ComboFlags :: bit_set[ComboFlag; c.int]
@@ -225,15 +152,7 @@ ComboFlag :: enum c.int {
 	NoPreview      = 6, // Display only a square arrow button
 }
 
-ComboFlags_None           :: ComboFlags{}
-ComboFlags_PopupAlignLeft :: ComboFlags{.PopupAlignLeft}                                         // Align the popup toward the left by default
-ComboFlags_HeightSmall    :: ComboFlags{.HeightSmall}                                            // Max ~4 items visible. Tip: If you want your combo popup to be a specific size you can use SetNextWindowSizeConstraints() prior to calling BeginCombo()
-ComboFlags_HeightRegular  :: ComboFlags{.HeightRegular}                                          // Max ~8 items visible (default)
-ComboFlags_HeightLarge    :: ComboFlags{.HeightLarge}                                            // Max ~20 items visible
-ComboFlags_HeightLargest  :: ComboFlags{.HeightLargest}                                          // As many fitting items as possible
-ComboFlags_NoArrowButton  :: ComboFlags{.NoArrowButton}                                          // Display on the preview box without the square arrow button
-ComboFlags_NoPreview      :: ComboFlags{.NoPreview}                                              // Display only a square arrow button
-ComboFlags_HeightMask_    :: ComboFlags{.HeightSmall,.HeightRegular,.HeightLarge,.HeightLargest}
+ComboFlags_HeightMask_ :: ComboFlags{.HeightSmall,.HeightRegular,.HeightLarge,.HeightLargest}
 
 // Flags for ImGui::BeginTabBar()
 TabBarFlags :: bit_set[TabBarFlag; c.int]
@@ -248,17 +167,8 @@ TabBarFlag :: enum c.int {
 	FittingPolicyScroll          = 7, // Add scroll buttons when tabs don't fit
 }
 
-TabBarFlags_None                         :: TabBarFlags{}
-TabBarFlags_Reorderable                  :: TabBarFlags{.Reorderable}                                  // Allow manually dragging tabs to re-order them + New tabs are appended at the end of list
-TabBarFlags_AutoSelectNewTabs            :: TabBarFlags{.AutoSelectNewTabs}                            // Automatically select new tabs when they appear
-TabBarFlags_TabListPopupButton           :: TabBarFlags{.TabListPopupButton}                           // Disable buttons to open the tab list popup
-TabBarFlags_NoCloseWithMiddleMouseButton :: TabBarFlags{.NoCloseWithMiddleMouseButton}                 // Disable behavior of closing tabs (that are submitted with p_open != NULL) with middle mouse button. You can still repro this behavior on user's side with if (IsItemHovered() && IsMouseClicked(2)) *p_open = false.
-TabBarFlags_NoTabListScrollingButtons    :: TabBarFlags{.NoTabListScrollingButtons}                    // Disable scrolling buttons (apply when fitting policy is ImGuiTabBarFlags_FittingPolicyScroll)
-TabBarFlags_NoTooltip                    :: TabBarFlags{.NoTooltip}                                    // Disable tooltips when hovering a tab
-TabBarFlags_FittingPolicyResizeDown      :: TabBarFlags{.FittingPolicyResizeDown}                      // Resize tabs when they don't fit
-TabBarFlags_FittingPolicyScroll          :: TabBarFlags{.FittingPolicyScroll}                          // Add scroll buttons when tabs don't fit
-TabBarFlags_FittingPolicyMask_           :: TabBarFlags{.FittingPolicyResizeDown,.FittingPolicyScroll}
-TabBarFlags_FittingPolicyDefault_        :: TabBarFlags{.FittingPolicyResizeDown}
+TabBarFlags_FittingPolicyMask_    :: TabBarFlags{.FittingPolicyResizeDown,.FittingPolicyScroll}
+TabBarFlags_FittingPolicyDefault_ :: TabBarFlags{.FittingPolicyResizeDown}
 
 // Flags for ImGui::BeginTabItem()
 TabItemFlags :: bit_set[TabItemFlag; c.int]
@@ -273,15 +183,6 @@ TabItemFlag :: enum c.int {
 	Trailing                     = 7, // Enforce the tab position to the right of the tab bar (before the scrolling buttons)
 }
 
-TabItemFlags_None                         :: TabItemFlags{}
-TabItemFlags_UnsavedDocument              :: TabItemFlags{.UnsavedDocument}              // Display a dot next to the title + tab is selected when clicking the X + closure is not assumed (will wait for user to stop submitting the tab). Otherwise closure is assumed when pressing the X, so if you keep submitting the tab may reappear at end of tab bar.
-TabItemFlags_SetSelected                  :: TabItemFlags{.SetSelected}                  // Trigger flag to programmatically make the tab selected when calling BeginTabItem()
-TabItemFlags_NoCloseWithMiddleMouseButton :: TabItemFlags{.NoCloseWithMiddleMouseButton} // Disable behavior of closing tabs (that are submitted with p_open != NULL) with middle mouse button. You can still repro this behavior on user's side with if (IsItemHovered() && IsMouseClicked(2)) *p_open = false.
-TabItemFlags_NoPushId                     :: TabItemFlags{.NoPushId}                     // Don't call PushID(tab->ID)/PopID() on BeginTabItem()/EndTabItem()
-TabItemFlags_NoTooltip                    :: TabItemFlags{.NoTooltip}                    // Disable tooltip for the given tab
-TabItemFlags_NoReorder                    :: TabItemFlags{.NoReorder}                    // Disable reordering this tab or having another tab cross over this tab
-TabItemFlags_Leading                      :: TabItemFlags{.Leading}                      // Enforce the tab position to the left of the tab bar (after the tab list popup button)
-TabItemFlags_Trailing                     :: TabItemFlags{.Trailing}                     // Enforce the tab position to the right of the tab bar (before the scrolling buttons)
 
 // Flags for ImGui::BeginTable()
 // - Important! Sizing policies have complex and subtle side effects, much more so than you would expect.
@@ -381,36 +282,10 @@ TableColumnFlag :: enum c.int {
 	NoDirectResize_ = 30, // [Internal] Disable user resizing this column directly (it may however we resized indirectly from its left edge)
 }
 
-// Input configuration flags
-TableColumnFlags_None                 :: TableColumnFlags{}
-TableColumnFlags_Disabled             :: TableColumnFlags{.Disabled}             // Overriding/master disable flag: hide column, won't show in context menu (unlike calling TableSetColumnEnabled() which manipulates the user accessible state)
-TableColumnFlags_DefaultHide          :: TableColumnFlags{.DefaultHide}          // Default as a hidden/disabled column.
-TableColumnFlags_DefaultSort          :: TableColumnFlags{.DefaultSort}          // Default as a sorting column.
-TableColumnFlags_WidthStretch         :: TableColumnFlags{.WidthStretch}         // Column will stretch. Preferable with horizontal scrolling disabled (default if table sizing policy is _SizingStretchSame or _SizingStretchProp).
-TableColumnFlags_WidthFixed           :: TableColumnFlags{.WidthFixed}           // Column will not stretch. Preferable with horizontal scrolling enabled (default if table sizing policy is _SizingFixedFit and table is resizable).
-TableColumnFlags_NoResize             :: TableColumnFlags{.NoResize}             // Disable manual resizing.
-TableColumnFlags_NoReorder            :: TableColumnFlags{.NoReorder}            // Disable manual reordering this column, this will also prevent other columns from crossing over this column.
-TableColumnFlags_NoHide               :: TableColumnFlags{.NoHide}               // Disable ability to hide/disable this column.
-TableColumnFlags_NoClip               :: TableColumnFlags{.NoClip}               // Disable clipping for this column (all NoClip columns will render in a same draw command).
-TableColumnFlags_NoSort               :: TableColumnFlags{.NoSort}               // Disable ability to sort on this field (even if ImGuiTableFlags_Sortable is set on the table).
-TableColumnFlags_NoSortAscending      :: TableColumnFlags{.NoSortAscending}      // Disable ability to sort in the ascending direction.
-TableColumnFlags_NoSortDescending     :: TableColumnFlags{.NoSortDescending}     // Disable ability to sort in the descending direction.
-TableColumnFlags_NoHeaderLabel        :: TableColumnFlags{.NoHeaderLabel}        // TableHeadersRow() will not submit label for this column. Convenient for some small columns. Name will still appear in context menu.
-TableColumnFlags_NoHeaderWidth        :: TableColumnFlags{.NoHeaderWidth}        // Disable header text width contribution to automatic column width.
-TableColumnFlags_PreferSortAscending  :: TableColumnFlags{.PreferSortAscending}  // Make the initial sort direction Ascending when first sorting on this column (default).
-TableColumnFlags_PreferSortDescending :: TableColumnFlags{.PreferSortDescending} // Make the initial sort direction Descending when first sorting on this column.
-TableColumnFlags_IndentEnable         :: TableColumnFlags{.IndentEnable}         // Use current Indent value when entering cell (default for column 0).
-TableColumnFlags_IndentDisable        :: TableColumnFlags{.IndentDisable}        // Ignore current Indent value when entering cell (default for columns > 0). Indentation changes _within_ the cell will still be honored.
-// Output status flags, read-only via TableGetColumnFlags()
-TableColumnFlags_IsEnabled :: TableColumnFlags{.IsEnabled} // Status: is enabled == not hidden by user/api (referred to as "Hide" in _DefaultHide and _NoHide) flags.
-TableColumnFlags_IsVisible :: TableColumnFlags{.IsVisible} // Status: is visible == is enabled AND not clipped by scrolling.
-TableColumnFlags_IsSorted  :: TableColumnFlags{.IsSorted}  // Status: is currently part of the sort specs
-TableColumnFlags_IsHovered :: TableColumnFlags{.IsHovered} // Status: is hovered by mouse
 // [Internal] Combinations and masks
-TableColumnFlags_WidthMask_      :: TableColumnFlags{.WidthStretch,.WidthFixed}
-TableColumnFlags_IndentMask_     :: TableColumnFlags{.IndentEnable,.IndentDisable}
-TableColumnFlags_StatusMask_     :: TableColumnFlags{.IsEnabled,.IsVisible,.IsSorted,.IsHovered}
-TableColumnFlags_NoDirectResize_ :: TableColumnFlags{.NoDirectResize_}                           // [Internal] Disable user resizing this column directly (it may however we resized indirectly from its left edge)
+TableColumnFlags_WidthMask_  :: TableColumnFlags{.WidthStretch,.WidthFixed}
+TableColumnFlags_IndentMask_ :: TableColumnFlags{.IndentEnable,.IndentDisable}
+TableColumnFlags_StatusMask_ :: TableColumnFlags{.IsEnabled,.IsVisible,.IsSorted,.IsHovered}
 
 // Flags for ImGui::TableNextRow()
 TableRowFlags :: bit_set[TableRowFlag; c.int]
@@ -418,8 +293,6 @@ TableRowFlag :: enum c.int {
 	Headers = 0, // Identify header row (set default background color + width of its contents accounted differently for auto column width)
 }
 
-TableRowFlags_None    :: TableRowFlags{}
-TableRowFlags_Headers :: TableRowFlags{.Headers} // Identify header row (set default background color + width of its contents accounted differently for auto column width)
 
 TableBgTarget :: enum c.int {
 	None = 0,
@@ -438,12 +311,6 @@ FocusedFlag :: enum c.int {
 	DockHierarchy    = 4, // Consider docking hierarchy (treat dockspace host as parent of docked window) (when used with _ChildWindows or _RootWindow)
 }
 
-FocusedFlags_None                :: FocusedFlags{}
-FocusedFlags_ChildWindows        :: FocusedFlags{.ChildWindows}             // Return true if any children of the window is focused
-FocusedFlags_RootWindow          :: FocusedFlags{.RootWindow}               // Test from root window (top most parent of the current hierarchy)
-FocusedFlags_AnyWindow           :: FocusedFlags{.AnyWindow}                // Return true if any window is focused. Important: If you are trying to tell how to dispatch your low-level inputs, do NOT use this. Use 'io.WantCaptureMouse' instead! Please read the FAQ!
-FocusedFlags_NoPopupHierarchy    :: FocusedFlags{.NoPopupHierarchy}         // Do not consider popup hierarchy (do not treat popup emitter as parent of popup) (when used with _ChildWindows or _RootWindow)
-FocusedFlags_DockHierarchy       :: FocusedFlags{.DockHierarchy}            // Consider docking hierarchy (treat dockspace host as parent of docked window) (when used with _ChildWindows or _RootWindow)
 FocusedFlags_RootAndChildWindows :: FocusedFlags{.RootWindow,.ChildWindows}
 
 // Flags for ImGui::IsItemHovered(), ImGui::IsWindowHovered()
@@ -496,14 +363,6 @@ DockNodeFlag :: enum c.int {
 	AutoHideTabBar         = 6, //       // Tab bar will automatically hide when there is a single window in the dock node.
 }
 
-DockNodeFlags_None          :: DockNodeFlags{}
-DockNodeFlags_KeepAliveOnly :: DockNodeFlags{.KeepAliveOnly} //       // Don't display the dockspace node but keep it alive. Windows docked into this dockspace node won't be undocked.
-//ImGuiDockNodeFlags_NoCentralNode              = 1 << 1,   //       // Disable Central Node (the node which can stay empty)
-DockNodeFlags_NoDockingInCentralNode :: DockNodeFlags{.NoDockingInCentralNode} //       // Disable docking inside the Central Node, which will be always kept empty.
-DockNodeFlags_PassthruCentralNode    :: DockNodeFlags{.PassthruCentralNode}    //       // Enable passthru dockspace: 1) DockSpace() will render a ImGuiCol_WindowBg background covering everything excepted the Central Node when empty. Meaning the host window should probably use SetNextWindowBgAlpha(0.0f) prior to Begin() when using this. 2) When Central Node is empty: let inputs pass-through + won't display a DockingEmptyBg background. See demo for details.
-DockNodeFlags_NoSplit                :: DockNodeFlags{.NoSplit}                //       // Disable splitting the node into smaller nodes. Useful e.g. when embedding dockspaces into a main root one (the root one may have splitting disabled to reduce confusion). Note: when turned off, existing splits will be preserved.
-DockNodeFlags_NoResize               :: DockNodeFlags{.NoResize}               // Saved // Disable resizing node using the splitter/separators. Useful with programmatically setup dockspaces.
-DockNodeFlags_AutoHideTabBar         :: DockNodeFlags{.AutoHideTabBar}         //       // Tab bar will automatically hide when there is a single window in the dock node.
 
 // Flags for ImGui::BeginDragDropSource(), ImGui::AcceptDragDropPayload()
 DragDropFlags :: bit_set[DragDropFlag; c.int]
@@ -521,19 +380,7 @@ DragDropFlag :: enum c.int {
 	AcceptNoPreviewTooltip  = 12, // Request hiding the BeginDragDropSource tooltip from the BeginDragDropTarget site.
 }
 
-DragDropFlags_None :: DragDropFlags{}
-// BeginDragDropSource() flags
-DragDropFlags_SourceNoPreviewTooltip   :: DragDropFlags{.SourceNoPreviewTooltip}   // Disable preview tooltip. By default, a successful call to BeginDragDropSource opens a tooltip so you can display a preview or description of the source contents. This flag disables this behavior.
-DragDropFlags_SourceNoDisableHover     :: DragDropFlags{.SourceNoDisableHover}     // By default, when dragging we clear data so that IsItemHovered() will return false, to avoid subsequent user code submitting tooltips. This flag disables this behavior so you can still call IsItemHovered() on the source item.
-DragDropFlags_SourceNoHoldToOpenOthers :: DragDropFlags{.SourceNoHoldToOpenOthers} // Disable the behavior that allows to open tree nodes and collapsing header by holding over them while dragging a source item.
-DragDropFlags_SourceAllowNullID        :: DragDropFlags{.SourceAllowNullID}        // Allow items such as Text(), Image() that have no unique identifier to be used as drag source, by manufacturing a temporary identifier based on their window-relative position. This is extremely unusual within the dear imgui ecosystem and so we made it explicit.
-DragDropFlags_SourceExtern             :: DragDropFlags{.SourceExtern}             // External source (from outside of dear imgui), won't attempt to read current item/window info. Will always return true. Only one Extern source can be active simultaneously.
-DragDropFlags_SourceAutoExpirePayload  :: DragDropFlags{.SourceAutoExpirePayload}  // Automatically expire the payload if the source cease to be submitted (otherwise payloads are persisting while being dragged)
-// AcceptDragDropPayload() flags
-DragDropFlags_AcceptBeforeDelivery    :: DragDropFlags{.AcceptBeforeDelivery}                          // AcceptDragDropPayload() will returns true even before the mouse button is released. You can then call IsDelivery() to test if the payload needs to be delivered.
-DragDropFlags_AcceptNoDrawDefaultRect :: DragDropFlags{.AcceptNoDrawDefaultRect}                       // Do not draw the default highlight rectangle when hovering over target.
-DragDropFlags_AcceptNoPreviewTooltip  :: DragDropFlags{.AcceptNoPreviewTooltip}                        // Request hiding the BeginDragDropSource tooltip from the BeginDragDropTarget site.
-DragDropFlags_AcceptPeekOnly          :: DragDropFlags{.AcceptBeforeDelivery,.AcceptNoDrawDefaultRect} // For peeking ahead and inspecting the payload before delivery.
+DragDropFlags_AcceptPeekOnly :: DragDropFlags{.AcceptBeforeDelivery,.AcceptNoDrawDefaultRect} // For peeking ahead and inspecting the payload before delivery.
 
 DataType :: enum c.int {
 	S8,
@@ -771,23 +618,6 @@ ConfigFlag :: enum c.int {
 	IsTouchScreen = 21, // Application is using a touch screen instead of a mouse.
 }
 
-ConfigFlags_None                 :: ConfigFlags{}
-ConfigFlags_NavEnableKeyboard    :: ConfigFlags{.NavEnableKeyboard}    // Master keyboard navigation enable flag. Enable full Tabbing + directional arrows + space/enter to activate.
-ConfigFlags_NavEnableGamepad     :: ConfigFlags{.NavEnableGamepad}     // Master gamepad navigation enable flag. Backend also needs to set ImGuiBackendFlags_HasGamepad.
-ConfigFlags_NavEnableSetMousePos :: ConfigFlags{.NavEnableSetMousePos} // Instruct navigation to move the mouse cursor. May be useful on TV/console systems where moving a virtual mouse is awkward. Will update io.MousePos and set io.WantSetMousePos=true. If enabled you MUST honor io.WantSetMousePos requests in your backend, otherwise ImGui will react as if the mouse is jumping around back and forth.
-ConfigFlags_NavNoCaptureKeyboard :: ConfigFlags{.NavNoCaptureKeyboard} // Instruct navigation to not set the io.WantCaptureKeyboard flag when io.NavActive is set.
-ConfigFlags_NoMouse              :: ConfigFlags{.NoMouse}              // Instruct imgui to clear mouse position/buttons in NewFrame(). This allows ignoring the mouse information set by the backend.
-ConfigFlags_NoMouseCursorChange  :: ConfigFlags{.NoMouseCursorChange}  // Instruct backend to not alter mouse cursor shape and visibility. Use if the backend cursor changes are interfering with yours and you don't want to use SetMouseCursor() to change mouse cursor. You may want to honor requests from imgui by reading GetMouseCursor() yourself instead.
-// [BETA] Docking
-ConfigFlags_DockingEnable :: ConfigFlags{.DockingEnable} // Docking enable flags.
-// [BETA] Viewports
-// When using viewports it is recommended that your default value for ImGuiCol_WindowBg is opaque (Alpha=1.0) so transition to a viewport won't be noticeable.
-ConfigFlags_ViewportsEnable         :: ConfigFlags{.ViewportsEnable}         // Viewport enable flags (require both ImGuiBackendFlags_PlatformHasViewports + ImGuiBackendFlags_RendererHasViewports set by the respective backends)
-ConfigFlags_DpiEnableScaleViewports :: ConfigFlags{.DpiEnableScaleViewports} // [BETA: Don't use] FIXME-DPI: Reposition and resize imgui windows when the DpiScale of a viewport changed (mostly useful for the main viewport hosting other window). Note that resizing the main window itself is up to your application.
-ConfigFlags_DpiEnableScaleFonts     :: ConfigFlags{.DpiEnableScaleFonts}     // [BETA: Don't use] FIXME-DPI: Request bitmap-scaled fonts to match DpiScale. This is a very low-quality workaround. The correct way to handle DPI is _currently_ to replace the atlas and/or fonts in the Platform_OnChangedViewport callback, but this is all early work in progress.
-// User storage (to allow your backend/engine to communicate to code that may be shared between multiple projects. Those flags are NOT used by core Dear ImGui)
-ConfigFlags_IsSRGB        :: ConfigFlags{.IsSRGB}        // Application is SRGB-aware.
-ConfigFlags_IsTouchScreen :: ConfigFlags{.IsTouchScreen} // Application is using a touch screen instead of a mouse.
 
 // Backend capabilities flags stored in io.BackendFlags. Set by imgui_impl_xxx or custom backend.
 BackendFlags :: bit_set[BackendFlag; c.int]
@@ -802,15 +632,6 @@ BackendFlag :: enum c.int {
 	RendererHasViewports    = 12, // Backend Renderer supports multiple viewports.
 }
 
-BackendFlags_None                 :: BackendFlags{}
-BackendFlags_HasGamepad           :: BackendFlags{.HasGamepad}           // Backend Platform supports gamepad and currently has one connected.
-BackendFlags_HasMouseCursors      :: BackendFlags{.HasMouseCursors}      // Backend Platform supports honoring GetMouseCursor() value to change the OS cursor shape.
-BackendFlags_HasSetMousePos       :: BackendFlags{.HasSetMousePos}       // Backend Platform supports io.WantSetMousePos requests to reposition the OS mouse position (only used if ImGuiConfigFlags_NavEnableSetMousePos is set).
-BackendFlags_RendererHasVtxOffset :: BackendFlags{.RendererHasVtxOffset} // Backend Renderer supports ImDrawCmd::VtxOffset. This enables output of large meshes (64K+ vertices) while still using 16-bit indices.
-// [BETA] Viewports
-BackendFlags_PlatformHasViewports    :: BackendFlags{.PlatformHasViewports}    // Backend Platform supports multiple viewports.
-BackendFlags_HasMouseHoveredViewport :: BackendFlags{.HasMouseHoveredViewport} // Backend Platform supports calling io.AddMouseViewportEvent() with the viewport under the mouse. IF POSSIBLE, ignore viewports with the ImGuiViewportFlags_NoInputs flag (Win32 backend, GLFW 3.30+ backend can do this, SDL backend cannot). If this cannot be done, Dear ImGui needs to use a flawed heuristic to find the viewport under.
-BackendFlags_RendererHasViewports    :: BackendFlags{.RendererHasViewports}    // Backend Renderer supports multiple viewports.
 
 Col :: enum c.int {
 	Text,
@@ -912,10 +733,6 @@ ButtonFlag :: enum c.int {
 	MouseButtonMiddle = 2, // React on center mouse button
 }
 
-ButtonFlags_None              :: ButtonFlags{}
-ButtonFlags_MouseButtonLeft   :: ButtonFlags{.MouseButtonLeft}   // React on left mouse button (default)
-ButtonFlags_MouseButtonRight  :: ButtonFlags{.MouseButtonRight}  // React on right mouse button
-ButtonFlags_MouseButtonMiddle :: ButtonFlags{.MouseButtonMiddle} // React on center mouse button
 // [Internal]
 ButtonFlags_MouseButtonMask_    :: ButtonFlags{.MouseButtonLeft,.MouseButtonRight,.MouseButtonMiddle}
 ButtonFlags_MouseButtonDefault_ :: ButtonFlags{.MouseButtonLeft}
@@ -949,31 +766,6 @@ ColorEditFlag :: enum c.int {
 	InputHSV         = 28, // [Input]      // ColorEdit, ColorPicker: input and output data in HSV format.
 }
 
-ColorEditFlags_None           :: ColorEditFlags{}
-ColorEditFlags_NoAlpha        :: ColorEditFlags{.NoAlpha}        //              // ColorEdit, ColorPicker, ColorButton: ignore Alpha component (will only read 3 components from the input pointer).
-ColorEditFlags_NoPicker       :: ColorEditFlags{.NoPicker}       //              // ColorEdit: disable picker when clicking on color square.
-ColorEditFlags_NoOptions      :: ColorEditFlags{.NoOptions}      //              // ColorEdit: disable toggling options menu when right-clicking on inputs/small preview.
-ColorEditFlags_NoSmallPreview :: ColorEditFlags{.NoSmallPreview} //              // ColorEdit, ColorPicker: disable color square preview next to the inputs. (e.g. to show only the inputs)
-ColorEditFlags_NoInputs       :: ColorEditFlags{.NoInputs}       //              // ColorEdit, ColorPicker: disable inputs sliders/text widgets (e.g. to show only the small preview color square).
-ColorEditFlags_NoTooltip      :: ColorEditFlags{.NoTooltip}      //              // ColorEdit, ColorPicker, ColorButton: disable tooltip when hovering the preview.
-ColorEditFlags_NoLabel        :: ColorEditFlags{.NoLabel}        //              // ColorEdit, ColorPicker: disable display of inline text label (the label is still forwarded to the tooltip and picker).
-ColorEditFlags_NoSidePreview  :: ColorEditFlags{.NoSidePreview}  //              // ColorPicker: disable bigger color preview on right side of the picker, use small color square preview instead.
-ColorEditFlags_NoDragDrop     :: ColorEditFlags{.NoDragDrop}     //              // ColorEdit: disable drag and drop target. ColorButton: disable drag and drop source.
-ColorEditFlags_NoBorder       :: ColorEditFlags{.NoBorder}       //              // ColorButton: disable border (which is enforced by default)
-// User Options (right-click on widget to change some of them).
-ColorEditFlags_AlphaBar         :: ColorEditFlags{.AlphaBar}         //              // ColorEdit, ColorPicker: show vertical alpha bar/gradient in picker.
-ColorEditFlags_AlphaPreview     :: ColorEditFlags{.AlphaPreview}     //              // ColorEdit, ColorPicker, ColorButton: display preview as a transparent color over a checkerboard, instead of opaque.
-ColorEditFlags_AlphaPreviewHalf :: ColorEditFlags{.AlphaPreviewHalf} //              // ColorEdit, ColorPicker, ColorButton: display half opaque / half checkerboard, instead of opaque.
-ColorEditFlags_HDR              :: ColorEditFlags{.HDR}              //              // (WIP) ColorEdit: Currently only disable 0.0f..1.0f limits in RGBA edition (note: you probably want to use ImGuiColorEditFlags_Float flag as well).
-ColorEditFlags_DisplayRGB       :: ColorEditFlags{.DisplayRGB}       // [Display]    // ColorEdit: override _display_ type among RGB/HSV/Hex. ColorPicker: select any combination using one or more of RGB/HSV/Hex.
-ColorEditFlags_DisplayHSV       :: ColorEditFlags{.DisplayHSV}       // [Display]    // "
-ColorEditFlags_DisplayHex       :: ColorEditFlags{.DisplayHex}       // [Display]    // "
-ColorEditFlags_Uint8            :: ColorEditFlags{.Uint8}            // [DataType]   // ColorEdit, ColorPicker, ColorButton: _display_ values formatted as 0..255.
-ColorEditFlags_Float            :: ColorEditFlags{.Float}            // [DataType]   // ColorEdit, ColorPicker, ColorButton: _display_ values formatted as 0.0f..1.0f floats instead of 0..255 integers. No round-trip of value via integers.
-ColorEditFlags_PickerHueBar     :: ColorEditFlags{.PickerHueBar}     // [Picker]     // ColorPicker: bar for Hue, rectangle for Sat/Value.
-ColorEditFlags_PickerHueWheel   :: ColorEditFlags{.PickerHueWheel}   // [Picker]     // ColorPicker: wheel for Hue, triangle for Sat/Value.
-ColorEditFlags_InputRGB         :: ColorEditFlags{.InputRGB}         // [Input]      // ColorEdit, ColorPicker: input and output data in RGB format.
-ColorEditFlags_InputHSV         :: ColorEditFlags{.InputHSV}         // [Input]      // ColorEdit, ColorPicker: input and output data in HSV format.
 // Defaults Options. You can set application defaults using SetColorEditOptions(). The intent is that you probably don't want to
 // override them in most of your calls. Let the user choose via the option menu and/or call SetColorEditOptions() once during startup.
 ColorEditFlags_DefaultOptions_ :: ColorEditFlags{.Uint8,.DisplayRGB,.InputRGB,.PickerHueBar}
@@ -988,19 +780,13 @@ ColorEditFlags_InputMask_    :: ColorEditFlags{.InputRGB,.InputHSV}
 // (Those are per-item flags. There are shared flags in ImGuiIO: io.ConfigDragClickToInputText)
 SliderFlags :: bit_set[SliderFlag; c.int]
 SliderFlag :: enum c.int {
-	AlwaysClamp                                                  = 4,                // Clamp value to min/max bounds when input manually with CTRL+Click. By default CTRL+Click allows going out of bounds.
-	Logarithmic                                                  = 5,                // Make the widget logarithmic (linear otherwise). Consider using ImGuiSliderFlags_NoRoundToFormat with this if using a format-string with small amount of digits.
-	NoRoundToFormat                                              = 6,                // Disable rounding underlying value to match precision of the display format string (e.g. %.3f values are rounded to those 3 digits)
-	NoInput                                                      = 7,                // Disable CTRL+Click or Enter key allowing to input text directly into the widget
-	/* log2(val) was not even! (val=1879048207) *///InvalidMask_ = 30.8073549335743, // [Internal] We treat using those bits as being potentially a 'float power' argument from the previous API that has got miscast to this enum, and will trigger an assert if needed.
+	AlwaysClamp     = 4, // Clamp value to min/max bounds when input manually with CTRL+Click. By default CTRL+Click allows going out of bounds.
+	Logarithmic     = 5, // Make the widget logarithmic (linear otherwise). Consider using ImGuiSliderFlags_NoRoundToFormat with this if using a format-string with small amount of digits.
+	NoRoundToFormat = 6, // Disable rounding underlying value to match precision of the display format string (e.g. %.3f values are rounded to those 3 digits)
+	NoInput         = 7, // Disable CTRL+Click or Enter key allowing to input text directly into the widget
 }
 
-SliderFlags_None            :: SliderFlags{}
-SliderFlags_AlwaysClamp     :: SliderFlags{.AlwaysClamp}                            // Clamp value to min/max bounds when input manually with CTRL+Click. By default CTRL+Click allows going out of bounds.
-SliderFlags_Logarithmic     :: SliderFlags{.Logarithmic}                            // Make the widget logarithmic (linear otherwise). Consider using ImGuiSliderFlags_NoRoundToFormat with this if using a format-string with small amount of digits.
-SliderFlags_NoRoundToFormat :: SliderFlags{.NoRoundToFormat}                        // Disable rounding underlying value to match precision of the display format string (e.g. %.3f values are rounded to those 3 digits)
-SliderFlags_NoInput         :: SliderFlags{.NoInput}                                // Disable CTRL+Click or Enter key allowing to input text directly into the widget
-SliderFlags_InvalidMask_    :: c.int(0x7000000F) // Meant to be of type SliderFlags // [Internal] We treat using those bits as being potentially a 'float power' argument from the previous API that has got miscast to this enum, and will trigger an assert if needed.
+SliderFlags_InvalidMask_ :: c.int(0x7000000F) // Meant to be of type SliderFlags // [Internal] We treat using those bits as being potentially a 'float power' argument from the previous API that has got miscast to this enum, and will trigger an assert if needed.
 
 MouseButton :: enum c.int {
 	Left = 0,
@@ -1066,11 +852,6 @@ DrawListFlag :: enum c.int {
 	AllowVtxOffset         = 3, // Can emit 'VtxOffset > 0' to allow large meshes. Set when 'ImGuiBackendFlags_RendererHasVtxOffset' is enabled.
 }
 
-DrawListFlags_None                   :: DrawListFlags{}
-DrawListFlags_AntiAliasedLines       :: DrawListFlags{.AntiAliasedLines}       // Enable anti-aliased lines/borders (*2 the number of triangles for 1.0f wide line or lines thin enough to be drawn using textures, otherwise *3 the number of triangles)
-DrawListFlags_AntiAliasedLinesUseTex :: DrawListFlags{.AntiAliasedLinesUseTex} // Enable anti-aliased lines/borders using textures when possible. Require backend to render with bilinear filtering (NOT point/nearest filtering).
-DrawListFlags_AntiAliasedFill        :: DrawListFlags{.AntiAliasedFill}        // Enable anti-aliased edge around filled shapes (rounded rectangles, circles).
-DrawListFlags_AllowVtxOffset         :: DrawListFlags{.AllowVtxOffset}         // Can emit 'VtxOffset > 0' to allow large meshes. Set when 'ImGuiBackendFlags_RendererHasVtxOffset' is enabled.
 
 // Flags for ImFontAtlas build
 FontAtlasFlags :: bit_set[FontAtlasFlag; c.int]
@@ -1080,10 +861,6 @@ FontAtlasFlag :: enum c.int {
 	NoBakedLines       = 2, // Don't build thick line textures into the atlas (save a little texture memory, allow support for point/nearest filtering). The AntiAliasedLinesUseTex features uses them, otherwise they will be rendered using polygons (more expensive for CPU/GPU).
 }
 
-FontAtlasFlags_None               :: FontAtlasFlags{}
-FontAtlasFlags_NoPowerOfTwoHeight :: FontAtlasFlags{.NoPowerOfTwoHeight} // Don't round the height to next power of two
-FontAtlasFlags_NoMouseCursors     :: FontAtlasFlags{.NoMouseCursors}     // Don't build software mouse cursors into the atlas (save a little texture memory)
-FontAtlasFlags_NoBakedLines       :: FontAtlasFlags{.NoBakedLines}       // Don't build thick line textures into the atlas (save a little texture memory, allow support for point/nearest filtering). The AntiAliasedLinesUseTex features uses them, otherwise they will be rendered using polygons (more expensive for CPU/GPU).
 
 // Flags stored in ImGuiViewport::Flags, giving indications to the platform backends.
 ViewportFlags :: bit_set[ViewportFlag; c.int]
@@ -1105,22 +882,6 @@ ViewportFlag :: enum c.int {
 	IsFocused   = 13, // Platform Window: Window is focused (last call to Platform_GetWindowFocus() returned true)
 }
 
-ViewportFlags_None                :: ViewportFlags{}
-ViewportFlags_IsPlatformWindow    :: ViewportFlags{.IsPlatformWindow}    // Represent a Platform Window
-ViewportFlags_IsPlatformMonitor   :: ViewportFlags{.IsPlatformMonitor}   // Represent a Platform Monitor (unused yet)
-ViewportFlags_OwnedByApp          :: ViewportFlags{.OwnedByApp}          // Platform Window: Was created/managed by the user application? (rather than our backend)
-ViewportFlags_NoDecoration        :: ViewportFlags{.NoDecoration}        // Platform Window: Disable platform decorations: title bar, borders, etc. (generally set all windows, but if ImGuiConfigFlags_ViewportsDecoration is set we only set this on popups/tooltips)
-ViewportFlags_NoTaskBarIcon       :: ViewportFlags{.NoTaskBarIcon}       // Platform Window: Disable platform task bar icon (generally set on popups/tooltips, or all windows if ImGuiConfigFlags_ViewportsNoTaskBarIcon is set)
-ViewportFlags_NoFocusOnAppearing  :: ViewportFlags{.NoFocusOnAppearing}  // Platform Window: Don't take focus when created.
-ViewportFlags_NoFocusOnClick      :: ViewportFlags{.NoFocusOnClick}      // Platform Window: Don't take focus when clicked on.
-ViewportFlags_NoInputs            :: ViewportFlags{.NoInputs}            // Platform Window: Make mouse pass through so we can drag this window while peaking behind it.
-ViewportFlags_NoRendererClear     :: ViewportFlags{.NoRendererClear}     // Platform Window: Renderer doesn't need to clear the framebuffer ahead (because we will fill it entirely).
-ViewportFlags_NoAutoMerge         :: ViewportFlags{.NoAutoMerge}         // Platform Window: Avoid merging this window into another host window. This can only be set via ImGuiWindowClass viewport flags override (because we need to now ahead if we are going to create a viewport in the first place!).
-ViewportFlags_TopMost             :: ViewportFlags{.TopMost}             // Platform Window: Display on top (for tooltips only).
-ViewportFlags_CanHostOtherWindows :: ViewportFlags{.CanHostOtherWindows} // Viewport can host multiple imgui windows (secondary viewports are associated to a single window). // FIXME: In practice there's still probably code making the assumption that this is always and only on the MainViewport. Will fix once we add support for "no main viewport".
-// Output status flags (from Platform)
-ViewportFlags_IsMinimized :: ViewportFlags{.IsMinimized} // Platform Window: Window is minimized, can skip render. When minimized we tend to avoid using the viewport pos/size for clipping window or testing if they are contained in the viewport.
-ViewportFlags_IsFocused   :: ViewportFlags{.IsFocused}   // Platform Window: Window is focused (last call to Platform_GetWindowFocus() returned true)
 
 
 ////////////////////////////////////////////////////////////
