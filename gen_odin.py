@@ -5,10 +5,6 @@ import math
 import argparse
 
 # TODO:
-# - Align comments
-#		ImGui has nicely aligned comments, and we just dump them with no special
-#		indentation. Fixing this would increase readability, especially in cases
-#		with inline tables spanning multiple lines (see: comments on `Font` struct)
 # - Get rid of any special handling of values
 #		There are many cases where we override or disable different structs/enums etc.
 #		This is done for a variety of reasons. We should continuously try to fix these where possible.
@@ -54,12 +50,10 @@ _disallowed_identifiers = [
 ]
 
 def make_identifier_valid(ident: str) -> str:
-	if str_to_int(ident[0]) != None:
-		return "_" + ident
+	if str_to_int(ident[0]) != None: return "_" + ident
 
 	for keyword in _disallowed_identifiers:
-		if ident == keyword:
-			return "_" + ident
+		if ident == keyword: return "_" + ident
 
 	return ident
 
@@ -121,7 +115,6 @@ _type_aliases = {
 	"ImU64": "u64",
 
 	"size_t": "c.size_t",
-	"bool": "c.bool",
 
 	"va_list": "libc.va_list",
 }
