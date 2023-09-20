@@ -4,7 +4,9 @@ package imgui_example_sdl2_directx11
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/docking/examples/example_sdl2_directx11/main.cpp
 
-import "../../imgui/"
+import "../../imgui"
+import "../../imgui/imgui_impl_sdl2"
+import "../../imgui/imgui_impl_dx11"
 
 import sdl "vendor:sdl2"
 import "vendor:directx/d3d11"
@@ -54,24 +56,24 @@ main :: proc() {
 
 	imgui.StyleColorsDark(nil)
 
-	imgui.ImGui_ImplSDL2_InitForD3D(window)
-	defer imgui.ImGui_ImplSDL2_Shutdown() // here
-	imgui.ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext)
-	defer imgui.ImGui_ImplDX11_Shutdown()
+	imgui_impl_sdl2.InitForD3D(window)
+	defer imgui_impl_sdl2.Shutdown() // here
+	imgui_impl_dx11.Init(g_pd3dDevice, g_pd3dDeviceContext)
+	defer imgui_impl_dx11.Shutdown()
 
 	running := true
 	for running {
 		e: sdl.Event
 		for sdl.PollEvent(&e) {
-			imgui.ImGui_ImplSDL2_ProcessEvent(&e)
+			imgui_impl_sdl2.ProcessEvent(&e)
 
 			#partial switch e.type {
 			case .QUIT: running = false
 			}
 		}
 
-		imgui.ImGui_ImplDX11_NewFrame()
-		imgui.ImGui_ImplSDL2_NewFrame()
+		imgui_impl_dx11.NewFrame()
+		imgui_impl_sdl2.NewFrame()
 		imgui.NewFrame()
 
 		imgui.ShowDemoWindow(nil)
@@ -86,7 +88,7 @@ main :: proc() {
 		imgui.Render()
 		g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nil)
 		g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, &{ 0, 0, 0, 1 })
-		imgui.ImGui_ImplDX11_RenderDrawData(imgui.GetDrawData())
+		imgui_impl_dx11.RenderDrawData(imgui.GetDrawData())
 
 		when imgui.IMGUI_BRANCH == "docking" {
 			if .ViewportsEnable in io.ConfigFlags {

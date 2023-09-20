@@ -4,6 +4,7 @@ package imgui_example_null
 // https://github.com/ocornut/imgui/blob/docking/examples/example_null/main.cpp
 
 import "../../imgui"
+
 import "core:fmt"
 
 main :: proc() {

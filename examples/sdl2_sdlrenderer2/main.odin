@@ -4,7 +4,9 @@ package imgui_example_sdl2_sdlrenderer2
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/docking/examples/example_sdl2_sdlrenderer2/main.cpp
 
-import "../../imgui/"
+import "../../imgui"
+import "../../imgui/imgui_impl_sdl2"
+import "../../imgui/imgui_impl_sdlrenderer2"
 
 import sdl "vendor:sdl2"
 // Required for SDL_RenderGeometryRaw()
@@ -37,24 +39,24 @@ main :: proc() {
 
 	imgui.StyleColorsDark(nil)
 
-	imgui.ImGui_ImplSDL2_InitForSDLRenderer(window, renderer)
-	defer imgui.ImGui_ImplSDL2_Shutdown()
-	imgui.ImGui_ImplSDLRenderer2_Init(renderer)
-	defer imgui.ImGui_ImplSDLRenderer2_Shutdown()
+	imgui_impl_sdl2.InitForSDLRenderer(window, renderer)
+	defer imgui_impl_sdl2.Shutdown()
+	imgui_impl_sdlrenderer2.Init(renderer)
+	defer imgui_impl_sdlrenderer2.Shutdown()
 
 	running := true
 	for running {
 		e: sdl.Event
 		for sdl.PollEvent(&e) {
-			imgui.ImGui_ImplSDL2_ProcessEvent(&e)
+			imgui_impl_sdl2.ProcessEvent(&e)
 
 			#partial switch e.type {
 			case .QUIT: running = false
 			}
 		}
 
-		imgui.ImGui_ImplSDLRenderer2_NewFrame()
-		imgui.ImGui_ImplSDL2_NewFrame()
+		imgui_impl_sdlrenderer2.NewFrame()
+		imgui_impl_sdl2.NewFrame()
 		imgui.NewFrame()
 
 		imgui.ShowDemoWindow(nil)
@@ -70,7 +72,7 @@ main :: proc() {
 		sdl.RenderSetScale(renderer, io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y)
 		sdl.SetRenderDrawColor(renderer, 0, 0, 0, 255)
 		sdl.RenderClear(renderer)
-		imgui.ImGui_ImplOpenGL3_RenderDrawData(imgui.GetDrawData())
+		imgui_impl_sdlrenderer2.RenderDrawData(imgui.GetDrawData())
 		sdl.RenderPresent(renderer)
 	}
 }

@@ -11,7 +11,9 @@ package imgui_example_sdl2_metal
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/master/examples/example_sdl2_metal/main.mm
 
-import "../../imgui/"
+import "../../imgui"
+import "../../imgui/imgui_impl_sdl2"
+import "../../imgui/imgui_impl_metal"
 
 import sdl "vendor:sdl2"
 import MTL "vendor:darwin/Metal"
@@ -55,10 +57,10 @@ main :: proc() {
 	layer := cast(^CA.MetalLayer)sdl.RenderGetMetalLayer(renderer)
 	layer->setPixelFormat(.BGRA8Unorm)
 
-	imgui.ImGui_ImplMetal_Init(layer->device())
-	defer imgui.ImGui_ImplMetal_Shutdown()
-	imgui.ImGui_ImplSDL2_InitForMetal(window)
-	defer imgui.ImGui_ImplSDL2_Shutdown()
+	imgui_impl_metal.Init(layer->device())
+	defer imgui_impl_metal.Shutdown()
+	imgui_impl_sdl2.InitForMetal(window)
+	defer imgui_impl_sdl2.Shutdown()
 
 	command_queue := layer->device()->newCommandQueue()
 	render_pass_descriptor :^MTL.RenderPassDescriptor= MTL.RenderPassDescriptor.alloc()->init()
@@ -67,7 +69,7 @@ main :: proc() {
 	for running {
 		e: sdl.Event
 		for sdl.PollEvent(&e) {
-			imgui.ImGui_ImplSDL2_ProcessEvent(&e)
+			imgui_impl_sdl2.ProcessEvent(&e)
 
 			#partial switch e.type {
 			case .QUIT: running = false
@@ -88,8 +90,8 @@ main :: proc() {
 		render_encoder := command_buffer->renderCommandEncoderWithDescriptor(render_pass_descriptor)
 		defer render_encoder->endEncoding()
 
-		imgui.ImGui_ImplMetal_NewFrame(render_pass_descriptor)
-		imgui.ImGui_ImplSDL2_NewFrame()
+		imgui_impl_metal.NewFrame(render_pass_descriptor)
+		imgui_impl_sdl2.NewFrame()
 		imgui.NewFrame()
 
 		imgui.ShowDemoWindow(nil)
@@ -102,7 +104,7 @@ main :: proc() {
 		imgui.End()
 
 		imgui.Render()
-		imgui.ImGui_ImplMetal_RenderDrawData(imgui.GetDrawData(), command_buffer, render_encoder)
+		imgui_impl_metal.RenderDrawData(imgui.GetDrawData(), command_buffer, render_encoder)
 
 		when imgui.IMGUI_BRANCH == "docking" {
 			imgui.UpdatePlatformWindows()

@@ -4,7 +4,9 @@ package imgui_example_glfw_opengl3
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/docking/examples/example_glfw_opengl3/main.cpp
 
-import "../../imgui/"
+import "../../imgui"
+import "../../imgui/imgui_impl_glfw"
+import "../../imgui/imgui_impl_opengl3"
 
 import "vendor:glfw"
 import gl "vendor:OpenGL"
@@ -40,16 +42,16 @@ main :: proc() {
 
 	imgui.StyleColorsDark(nil)
 
-	imgui.ImGui_ImplGlfw_InitForOpenGL(window, true)
-	defer imgui.ImGui_ImplGlfw_Shutdown()
-	imgui.ImGui_ImplOpenGL3_Init("#version 150")
-	defer imgui.ImGui_ImplOpenGL3_Shutdown()
+	imgui_impl_glfw.InitForOpenGL(window, true)
+	defer imgui_impl_glfw.Shutdown()
+	imgui_impl_opengl3.Init("#version 150")
+	defer imgui_impl_opengl3.Shutdown()
 
 	for !glfw.WindowShouldClose(window) {
 		glfw.PollEvents()
 
-		imgui.ImGui_ImplOpenGL3_NewFrame()
-		imgui.ImGui_ImplGlfw_NewFrame()
+		imgui_impl_opengl3.NewFrame()
+		imgui_impl_glfw.NewFrame()
 		imgui.NewFrame()
 
 		imgui.ShowDemoWindow(nil)
@@ -66,7 +68,7 @@ main :: proc() {
 		gl.Viewport(0, 0, display_w, display_h)
 		gl.ClearColor(0, 0, 0, 1)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
-		imgui.ImGui_ImplOpenGL3_RenderDrawData(imgui.GetDrawData())
+		imgui_impl_opengl3.RenderDrawData(imgui.GetDrawData())
 
 		when imgui.IMGUI_BRANCH == "docking" {
 			backup_current_window := glfw.GetCurrentContext()
