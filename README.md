@@ -9,9 +9,14 @@ If you don't want to configure and or build yourself, a prebuilt version of the 
 
 Building is entirely automated, using `build.py`. Currently however there is only Windows and Linux, although compiling for other platforms shouldn't be too difficult, following the pattern in `build.py`.
 
- 0. `dear_bindings` depends on a library called "`ply`"
-	- You can probably install this with `python -m pip install ply`
-	- On Arch Linux I had to install `python-ply` with pacman.
+ 0. Dependencies
+	- `git` must be in your path
+	- `dear_bindings` depends on a library called "`ply`"
+		- You can probably install this with `python -m pip install ply`
+		- On Arch Linux I had to install `python-ply` with pacman.
+	- Windows depends on `cl.exe`, `lib.exe` being in your path, *before the script is run*
+		- Run [`vcvarsall`!](https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-170)
+	- Linux and OSX depend on `clang`, `ar`
  1. Clone this repository into a empty directory.
 	- Optionally configure build at the top of `build.py`
  2. From parent folder of `odin-imgui/`, run `python odin-imgui/build.py`

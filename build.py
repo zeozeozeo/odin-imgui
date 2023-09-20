@@ -118,14 +118,17 @@ def map_to_folder(files: typing.List[str], folder: str) -> typing.List[str]:
 def ensure_outside_of_repo():
 	assertx(not path.isfile("gen_odin.py"), "You must run this from outside of the odin-imgui repository!")
 
-def run_vcvars(cmd: typing.List[str]):
-	assertx(subprocess.run(f"vcvarsall.bat x64 && {' '.join(cmd)}").returncode == 0, f"Failed to run command '{cmd}'")
+def has_tool(tool: str) -> bool:
+	try: subprocess.check_output([tool])
+	except FileNotFoundError: return False
+	except: return True
+	else: return True
 
 def ensure_checked_out_with_commit(dir: str, repo: str, wanted_commit: str):
 	if not path.exists(dir):
 		exec(["git", "clone", repo, dir], f"Cloning {dir}")
 
-	exec(["git", "-C", dir, "checkout", wanted_commit], f"Checking out {dir}")
+	exec(["git", "-c", "advice.detachedHead=false", "-C", dir, "checkout", wanted_commit], f"Checking out {dir}")
 
 def get_platform_imgui_lib_name() -> str:
 	""" Returns imgui binary name for system/processor """
@@ -133,10 +136,8 @@ def get_platform_imgui_lib_name() -> str:
 	system = platform.system()
 
 	processor = None
-	if platform.machine() in ["AMD64", "x86_64"]:
-		processor = "x64"
-	if platform.machine() in ["arm64"]:
-		processor = "arm64"
+	if platform.machine() in ["AMD64", "x86_64"]: processor = "x64"
+	if platform.machine() in ["arm64"]:           processor = "arm64"
 
 	binary_ext = "lib" if system == "Windows" else "a"
 
@@ -150,6 +151,15 @@ dest_path = pp("odin-imgui/imgui")
 
 def main():
 	ensure_outside_of_repo()
+
+	# Check that CLI tools are available
+	assertx(has_tool("git"), "Git not available!")
+
+	if platform.system() == "Windows":
+		assertx(has_tool("cl") and has_tool("lib"), "cl.exe or lib.exe not in path - did you run vcvarsall.bat?")
+	else:
+		assertx(has_tool("clang"), "clang not found!")
+		assertx(has_tool("ar"), "ar not found!")
 
 	# Check out bindings generator tools
 	ensure_checked_out_with_commit("imgui", "https://github.com/ocornut/imgui.git", git_heads[active_branch]["imgui"])
@@ -172,7 +182,7 @@ def main():
 	shutil.rmtree(path=temp_path, ignore_errors=True)
 	os.mkdir(temp_path)
 	shutil.rmtree(path=dest_path, ignore_errors=True)
-	os.mkdir(dest_path)
+	os.mkdir(dest_path) # TODO[TS]: If something is in folder, it can't be deleted
 
 	# Generate bindings for active ImGui branch
 	exec([sys.executable, pp("dear_bindings/dear_bindings.py"), "-o", path.join(temp_path, "c_imgui"), pp("imgui/imgui.h")], "Running dear_bindings")
@@ -246,14 +256,14 @@ def main():
 
 	os.chdir(temp_path)
 
-	if platform_win32_like:  run_vcvars(["cl"] + compile_flags + ["/c"] + all_sources)
+	if platform_win32_like:  exec(["cl"] + compile_flags + ["/c"] + all_sources, "Compiling sources")
 	elif platform_unix_like: exec(["clang"] + compile_flags + ["-c"] + all_sources, "Compiling sources")
 
 	os.chdir("..")
 
 	dest_binary = get_platform_imgui_lib_name()
 
-	if platform_win32_like:  run_vcvars(["lib", "/OUT:" + path.join(dest_path, dest_binary)] + map_to_folder(all_objects, temp_path))
+	if platform_win32_like:  exec(["lib", "/OUT:" + path.join(dest_path, dest_binary)] + map_to_folder(all_objects, temp_path), "Making library from objects")
 	elif platform_unix_like: exec(["ar", "rcs", path.join(dest_path, dest_binary)] + map_to_folder(all_objects, temp_path), "Making library from objects")
 
 	expected_files = ["imgui.odin", "impl_enabled.odin", dest_binary]
