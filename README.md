@@ -14,8 +14,7 @@ Building is entirely automated, using `build.py`. Currently however there is onl
 	- `dear_bindings` depends on a library called "`ply`"
 		- You can probably install this with `python -m pip install ply`
 		- On Arch Linux I had to install `python-ply` with pacman.
-	- Windows depends on `cl.exe`, `lib.exe` being in your path, *before the script is run*
-		- Run [`vcvarsall`!](https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-170)
+	- Windows depends on that [`vcvarsall.bat`](https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-170) is in your path.
 	- Linux and OSX depend on `clang`, `ar`
  1. Clone this repository into a empty directory.
 	- Optionally configure build at the top of `build.py`

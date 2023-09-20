@@ -149,14 +149,32 @@ def get_platform_imgui_lib_name() -> str:
 temp_path = "temp"
 dest_path = pp("odin-imgui/imgui")
 
+def run_vcvars(cmd: typing.List[str], what):
+	assertx(subprocess.run(f"vcvarsall.bat x64 && {' '.join(cmd)}").returncode == 0, f"Failed to run command '{cmd}'")
+
+# TODO[TS]: This works, but there's a bug in Python, which makes cl.exe return with
+# exit code 2 for no god damn reason at all, if not run with run_vcvars.
+# If we're on windows, we can check for cl.exe, and re execute after calling vcvarsall, if available.
+def did_re_execute() -> bool:
+	if platform.system() != "Windows": return False
+	if has_tool("cl"): return False
+	if "-no_reexecute" in sys.argv: return False
+	print("Re-executing with vcvarsall..")
+	os.system("".join(["vcvarsall.bat x64 && ", sys.executable, " odin-imgui\\build.py -no_reexecute"]))
+	return True
+
 def main():
+	if did_re_execute(): return
+
 	ensure_outside_of_repo()
 
 	# Check that CLI tools are available
 	assertx(has_tool("git"), "Git not available!")
 
 	if platform.system() == "Windows":
-		assertx(has_tool("cl") and has_tool("lib"), "cl.exe or lib.exe not in path - did you run vcvarsall.bat?")
+		pass
+		# Fun times! We can't check for this, for the reasons described above did_re_execute()
+		# assertx(has_tool("cl") and has_tool("lib"), "cl.exe or lib.exe not in path - did you run vcvarsall.bat?")
 	else:
 		assertx(has_tool("clang"), "clang not found!")
 		assertx(has_tool("ar"), "ar not found!")
@@ -256,7 +274,9 @@ def main():
 
 	os.chdir(temp_path)
 
-	if platform_win32_like:  exec(["cl"] + compile_flags + ["/c"] + all_sources, "Compiling sources")
+	# cl.exe, *in particular*, won't work without running vcvarsall first, even if cl.exe is in the path.
+	# See did_re_execute
+	if platform_win32_like:  run_vcvars(["cl"] + compile_flags + ["/c"] + all_sources, "Compiling sources")
 	elif platform_unix_like: exec(["clang"] + compile_flags + ["-c"] + all_sources, "Compiling sources")
 
 	os.chdir("..")
