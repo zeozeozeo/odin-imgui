@@ -136,8 +136,6 @@ def get_platform_imgui_lib_name() -> str:
 
 	return f'imgui_{system.lower()}_{processor}.{binary_ext}'
 
-temp_path = "temp"
-
 def run_vcvars(cmd: typing.List[str], what):
 	assertx(subprocess.run(f"vcvarsall.bat x64 && {' '.join(cmd)}").returncode == 0, f"Failed to run command '{cmd}'")
 
@@ -185,18 +183,18 @@ def main():
 		full_dep = backend_deps[backend_dep]
 		ensure_checked_out_with_commit(path.join("backend_deps", full_dep["path"]), full_dep["repo"], full_dep["commit"])
 
-	# Clear our temp and build folder
-	shutil.rmtree(path=temp_path, ignore_errors=True)
-	os.mkdir(temp_path)
+	# Clear the temp folder
+	shutil.rmtree(path="temp", ignore_errors=True)
+	os.mkdir("temp")
 
 	# Generate bindings for active ImGui branch
-	exec([sys.executable, pp("dear_bindings/dear_bindings.py"), "-o", path.join(temp_path, "c_imgui"), pp("imgui/imgui.h")], "Running dear_bindings")
+	exec([sys.executable, pp("dear_bindings/dear_bindings.py"), "-o", pp("temp/c_imgui"), pp("imgui/imgui.h")], "Running dear_bindings")
 	# Generate odin bindings from dear_bindings json file
-	exec([sys.executable, pp("gen_odin.py"), path.join(temp_path, "c_imgui.json"), "imgui.odin"], "Running odin-imgui")
+	exec([sys.executable, pp("gen_odin.py"), path.join("temp", "c_imgui.json"), "imgui.odin"], "Running odin-imgui")
 
 	# Find and copy imgui sources to temp folder
-	_imgui_headers = glob_copy("imgui", "*.h", temp_path)
-	imgui_sources = glob_copy("imgui", "*.cpp", temp_path)
+	_imgui_headers = glob_copy("imgui", "*.h", "temp")
+	imgui_sources = glob_copy("imgui", "*.cpp", "temp")
 
 	# Gather sources, defines, includes etc
 	all_sources = imgui_sources
@@ -222,6 +220,7 @@ def main():
 		"\n",
 	])
 
+	# Write branch. This can be used to toggle docking and multi viewports at compile time
 	f.writelines([f'IMGUI_BRANCH :: "{active_branch}"\n\n'])
 
 	for backend_name in backends:
@@ -237,13 +236,13 @@ def main():
 		if not backend["supported"]:
 			print(f"Warning: compiling backend '{backend_name}' which is not officially supported")
 
-		glob_copy(pp("imgui/backends"), f"imgui_impl_{backend_name}.*", temp_path)
+		glob_copy(pp("imgui/backends"), f"imgui_impl_{backend_name}.*", "temp")
 
 		if backend_name in ["osx", "metal"]: all_sources += [f"imgui_impl_{backend_name}.mm"]
 		else:                                all_sources += [f"imgui_impl_{backend_name}.cpp"]
 
 		if backend_name == "opengl3":
-			shutil.copy(pp("imgui/backends/imgui_impl_opengl3_loader.h"), temp_path)
+			shutil.copy(pp("imgui/backends/imgui_impl_opengl3_loader.h"), "temp")
 
 		for define in backend.get("defines", []): compile_flags += [platform_select({ "windows": f"/D{define}", "linux, darwin": f"-D{define}" })]
 
@@ -258,7 +257,7 @@ def main():
 	if platform_win32_like:  all_objects += map(lambda file: file.removesuffix(".cpp") + ".obj", all_sources)
 	elif platform_unix_like: all_objects += map(lambda file: file.removesuffix(".cpp") + ".o", all_sources)
 
-	os.chdir(temp_path)
+	os.chdir("temp")
 
 	# cl.exe, *in particular*, won't work without running vcvarsall first, even if cl.exe is in the path.
 	# See did_re_execute
@@ -269,8 +268,8 @@ def main():
 
 	dest_binary = get_platform_imgui_lib_name()
 
-	if platform_win32_like:  exec(["lib", "/OUT:" + dest_binary] + map_to_folder(all_objects, temp_path), "Making library from objects")
-	elif platform_unix_like: exec(["ar", "rcs", dest_binary] + map_to_folder(all_objects, temp_path), "Making library from objects")
+	if platform_win32_like:  exec(["lib", "/OUT:" + dest_binary] + map_to_folder(all_objects, "temp"), "Making library from objects")
+	elif platform_unix_like: exec(["ar", "rcs", dest_binary] + map_to_folder(all_objects, "temp"), "Making library from objects")
 
 	expected_files = ["imgui.odin", "impl_enabled.odin", dest_binary]
 
