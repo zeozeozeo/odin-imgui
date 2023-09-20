@@ -4,9 +4,9 @@ package imgui_example_sdl2_opengl3
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/docking/examples/example_sdl2_opengl3/main.cpp
 
-import "../../imgui"
-import "../../imgui/imgui_impl_sdl2"
-import "../../imgui/imgui_impl_opengl3"
+import imgui "../.."
+import "../../imgui_impl_sdl2"
+import "../../imgui_impl_opengl3"
 
 import sdl "vendor:sdl2"
 import gl "vendor:OpenGL"

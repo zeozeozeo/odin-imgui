@@ -4,9 +4,9 @@ package imgui_example_sdl2_sdlrenderer2
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/docking/examples/example_sdl2_sdlrenderer2/main.cpp
 
-import "../../imgui"
-import "../../imgui/imgui_impl_sdl2"
-import "../../imgui/imgui_impl_sdlrenderer2"
+import imgui "../.."
+import "../../imgui_impl_sdl2"
+import "../../imgui_impl_sdlrenderer2"
 
 import sdl "vendor:sdl2"
 // Required for SDL_RenderGeometryRaw()

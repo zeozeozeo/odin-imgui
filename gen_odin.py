@@ -239,6 +239,28 @@ def write_line_with_comments(file: typing.IO, str: str, comment_parent, indent =
 
 	write_line(file, str + attached_comment, indent)
 
+# Empty define has value of ""
+_define_overrides = {
+
+}
+
+defines = {}
+def passes_conditionals(thing_with_conditionals) -> bool:
+	if not "conditionals" in thing_with_conditionals: return True
+
+	for conditional in thing_with_conditionals["conditionals"]:
+		condition = conditional["condition"]
+
+		if condition == "ifdef":
+			if not conditional["expression"] in defines: return False
+		elif condition == "ifndef":
+			if conditional["expression"] in defines: return False
+		elif condition == "if":
+			# TODO: Don't commit before fixing this please
+			return False
+
+	return True
+
 # HEADER
 def write_header(file: typing.IO):
 	write_line(file, """package imgui
@@ -707,6 +729,13 @@ def main():
 	info = json.load(open(args.imgui_json, "r"))
 	file = open(args.destination_file, "w+")
 
+	# Process defines
+	for define in info["defines"]:
+		print(f'Define {define["name"]} ({define["content"]}) passes = {passes_conditionals(define)}')
+		if passes_conditionals(define):
+			defines[define["name"]] = define["content"]
+
+	# Write the things
 	write_header(file)
 	write_defines(file, info["defines"])
 	write_enums(file, info["enums"])

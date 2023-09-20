@@ -4,9 +4,9 @@ package imgui_example_sdl2_directx11
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/docking/examples/example_sdl2_directx11/main.cpp
 
-import "../../imgui"
-import "../../imgui/imgui_impl_sdl2"
-import "../../imgui/imgui_impl_dx11"
+import imgui "../.."
+import "../../imgui_impl_sdl2"
+import "../../imgui_impl_dx11"
 
 import sdl "vendor:sdl2"
 import "vendor:directx/d3d11"

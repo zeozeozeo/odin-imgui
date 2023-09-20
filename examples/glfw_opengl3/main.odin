@@ -4,9 +4,9 @@ package imgui_example_glfw_opengl3
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/docking/examples/example_glfw_opengl3/main.cpp
 
-import "../../imgui"
-import "../../imgui/imgui_impl_glfw"
-import "../../imgui/imgui_impl_opengl3"
+import imgui "../.."
+import "../../imgui_impl_glfw"
+import "../../imgui_impl_opengl3"
 
 import "vendor:glfw"
 import gl "vendor:OpenGL"

@@ -8,17 +8,10 @@ import sys
 import platform
 
 # TODO:
-# - Don't `cd` into temp folder
-#		When compiling, we `cd` into the temp folder, as there's no option
-#		for clang or gcc to output .o files into another folder.
-#		We should probably instead run one compile command per source file.
-#		This lets us specify the output file, as well as compiling in paralell
 # - Make this file never show it's call stack. Call stacks should mean that a child script failed.
-# - Move entire build process into odin-imgui/ folder.
-#		It might even be ideal to have odin-imgui be importable itself, though
-#		this would require moving a lot of things around first.
 # - Add self-documenting build.ini or similar, as to not require anyone to look
 #		at this file unless they want to add a new backend.
+# - It could be nice to be able to generate into another folder, or just say --copy-into../../my_cool_folder
 
 # @CONFIGURE: Must be key into below table
 active_branch = "docking"
@@ -115,9 +108,6 @@ def pp(the_path: str) -> str:
 def map_to_folder(files: typing.List[str], folder: str) -> typing.List[str]:
 	return list(map(lambda file: path.join(folder, file), files))
 
-def ensure_outside_of_repo():
-	assertx(not path.isfile("gen_odin.py"), "You must run this from outside of the odin-imgui repository!")
-
 def has_tool(tool: str) -> bool:
 	try: subprocess.check_output([tool])
 	except FileNotFoundError: return False
@@ -147,7 +137,6 @@ def get_platform_imgui_lib_name() -> str:
 	return f'imgui_{system.lower()}_{processor}.{binary_ext}'
 
 temp_path = "temp"
-dest_path = pp("odin-imgui/imgui")
 
 def run_vcvars(cmd: typing.List[str], what):
 	assertx(subprocess.run(f"vcvarsall.bat x64 && {' '.join(cmd)}").returncode == 0, f"Failed to run command '{cmd}'")
@@ -160,13 +149,13 @@ def did_re_execute() -> bool:
 	if has_tool("cl"): return False
 	if "-no_reexecute" in sys.argv: return False
 	print("Re-executing with vcvarsall..")
-	os.system("".join(["vcvarsall.bat x64 && ", sys.executable, " odin-imgui\\build.py -no_reexecute"]))
+	os.system("".join(["vcvarsall.bat x64 && ", sys.executable, " build.py -no_reexecute"]))
 	return True
 
 def main():
-	if did_re_execute(): return
+	assertx(path.isfile("build.py"), "You have to run the script from within the repository for now!")
 
-	ensure_outside_of_repo()
+	if did_re_execute(): return
 
 	# Check that CLI tools are available
 	assertx(has_tool("git"), "Git not available!")
@@ -199,13 +188,11 @@ def main():
 	# Clear our temp and build folder
 	shutil.rmtree(path=temp_path, ignore_errors=True)
 	os.mkdir(temp_path)
-	shutil.rmtree(path=dest_path, ignore_errors=True)
-	os.mkdir(dest_path) # TODO[TS]: If something is in folder, it can't be deleted
 
 	# Generate bindings for active ImGui branch
 	exec([sys.executable, pp("dear_bindings/dear_bindings.py"), "-o", path.join(temp_path, "c_imgui"), pp("imgui/imgui.h")], "Running dear_bindings")
 	# Generate odin bindings from dear_bindings json file
-	exec([sys.executable, pp("odin-imgui/gen_odin.py"), path.join(temp_path, "c_imgui.json"), path.join(dest_path, "imgui.odin")], "Running odin-imgui")
+	exec([sys.executable, pp("gen_odin.py"), path.join(temp_path, "c_imgui.json"), "imgui.odin"], "Running odin-imgui")
 
 	# Find and copy imgui sources to temp folder
 	_imgui_headers = glob_copy("imgui", "*.h", temp_path)
@@ -226,7 +213,7 @@ def main():
 	else: compile_flags += platform_select({ "windows": ["/O2"], "linux, darwin": ["-O3"] })
 
 	# Write file describing the enabled backends
-	f = open(path.join(dest_path, "impl_enabled.odin"), "w+")
+	f = open("impl_enabled.odin", "w+")
 	f.writelines([
 		"package imgui\n",
 		"\n",
@@ -267,9 +254,6 @@ def main():
 		if platform_win32_like:  compile_flags += ["/I" + path.join("..", "backend_deps", backend_deps[backend_dep]["path"], "include")]
 		elif platform_unix_like: compile_flags += ["-I" + path.join("..", "backend_deps", backend_deps[backend_dep]["path"], "include")]
 
-	# Copy implementation files
-	glob_copy("odin-imgui", "imgui_impl_*.odin", dest_path)
-
 	all_objects = []
 	if platform_win32_like:  all_objects += map(lambda file: file.removesuffix(".cpp") + ".obj", all_sources)
 	elif platform_unix_like: all_objects += map(lambda file: file.removesuffix(".cpp") + ".o", all_sources)
@@ -285,13 +269,13 @@ def main():
 
 	dest_binary = get_platform_imgui_lib_name()
 
-	if platform_win32_like:  exec(["lib", "/OUT:" + path.join(dest_path, dest_binary)] + map_to_folder(all_objects, temp_path), "Making library from objects")
-	elif platform_unix_like: exec(["ar", "rcs", path.join(dest_path, dest_binary)] + map_to_folder(all_objects, temp_path), "Making library from objects")
+	if platform_win32_like:  exec(["lib", "/OUT:" + dest_binary] + map_to_folder(all_objects, temp_path), "Making library from objects")
+	elif platform_unix_like: exec(["ar", "rcs", dest_binary] + map_to_folder(all_objects, temp_path), "Making library from objects")
 
 	expected_files = ["imgui.odin", "impl_enabled.odin", dest_binary]
 
 	for file in expected_files:
-		assertx(path.isfile(path.join(dest_path, file)), f"Missing file '{file}' in build folder! Something went wrong..")
+		assertx(path.isfile(file), f"Missing file '{file}' in build folder! Something went wrong..")
 
 	print("Looks like everything went ok!")
 

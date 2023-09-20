@@ -11,9 +11,9 @@ package imgui_example_sdl2_metal
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/master/examples/example_sdl2_metal/main.mm
 
-import "../../imgui"
-import "../../imgui/imgui_impl_sdl2"
-import "../../imgui/imgui_impl_metal"
+import imgui "../.."
+import "../../imgui_impl_sdl2"
+import "../../imgui_impl_metal"
 
 import sdl "vendor:sdl2"
 import MTL "vendor:darwin/Metal"

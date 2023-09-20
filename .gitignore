@@ -1,2 +1,6 @@
 examples/*.exe
 examples/imgui.ini
+temp/
+imgui/
+dear_bindings/
+backend_deps/

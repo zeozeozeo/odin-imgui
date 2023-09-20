@@ -1,25 +1,25 @@
 # Odin ImGui - Generated ImGui bindings using dear_bindings
 
 ## Usage
-If you don't want to configure and or build yourself, a prebuilt version of the pacakge can be found in `imgui/`.
- - This package only has binaries for Windows at the moment. I've tested on Linux, it's just hard to manually get both binaries in there.
+If you don't want to configure and or build yourself, a prebuilt binary has been committed to the repository.
+ - Only binaries for Windows are committed at the moment. I've tested on Linux, it's just hard to manually get both binaries in there.
  - It has all backends listed in `build.py` enabled, which almost definitely more than you need. I strongly suggest building yourself with your wanted backends.
 
 ## Building
 
-Building is entirely automated, using `build.py`. Currently however there is only Windows and Linux, although compiling for other platforms shouldn't be too difficult, following the pattern in `build.py`.
+Building is entirely automated, using `build.py`. All platforms should work (not not: open an issue!), but currently Mac backends are untested as I don't have a Mac (help wanted!)
 
  0. Dependencies
 	- `git` must be in your path
-	- `dear_bindings` depends on a library called "`ply`"
+	- `dear_bindings` depends on a library called "`ply`". [link](https://www.dabeaz.com/ply/).
 		- You can probably install this with `python -m pip install ply`
-		- On Arch Linux I had to install `python-ply` with pacman.
+		- If your distro manages Python packages, it may be called `python-ply` or similar.
 	- Windows depends on that [`vcvarsall.bat`](https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-170) is in your path.
 	- Linux and OSX depend on `clang`, `ar`
- 1. Clone this repository into a empty directory.
+ 1. Clone this repository.
 	- Optionally configure build at the top of `build.py`
- 2. From parent folder of `odin-imgui/`, run `python odin-imgui/build.py`
- 3. Folder `odin-imgui/imgui/` is importable. Copy into your project, or import directly.
+ 2. Run `python build.py`
+ 3. Repository is importable. Copy into your project, or import directly.
 
 ## Configuring
 
@@ -90,3 +90,4 @@ Additionally, when updating, all backends in `imgui_impl.odin` should be checked
 	- Vulkan - This is implicitly tested against my own private project, but it would be good to have an example.
 	- Win32 - This should be quite easy, I just haven't had the time.
 	- DX12 - I'm not a DX12 expert, and this is one of the more complicated examples.
+	- All apple examples
