@@ -163,18 +163,12 @@ def parse_type_desc(type_desc, in_function=False) -> str:
 			return "^" + parse_type_desc(type_desc["inner_type"], in_function)
 
 		case "Array":
-			array_bounds = get_array_count(type_desc["bounds"])
+			array_bounds = get_array_count(type_desc)
 			array_str = None
 			if in_function:
-				if array_bounds == "None": # TODO[TS]: Workaround for https://github.com/dearimgui/dear_bindings/issues/41
-					array_str = f'[^]' # Pointer decay
-				else:
-					array_str = f'^[{array_bounds}]'
-			else:
-				if array_bounds == "None":
-					raise "This should never happen!"
-				else:
-					array_str = f'[{array_bounds}]'
+				if    array_bounds == None: array_str = f'[^]' # Pointer decay
+				else: array_str = f'^[{array_bounds}]'
+			else:     array_str = f'[{array_bounds}]'
 
 			assert array_str != None
 
@@ -207,14 +201,15 @@ _imgui_bounds_value_overrides = {
 }
 
 # Get array count for name. If not array, returns None
-def get_array_count(bounds_value) -> str:
+def get_array_count(type_desc) -> str:
+	if not "bounds" in type_desc:
+		return None
+
+	bounds_value = type_desc["bounds"]
 	if str_to_int(bounds_value) != None: return bounds_value
 
 	if bounds_value in _imgui_bounds_value_overrides:
 		return _imgui_bounds_value_overrides[bounds_value]
-
-	if bounds_value == "None":
-		return "None" # https://github.com/dearimgui/dear_bindings/issues/41
 
 	enum_value = try_convert_enum_literal(bounds_value)
 	if enum_value != None:
