@@ -254,6 +254,63 @@ CHECKVERSION :: proc() {
 	DebugCheckVersionAndDataLayout(VERSION, size_of(IO), size_of(Style), size_of(Vec2), size_of(Vec4), size_of(DrawVert), size_of(DrawIdx))
 }""")
 
+# Pushes a list of field components to the aligned fields, accounting for comments.
+# Attached comments will be included as a field component
+# Preceding comments will be inserted as a "delimiter", which will
+# reset alignment.
+def append_aligned_field(aligned_fields, field_components, comment_parent):
+	comment = comment_parent.get("comments", {})
+	for preceding_comment in comment.get("preceding", []):
+		aligned_fields.append(preceding_comment)
+
+	if "attached" in comment: aligned_fields.append(field_components + [" " + comment["attached"]])
+	else:                     aligned_fields.append(field_components)
+
+# Given a list of fields, write them out aligned
+def _write_aligned_fields_range(file: typing.IO, aligned_fields, indent = 0):
+	# Find column sizes
+	column_sizes = []
+
+	for field in aligned_fields:
+		for component_idx in range(len(field)):
+			if component_idx >= len(column_sizes): column_sizes.append(0)
+
+			component = field[component_idx]
+			column_sizes[component_idx] = max(column_sizes[component_idx], len(component))
+
+	for field in aligned_fields:
+		file.write('\t' * indent)
+		for component_idx in range(len(field)):
+			component = field[component_idx]
+			whitespace_amount = column_sizes[component_idx] - len(component)
+			if component_idx == len(field) - 1: whitespace_amount = 0 # Don't pad last element
+			file.write(component + (' ' * whitespace_amount))
+
+		write_line(file)
+
+def write_aligned_fields(file: typing.IO, aligned_fields, indent = 0):
+	last_non_delimiter = 0 # Implicit delimiter at start
+	for field_idx in range(len(aligned_fields)):
+		field = aligned_fields[field_idx]
+		if type(field) == str:
+			# We're at a delimiter
+
+			# Align and write fields since last delimiter, if any
+			if field_idx > last_non_delimiter:
+				# We have a range of fields which should be aligned to each other
+				_write_aligned_fields_range(file, aligned_fields[last_non_delimiter:field_idx], indent)
+
+			# Write this line
+			write_line(file, field, indent)
+
+			# Keep updating to field_idx + 1 until we don't have a delimiter
+			last_non_delimiter = field_idx + 1
+
+	# If we didn't end with a delimiter, then we might have remaining fields to align
+	if len(aligned_fields) > last_non_delimiter:
+		_write_aligned_fields_range(file, aligned_fields[last_non_delimiter:len(aligned_fields)], indent)
+
+
 # DEFINES
 
 _imgui_define_prefixes = ["IMGUI_", "IM_"]
@@ -520,62 +577,6 @@ _imgui_struct_field_name_override = {
 	# then checking that our field name is not in that list.
 	"ID": "_ID",
 }
-
-# Pushes a list of field components to the aligned fields, accounting for comments.
-# Attached comments will be included as a field component
-# Preceding comments will be inserted as a "delimiter", which will
-# reset alignment.
-def append_aligned_field(aligned_fields, field_components, comment_parent):
-	comment = comment_parent.get("comments", {})
-	for preceding_comment in comment.get("preceding", []):
-		aligned_fields.append(preceding_comment)
-
-	if "attached" in comment: aligned_fields.append(field_components + [" " + comment["attached"]])
-	else:                     aligned_fields.append(field_components)
-
-# Given a list of fields, write them out aligned
-def _write_aligned_fields_range(file: typing.IO, aligned_fields, indent = 0):
-	# Find column sizes
-	column_sizes = []
-
-	for field in aligned_fields:
-		for component_idx in range(len(field)):
-			if component_idx >= len(column_sizes): column_sizes.append(0)
-
-			component = field[component_idx]
-			column_sizes[component_idx] = max(column_sizes[component_idx], len(component))
-
-	for field in aligned_fields:
-		file.write('\t' * indent)
-		for component_idx in range(len(field)):
-			component = field[component_idx]
-			whitespace_amount = column_sizes[component_idx] - len(component)
-			if component_idx == len(field) - 1: whitespace_amount = 0 # Don't pad last element
-			file.write(component + (' ' * whitespace_amount))
-
-		write_line(file)
-
-def write_aligned_fields(file: typing.IO, aligned_fields, indent = 0):
-	last_non_delimiter = 0 # Implicit delimiter at start
-	for field_idx in range(len(aligned_fields)):
-		field = aligned_fields[field_idx]
-		if type(field) == str:
-			# We're at a delimiter
-
-			# Align and write fields since last delimiter, if any
-			if field_idx > last_non_delimiter:
-				# We have a range of fields which should be aligned to each other
-				_write_aligned_fields_range(file, aligned_fields[last_non_delimiter:field_idx], indent)
-
-			# Write this line
-			write_line(file, field, indent)
-
-			# Keep updating to field_idx + 1 until we don't have a delimiter
-			last_non_delimiter = field_idx + 1
-
-	# If we didn't end with a delimiter, then we might have remaining fields to align
-	if len(aligned_fields) > last_non_delimiter:
-		_write_aligned_fields_range(file, aligned_fields[last_non_delimiter:len(aligned_fields)], indent)
 
 def write_structs(file: typing.IO, structs):
 	write_section(file, "Structs")
