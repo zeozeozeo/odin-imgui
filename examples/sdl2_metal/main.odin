@@ -11,8 +11,6 @@ package imgui_example_sdl2_metal
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/master/examples/example_sdl2_metal/main.mm
 
-USE_DOCKING_AND_VIEWPORTS :: true
-
 import "../../imgui/"
 
 import sdl "vendor:sdl2"
@@ -26,18 +24,15 @@ main :: proc() {
 	defer imgui.DestroyContext(nil)
 	io := imgui.GetIO()
 	io.ConfigFlags += {.NavEnableKeyboard, .NavEnableGamepad}
-	when USE_DOCKING_AND_VIEWPORTS {
+	when imgui.IMGUI_BRANCH == "docking" {
 		io.ConfigFlags += {.DockingEnable}
 		io.ConfigFlags += {.ViewportsEnable}
-	}
 
-	imgui.StyleColorsDark(nil)
-
-	if .ViewportsEnable in io.ConfigFlags {
 		style := imgui.GetStyle()
 		style.WindowRounding = 0
 		style.Colors[imgui.Col.WindowBg].w =1
 	}
+	imgui.StyleColorsDark(nil)
 
 	assert(sdl.Init(sdl.INIT_EVERYTHING) == 0)
 	defer sdl.Quit()
@@ -109,7 +104,7 @@ main :: proc() {
 		imgui.Render()
 		imgui.ImGui_ImplMetal_RenderDrawData(imgui.GetDrawData(), command_buffer, render_encoder)
 
-		if .ViewportsEnable in io.ConfigFlags {
+		when imgui.IMGUI_BRANCH == "docking" {
 			imgui.UpdatePlatformWindows()
 			imgui.RenderPlatformWindowsDefault()
 		}

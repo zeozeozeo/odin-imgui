@@ -235,6 +235,8 @@ def main():
 		"\n",
 	])
 
+	f.writelines([f'IMGUI_BRANCH :: "{active_branch}"\n\n'])
+
 	for backend_name in backends:
 		f.writelines([f"BACKEND_{backend_name.upper()}_ENABLED :: {'true' if backend_name in wanted_backends else 'false'}\n"])
 

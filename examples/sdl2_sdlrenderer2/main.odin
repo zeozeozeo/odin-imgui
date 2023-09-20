@@ -4,8 +4,6 @@ package imgui_example_sdl2_sdlrenderer2
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/docking/examples/example_sdl2_sdlrenderer2/main.cpp
 
-USE_DOCKING_AND_VIEWPORTS :: true
-
 import "../../imgui/"
 
 import sdl "vendor:sdl2"

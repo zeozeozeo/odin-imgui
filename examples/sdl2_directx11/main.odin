@@ -4,8 +4,6 @@ package imgui_example_sdl2_directx11
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/docking/examples/example_sdl2_directx11/main.cpp
 
-USE_DOCKING_AND_VIEWPORTS :: true
-
 import "../../imgui/"
 
 import sdl "vendor:sdl2"
@@ -45,12 +43,10 @@ main :: proc() {
 	defer imgui.DestroyContext(nil)
 	io := imgui.GetIO()
 	io.ConfigFlags += {.NavEnableKeyboard, .NavEnableGamepad}
-	when USE_DOCKING_AND_VIEWPORTS {
+	when imgui.IMGUI_BRANCH == "docking" {
 		io.ConfigFlags += {.DockingEnable}
 		io.ConfigFlags += {.ViewportsEnable}
-	}
 
-	if .ViewportsEnable in io.ConfigFlags {
 		style := imgui.GetStyle()
 		style.WindowRounding = 0
 		style.Colors[imgui.Col.WindowBg].w =1
@@ -92,9 +88,11 @@ main :: proc() {
 		g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, &{ 0, 0, 0, 1 })
 		imgui.ImGui_ImplDX11_RenderDrawData(imgui.GetDrawData())
 
-		if .ViewportsEnable in io.ConfigFlags {
-			imgui.UpdatePlatformWindows()
-			imgui.RenderPlatformWindowsDefault()
+		when imgui.IMGUI_BRANCH == "docking" {
+			if .ViewportsEnable in io.ConfigFlags {
+				imgui.UpdatePlatformWindows()
+				imgui.RenderPlatformWindowsDefault()
+			}
 		}
 
 		g_pSwapChain->Present(1, 0)

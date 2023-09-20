@@ -4,8 +4,6 @@ package imgui_example_sdl2_opengl3
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/docking/examples/example_sdl2_opengl3/main.cpp
 
-USE_DOCKING_AND_VIEWPORTS :: true
-
 import "../../imgui/"
 
 import sdl "vendor:sdl2"
@@ -39,12 +37,10 @@ main :: proc() {
 	defer imgui.DestroyContext(nil)
 	io := imgui.GetIO()
 	io.ConfigFlags += {.NavEnableKeyboard, .NavEnableGamepad}
-	when USE_DOCKING_AND_VIEWPORTS {
+	when imgui.IMGUI_BRANCH == "docking" {
 		io.ConfigFlags += {.DockingEnable}
 		io.ConfigFlags += {.ViewportsEnable}
-	}
 
-	if .ViewportsEnable in io.ConfigFlags {
 		style := imgui.GetStyle()
 		style.WindowRounding = 0
 		style.Colors[imgui.Col.WindowBg].w =1
@@ -87,7 +83,7 @@ main :: proc() {
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		imgui.ImGui_ImplOpenGL3_RenderDrawData(imgui.GetDrawData())
 
-		if .ViewportsEnable in io.ConfigFlags {
+		when imgui.IMGUI_BRANCH == "docking" {
 			backup_current_window := sdl.GL_GetCurrentWindow()
 			backup_current_context := sdl.GL_GetCurrentContext()
 			imgui.UpdatePlatformWindows()
