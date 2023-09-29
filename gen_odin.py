@@ -256,7 +256,8 @@ def passes_conditionals(thing_with_conditionals) -> bool:
 		elif condition == "ifndef":
 			if conditional["expression"] in defines: return False
 		elif condition == "if":
-			# TODO: Don't commit before fixing this please
+			return False
+		elif condition == "ifnot":
 			return False
 
 	return True

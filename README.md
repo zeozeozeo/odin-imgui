@@ -52,27 +52,27 @@ There are some examples in `examples/`. They are runnable directly.
 All backends which can be supported with only `vendor` have bindings now.
 It seems likely to me that SDL3, maybe WebGPU (and Android?) will exist in vendor in the future, at which point I'll add support.
 
-| Backend        | Has bindings | Has example | Comment                                                                              |
-|----------------|:------------:|:-----------:|--------------------------------------------------------------------------------------|
-| Allegro 5      |      No      |     No      | No odin bindings in vendor                                                           |
-| Android        |      No      |     No      | No odin bindings in vendor                                                           |
-| Directx 9      |      No      |     No      | No odin bindings in vendor                                                           |
-| Directx 10     |      No      |     No      | No odin bindings in vendor                                                           |
-| Directx 11     |     Yes      |     Yes     |                                                                                      |
-| Directx 12     |     Yes      |     No      | Bindings created, but not tested                                                     |
-| GLFW           |     Yes      |     Yes     |                                                                                      |
-| GLUT           |      No      |     No      | Obsolete. Likely will never be implemented.                                          |
-| Metal          |     Yes      |     No      |                                                                                      |
-| OpenGL 2       |      No      |     No      |                                                                                      |
-| OpenGL 3       |     Yes      |     Yes     |                                                                                      |
-| OSX            |     Yes      |     No      |                                                                                      |
-| SDL 2          |     Yes      |     Yes     |                                                                                      |
-| SDL 3          |      No      |     No      | No odin bindings in vendor (yet)                                                     |
-| SDL_Renderer 2 |     Yes      |     Yes     | Is implemented with example, but Odin vendor library lacks required version (2.0.18) |
-| SDL_Renderer 3 |      No      |     No      | No odin bindings in vendor (yet)                                                     |
-| Vulkan         |     Yes      |     No      | Implemented and tested in my own engine, but no Example yet due to size              |
-| WebGPU         |      No      |     No      | No odin bindings in vendor                                                           |
-| win32          |      No      |     No      | Bindings created, but not tested                                                     |
+| Backend        | Has bindings | Has example | Comment                                                              |
+|----------------|:------------:|:-----------:|----------------------------------------------------------------------|
+| Allegro 5      |      No      |     No      | No odin bindings in vendor                                           |
+| Android        |      No      |     No      | No odin bindings in vendor                                           |
+| Directx 9      |      No      |     No      | No odin bindings in vendor                                           |
+| Directx 10     |      No      |     No      | No odin bindings in vendor                                           |
+| Directx 11     |     Yes      |     Yes     |                                                                      |
+| Directx 12     |     Yes      |     No      | Bindings created, but not tested                                     |
+| GLFW           |     Yes      |     Yes     |                                                                      |
+| GLUT           |      No      |     No      | Obsolete. Likely will never be implemented.                          |
+| Metal          |     Yes      |     Yes     |                                                                      |
+| OpenGL 2       |      No      |     No      |                                                                      |
+| OpenGL 3       |     Yes      |     Yes     |                                                                      |
+| OSX            |     Yes      |     No      |                                                                      |
+| SDL 2          |     Yes      |     Yes     |                                                                      |
+| SDL 3          |      No      |     No      | No odin bindings in vendor (yet)                                     |
+| SDL_Renderer 2 |     Yes      |     Yes     | Has example, but Odin vendor library lacks required version (2.0.18) |
+| SDL_Renderer 3 |      No      |     No      | No odin bindings in vendor (yet)                                     |
+| Vulkan         |     Yes      |     No      | Tested in my own engine, but no example yet due to size              |
+| WebGPU         |      No      |     No      | No odin bindings in vendor                                           |
+| win32          |      No      |     No      | Bindings created, but not tested                                     |
 
 ## Updating
 

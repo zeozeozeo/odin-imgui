@@ -36,7 +36,7 @@ backends = {
 	"dx12":         { "supported": False, "enabled_on": ["windows"] },
 	"glfw":         { "supported": True,  "deps": ["glfw"] },
 	"glut":         { "supported": False },
-	"metal":        { "supported": False, "enabled_on": ["darwin"] },
+	"metal":        { "supported": True,  "enabled_on": ["darwin"] },
 	"opengl2":      { "supported": False },
 	"opengl3":      { "supported": True  },
 	"osx":          { "supported": False, "enabled_on": ["darwin"] },
@@ -109,7 +109,7 @@ def map_to_folder(files: typing.List[str], folder: str) -> typing.List[str]:
 	return list(map(lambda file: path.join(folder, file), files))
 
 def has_tool(tool: str) -> bool:
-	try: subprocess.check_output([tool])
+	try: subprocess.check_output([tool], stderr=subprocess.DEVNULL)
 	except FileNotFoundError: return False
 	except: return True
 	else: return True
@@ -255,7 +255,10 @@ def main():
 
 	all_objects = []
 	if platform_win32_like:  all_objects += map(lambda file: file.removesuffix(".cpp") + ".obj", all_sources)
-	elif platform_unix_like: all_objects += map(lambda file: file.removesuffix(".cpp") + ".o", all_sources)
+	elif platform_unix_like:
+		for file in all_sources:
+			if file.endswith(".cpp"): all_objects.append(file.removesuffix(".cpp") + ".o")
+			elif file.endswith(".mm"): all_objects.append(file.removesuffix(".mm") + ".o")
 
 	os.chdir("temp")
 

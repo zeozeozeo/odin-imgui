@@ -1,15 +1,13 @@
 package imgui_example_sdl2_metal
 
-#assert(ODIN_OS == .Darwin)
-
-// WARNING:
-// Not only have I not tested this as I don't own an Apple device, I have also
-// never written ObjC in my life!
-// This may very well work, but it also definitely might not.
-
 // This is an example of using the bindings with SDL2 and Metal
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/master/examples/example_sdl2_metal/main.mm
+
+// WARNING:
+// This has been tested and is now working, but as an OjbC noob, the code is probably pretty bad.
+
+#assert(ODIN_OS == .Darwin)
 
 import imgui "../.."
 import "../../imgui_impl_sdl2"
@@ -32,7 +30,7 @@ main :: proc() {
 
 		style := imgui.GetStyle()
 		style.WindowRounding = 0
-		style.Colors[imgui.Col.WindowBg].w =1
+		style.Colors[imgui.Col.WindowBg].w = 1
 	}
 	imgui.StyleColorsDark(nil)
 
@@ -88,7 +86,6 @@ main :: proc() {
 		render_pass_descriptor->colorAttachments()->object(0)->setStoreAction(.Store)
 
 		render_encoder := command_buffer->renderCommandEncoderWithDescriptor(render_pass_descriptor)
-		defer render_encoder->endEncoding()
 
 		imgui_impl_metal.NewFrame(render_pass_descriptor)
 		imgui_impl_sdl2.NewFrame()
@@ -110,6 +107,8 @@ main :: proc() {
 			imgui.UpdatePlatformWindows()
 			imgui.RenderPlatformWindowsDefault()
 		}
+		
+		render_encoder->endEncoding()
 
 		command_buffer->presentDrawable(drawable)
 		command_buffer->commit()

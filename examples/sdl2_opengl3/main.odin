@@ -15,6 +15,11 @@ main :: proc() {
 	assert(sdl.Init(sdl.INIT_EVERYTHING) == 0)
 	defer sdl.Quit()
 
+	sdl.GL_SetAttribute(.CONTEXT_FLAGS, i32(sdl.GLcontextFlag.FORWARD_COMPATIBLE_FLAG))
+	sdl.GL_SetAttribute(.CONTEXT_PROFILE_MASK, i32(sdl.GLprofile.CORE))
+	sdl.GL_SetAttribute(.CONTEXT_MAJOR_VERSION, 3)
+	sdl.GL_SetAttribute(.CONTEXT_MINOR_VERSION, 2)
+
 	window := sdl.CreateWindow(
 		"Dear ImGui SDL2+OpenGl3 example",
 		sdl.WINDOWPOS_CENTERED,
@@ -30,7 +35,7 @@ main :: proc() {
 	sdl.GL_MakeCurrent(window, gl_ctx)
 	sdl.GL_SetSwapInterval(1) // vsync
 
-	gl.load_up_to(3, 3, proc(p: rawptr, name: cstring) {
+	gl.load_up_to(3, 2, proc(p: rawptr, name: cstring) {
 		(cast(^rawptr)p)^ = sdl.GL_GetProcAddress(name)
 	})
 
@@ -52,7 +57,7 @@ main :: proc() {
 
 	imgui_impl_sdl2.InitForOpenGL(window, gl_ctx)
 	defer imgui_impl_sdl2.Shutdown()
-	imgui_impl_opengl3.Init("#version 150")
+	imgui_impl_opengl3.Init(nil)
 	defer imgui_impl_opengl3.Shutdown()
 
 	running := true

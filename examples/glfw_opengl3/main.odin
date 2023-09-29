@@ -15,6 +15,11 @@ main :: proc() {
 	assert(glfw.Init() != 0)
 	defer glfw.Terminate()
 
+    glfw.WindowHint(glfw.CONTEXT_VERSION_MAJOR, 3)
+    glfw.WindowHint(glfw.CONTEXT_VERSION_MINOR, 2)
+    glfw.WindowHint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
+    glfw.WindowHint(glfw.OPENGL_FORWARD_COMPAT, 1) // i32(true)
+
 	window := glfw.CreateWindow(1280, 720, "Dear ImGui GLFW+OpenGL3 example", nil, nil)
 	assert(window != nil)
 	defer glfw.DestroyWindow(window)
@@ -22,7 +27,7 @@ main :: proc() {
 	glfw.MakeContextCurrent(window)
 	glfw.SwapInterval(1) // vsync
 
-	gl.load_up_to(3, 3, proc(p: rawptr, name: cstring) {
+	gl.load_up_to(3, 2, proc(p: rawptr, name: cstring) {
 		(cast(^rawptr)p)^ = glfw.GetProcAddress(name)
 	})
 
