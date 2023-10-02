@@ -1,4 +1,15 @@
-# Odin ImGui - Generated ImGui bindings using dear_bindings
+# Odin ImGui
+
+## Generated Dear ImGui bindings using dear_bindings
+
+ - Generates bindings for both the `master` and `docking` ImGui branches, using [`dear_bindings`](https://github.com/dearimgui/dear_bindings)
+ - Contains bindings for most of the Dear ImGui implementations
+	- All backends which exist in `vendor:` have bindings
+	- These include: `vulkan, sdl2, opengl3, sdlrenderer2, glfw, dx11, dx12, win32, osx, metal`
+ - Compiles bindings as well as any wanted backends
+ - Tested on Windows, Linux, and Mac
+ - Includes several examples which can be used as a reference
+	- `GLFW + OpenGL, SDL2 + D3D11, SDL2 + Metal, SDL2 + OpenGL, SDL2 + SDL2 Renderer, SDL2 + Vulkan`
 
 ## Usage
 If you don't want to configure and or build yourself, a prebuilt binary has been committed to the repository.
@@ -81,6 +92,11 @@ You can mess with these all you want and see if it works.
 
 When updating, a new commit should be chosen for `master` which is right before `master` was merged into `docking`. The `docking` commit should be the following merge commit.
 Additionally, when updating, all backends in `imgui_impl.odin` should be checked for new commits, and updated where necessary.
+
+## Coming soon
+ - Respect defines from `imconfig.h`
+ - Generate functions to restore overloads from `imgui.h` C++ header.
+ - Helper file to work with ImGui in a way that is more Odin-ey
 
 ## Help wanted!
 
