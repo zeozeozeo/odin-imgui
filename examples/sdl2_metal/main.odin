@@ -107,7 +107,7 @@ main :: proc() {
 			imgui.UpdatePlatformWindows()
 			imgui.RenderPlatformWindowsDefault()
 		}
-		
+
 		render_encoder->endEncoding()
 
 		command_buffer->presentDrawable(drawable)
