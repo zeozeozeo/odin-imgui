@@ -642,7 +642,7 @@ _imgui_functions_skip = [
 	# whether IMGUI_DISABLE_OBSOLETE_KEYIO is set.
 	# Since we don't evaluate this yet, it is safer to remove it entirely
 	# rather than guess which one is right.
-	"GetKeyIndex",
+	"ImGui_GetKeyIndex",
 ]
 
 _imgui_function_prefixes = [ "ImGui_", "ImGui", "Im" ]
@@ -729,12 +729,6 @@ def main():
 
 	info = json.load(open(args.imgui_json, "r"))
 	file = open(args.destination_file, "w+")
-
-	# Process defines
-	for define in info["defines"]:
-		print(f'Define {define["name"]} ({define["content"]}) passes = {passes_conditionals(define)}')
-		if passes_conditionals(define):
-			defines[define["name"]] = define["content"]
 
 	# Write the things
 	write_header(file)
