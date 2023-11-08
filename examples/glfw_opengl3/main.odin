@@ -12,7 +12,7 @@ import "vendor:glfw"
 import gl "vendor:OpenGL"
 
 main :: proc() {
-	assert(glfw.Init() != 0)
+	assert(cast(bool)glfw.Init())
 	defer glfw.Terminate()
 
 	glfw.WindowHint(glfw.CONTEXT_VERSION_MAJOR, 3)
