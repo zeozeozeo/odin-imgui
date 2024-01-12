@@ -10,8 +10,13 @@ CHECKVERSION :: proc() {
 // DEFINES
 ////////////////////////////////////////////////////////////
 
-VERSION     :: "1.90 WIP"
-VERSION_NUM :: 18998
+VERSION                      :: "1.90 WIP"
+VERSION_NUM                  :: 18998
+PAYLOAD_TYPE_COLOR_3F        :: "_COL3F"   // float[3]: Standard type for colors, without alpha. User code may use this type.
+PAYLOAD_TYPE_COLOR_4F        :: "_COL4F"   // float[4]: Standard type for colors. User code may use this type.
+UNICODE_CODEPOINT_INVALID    :: 0xFFFD     // Invalid Unicode code point (standard value).
+UNICODE_CODEPOINT_MAX        :: 0x10FFFF   // Maximum Unicode code point supported by this build.
+DRAWLIST_TEX_LINES_WIDTH_MAX :: 63
 
 ////////////////////////////////////////////////////////////
 // ENUMS
@@ -610,8 +615,6 @@ Key :: enum c.int {
 	// NamedKey_BEGIN = 512,
 	// NamedKey_END = Key.COUNT,
 	// NamedKey_COUNT = Key.NamedKey_END-ImGuiKey_NamedKey_BEGIN,
-	// KeysData_SIZE = Key.NamedKey_COUNT,
-	// KeysData_OFFSET = Key.NamedKey_BEGIN,
 	// KeysData_SIZE = Key.COUNT,
 	// KeysData_OFFSET = 0,
 	// ModCtrl = Key.ImGuiMod_Ctrl,
@@ -2739,6 +2742,7 @@ foreign lib {
 	// Helpers
 	@(link_name="ImGuiViewport_GetCenter")     Viewport_GetCenter     :: proc(self: ^Viewport) -> Vec2 ---
 	@(link_name="ImGuiViewport_GetWorkCenter") Viewport_GetWorkCenter :: proc(self: ^Viewport) -> Vec2 ---
+	@(link_name="ImGui_GetKeyIndex")           GetKeyIndex            :: proc(key: Key) -> Key         --- // map ImGuiKey_* values into legacy native key index. == io.KeyMap[key]
 	// OBSOLETED in 1.90.0 (from September 2023)
 	@(link_name="ImGui_BeginChildFrame")         BeginChildFrame         :: proc(id: ID, size: Vec2) -> bool                                                                                                                                                                                --- // Implied window_flags = 0
 	@(link_name="ImGui_BeginChildFrameEx")       BeginChildFrameEx       :: proc(id: ID, size: Vec2, window_flags: WindowFlags) -> bool                                                                                                                                                     ---
@@ -2775,12 +2779,12 @@ DrawIdx   :: c.ushort // Default: 16-bit (for maximum compatibility with rendere
 ID :: c.uint // A unique ID used by widgets (typically the result of hashing a stack of string)
 // Character types
 // (we generally use UTF-8 encoded string in the API. This is storage specifically for a decoded character used for keyboard input and display)
-Wchar32 :: c.uint   // A single decoded U32 character/code point. We encode them as multi bytes UTF-8 when used in strings.
+Wchar32 :: rune     // A single decoded U32 character/code point. We encode them as multi bytes UTF-8 when used in strings.
 Wchar16 :: c.ushort // A single decoded U16 character/code point. We encode them as multi bytes UTF-8 when used in strings.
+Wchar   :: Wchar32
 // Callback and functions types
 InputTextCallback :: proc "c" (data: ^InputTextCallbackData) -> c.int     // Callback function for ImGui::InputText()
 SizeCallback      :: proc "c" (data: ^SizeCallbackData)                   // Callback function for ImGui::SetNextWindowSizeConstraints()
 MemAllocFunc      :: proc "c" (sz: c.size_t, user_data: rawptr) -> rawptr // Function signature for ImGui::SetAllocatorFunctions()
 MemFreeFunc       :: proc "c" (ptr: rawptr, user_data: rawptr)            // Function signature for ImGui::SetAllocatorFunctions()
 DrawCallback      :: proc "c" (parent_list: ^DrawList, cmd: ^DrawCmd)
-Wchar :: Wchar16

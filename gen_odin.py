@@ -3,6 +3,7 @@ import typing
 import ast
 import argparse
 import sys
+from os import path
 
 # TODO:
 # - Get rid of any special handling of values
@@ -14,8 +15,35 @@ import sys
 #		See: https://github.com/dearimgui/dear_bindings/blob/main/docs/Changelog.txt
 # - Check for IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 # - In general, conditionals should be checked to see if they cause any issues.
+# - There should be an option to emit a more complete version of IMGUI_CHECKVERSION() that checks all structs (and more?)
 
 # HELPERS
+def nice_stack(start: int = 0):
+	i = start + 1
+
+	stack_strings = []
+
+	while True:
+		try:
+			frame = sys._getframe(i)
+			stack_strings.append([frame.f_code.co_name, f'{path.basename(frame.f_code.co_filename)}:{frame.f_lineno}'])
+			i += 1
+		except:
+			max_len = 0
+			for j in range(len(stack_strings)):
+				max_len = max(max_len, len(stack_strings[j][0]))
+			max_len += 1
+			for stack_string in stack_strings:
+				print(stack_string[0] + " " * (max_len - len(stack_string[0])) + stack_string[1])
+			return
+
+def die(message):
+	print()
+	print("FATAL ERROR: " + message)
+	print()
+	nice_stack(1)
+	exit(1)
+
 def write_line(file: typing.IO, line: str = "", indent = 0):
 	file.writelines(["\t" * indent, line, "\n"])
 
@@ -239,29 +267,6 @@ def write_line_with_comments(file: typing.IO, str: str, comment_parent, indent =
 
 	write_line(file, str + attached_comment, indent)
 
-# Empty define has value of ""
-_define_overrides = {
-
-}
-
-defines = {}
-def passes_conditionals(thing_with_conditionals) -> bool:
-	if not "conditionals" in thing_with_conditionals: return True
-
-	for conditional in thing_with_conditionals["conditionals"]:
-		condition = conditional["condition"]
-
-		if condition == "ifdef":
-			if not conditional["expression"] in defines: return False
-		elif condition == "ifndef":
-			if conditional["expression"] in defines: return False
-		elif condition == "if":
-			return False
-		elif condition == "ifnot":
-			return False
-
-	return True
-
 # HEADER
 def write_header(file: typing.IO):
 	write_line(file, """package imgui
@@ -330,6 +335,79 @@ def write_aligned_fields(file: typing.IO, aligned_fields, indent = 0):
 
 # DEFINES
 
+# To add something to this list, it needs to be defined 100% of the time.
+# This for now means that we cannot emit defines such as IMGUI_HAS_VIEWPORT
+# They should also not be ambiguous like IM_COL32_R_SHIFT obviously.
+_emitted_defines = [
+	"IMGUI_VERSION",
+	"IMGUI_VERSION_NUM",
+	"IMGUI_PAYLOAD_TYPE_COLOR_3F",
+	"IMGUI_PAYLOAD_TYPE_COLOR_4F",
+	"IM_UNICODE_CODEPOINT_INVALID",
+	"IM_UNICODE_CODEPOINT_MAX",
+	"IM_DRAWLIST_TEX_LINES_WIDTH_MAX",
+]
+
+# Defines which are allowed to be defined in imconfig.h
+_allowed_user_defines = [
+	# A bug in dear_imgui struct fields causes these two defines to behave incorrectly
+	# "IMGUI_DISABLE_OBSOLETE_FUNCTIONS",
+	# "IMGUI_DISABLE_OBSOLETE_KEYIO",
+	"IMGUI_USE_WCHAR32",
+]
+
+# Things which are allowed in an #ifdef
+_allowed_ifdef = [
+	"IMGUI_USE_WCHAR32", # User defined only, bool
+	"IM_DRAWLIST_TEX_LINES_WIDTH_MAX", # Overridden by user, int
+	"IMGUI_DISABLE_OBSOLETE_FUNCTIONS", # User defined only, bool
+	"IMGUI_DISABLE_OBSOLETE_KEYIO", # User defined only, bool
+	"IMGUI_OVERRIDE_DRAWVERT_STRUCT_LAYOUT", # User defined only, bool. Indicates custom ImDrawVert struct. Should not be set for Odin purposes
+	"ImTextureID", # Concrete type overridden by user. Hard to deal with in Odin, so for now should not be set up by user
+	"ImDrawIdx", # Concrete type overridden by user. Hard to deal with in Odin, so for now should not be set up by user
+	"ImDrawCallback", # Concrete type overridden by user. Hard to deal with in Odin, so for now should not be set up by user
+]
+
+# Defines to process whatsoever
+_processed_defines = []
+for define in (_emitted_defines + _allowed_user_defines + _allowed_ifdef):
+	if not define in _processed_defines: _processed_defines.append(define)
+
+# Evaluated define and value
+processed_defines = {
+}
+
+def _unwrap_defined(condition_str: str) -> str:
+	# Technically "defined(FOO) && defined(BAR)" passes incorrectly.
+	if condition_str.startswith("defined(") and condition_str.endswith(")"):
+		return condition_str.removeprefix("defined(").removesuffix(")")
+	return None
+
+def condition_ifdef(condition_str) -> bool:
+	if not condition_str in _allowed_ifdef: die("Not allowed to evaluate condition '" + condition_str + "'")
+	return condition_str in processed_defines
+
+def condition_if(expression_str) -> bool:
+	defined_str = _unwrap_defined(expression_str)
+	if defined_str == None: die("For now only defined() defines are supported with #if (" + expression_str + ")")
+	return condition_ifdef(defined_str)
+
+def passes_conditionals(thing_with_conditionals) -> bool:
+	if not "conditionals" in thing_with_conditionals: return True
+
+	for conditional in thing_with_conditionals["conditionals"]:
+		condition = conditional["condition"]
+
+		if condition == "ifdef":    return condition_ifdef(conditional["expression"])
+		elif condition == "ifndef": return not condition_ifdef(conditional["expression"])
+		elif condition == "if":     return condition_if(conditional["expression"])
+		elif condition == "ifnot":  return not condition_if(conditional["expression"])
+		else:
+			die("Unexpected condition: " + condition)
+			return False
+
+	return True
+
 _imgui_define_prefixes = ["IMGUI_", "IM_"]
 
 # Defines have special prefixes
@@ -340,21 +418,23 @@ def define_strip_prefix(name: str) -> str:
 
 	return name
 
-_imgui_define_include = [
-	"IMGUI_VERSION",
-	"IMGUI_VERSION_NUM",
-]
-
-def write_defines(file: typing.IO, defines):
+def parse_and_write_defines(file: typing.IO, defines):
 	write_section(file, "Defines")
 	aligned = []
 
 	for define in defines:
-		entire_name = define["name"]
+		if not define["name"] in _processed_defines: continue
+		is_user_define = not define["source_location"]["filename"].endswith("imgui.h")
+		if not passes_conditionals(define): continue
 
-		if not entire_name in _imgui_define_include: continue
+		if is_user_define:
+			if not define["name"] in _allowed_user_defines: die("Disallowed user define '" + define["name"] + "'")
 
-		append_aligned_field(aligned, [define_strip_prefix(entire_name), f' :: {define["content"]}'], define)
+		if define["name"] in processed_defines: die("Define '" + define["name"] + "' already defined! This is almost certainly not correct")
+		processed_defines[define["name"]] = define.get("content", "")
+
+		if define["name"] in _emitted_defines:
+			append_aligned_field(aligned, [define_strip_prefix(define["name"]), f' :: {define.get("content", "true")}'], define)
 
 	write_aligned_fields(file, aligned)
 
@@ -413,6 +493,8 @@ def write_enum_as_flags(file, enum, enum_field_prefix, name):
 	aligned_flags = []
 
 	for element in enum["elements"]:
+		if not passes_conditionals(element): continue
+
 		element_entire_name = element["name"]
 		element_value = element["value_expression"]
 		element_name = enum_parse_field_name(element_entire_name, enum_field_prefix)
@@ -458,6 +540,8 @@ def write_enum_as_constants(file, enum, enum_field_prefix, name):
 	aligned = []
 
 	for element in enum["elements"]:
+		if not passes_conditionals(element): continue
+
 		field_base_name = element["name"]
 		field_name = enum_parse_field_name(field_base_name, enum_field_prefix)
 		field_value = element["value_expression"]
@@ -479,6 +563,8 @@ def write_enum(file: typing.IO, enum, enum_field_prefix: str, name: str, stop_af
 	stop_comment = ""
 
 	for element in enum["elements"]:
+		if not passes_conditionals(element): continue
+
 		field_base_name = element["name"]
 		# SEE: _imgui_enum_stop_after
 		if field_base_name == stop_after:
@@ -528,6 +614,8 @@ _imgui_enum_stop_after = {
 def write_enums(file: typing.IO, enums):
 	write_section(file, "Enums")
 	for enum in enums:
+		if not passes_conditionals(enum): continue
+
 		# enum_field_prefix is the prefix expected on each field
 		# name is the actual name of the enum
 		entire_name = enum["name"]
@@ -567,6 +655,8 @@ _imgui_struct_field_name_override = {
 def write_structs(file: typing.IO, structs):
 	write_section(file, "Structs")
 	for struct in structs:
+		if not passes_conditionals(struct): continue
+
 		entire_name = struct["name"]
 
 		if entire_name in _imgui_struct_override:
@@ -578,6 +668,8 @@ def write_structs(file: typing.IO, structs):
 		write_line_with_comments(file, f'{name} :: struct {{', struct)
 		field_components = []
 		for field in struct["fields"]:
+			if not passes_conditionals(field): continue
+
 			adjusted_name = apply_override(field["name"], _imgui_struct_field_name_override)
 			field_type = parse_type(field["type"])
 			append_aligned_field(field_components, [f'{adjusted_name}: ', f'{field_type},'], field)
@@ -636,13 +728,8 @@ def function_uses_va_list(function) -> bool:
 
 _imgui_functions_skip = [
 	# Returns ImStr, which isn't defined anywhere?
+	# Also has weird #ifdef
 	"ImStr_FromCharStr",
-
-	# This function appears in one of two forms in the json, depending on
-	# whether IMGUI_DISABLE_OBSOLETE_KEYIO is set.
-	# Since we don't evaluate this yet, it is safer to remove it entirely
-	# rather than guess which one is right.
-	"ImGui_GetKeyIndex",
 ]
 
 _imgui_function_prefixes = [ "ImGui_", "ImGui", "Im" ]
@@ -663,6 +750,8 @@ else when ODIN_OS == .Darwin {
 	for function in functions:
 		entire_name = function["name"]
 		if entire_name in _imgui_functions_skip: continue
+
+		if not passes_conditionals(function): continue
 
 		[_prefix, remainder] = strip_list(entire_name, _imgui_function_prefixes)
 
@@ -691,7 +780,7 @@ else when ODIN_OS == .Darwin {
 _imgui_allowed_typedefs = [
 	"ImWchar16",
 	"ImWchar32",
-	# "ImWchar",
+	"ImWchar",
 
 	"DrawIdx",
 	"ImDrawIdx",
@@ -707,12 +796,22 @@ _imgui_allowed_typedefs = [
 	"ImGuiMemFreeFunc",
 ]
 
+_imgui_typedef_overrides = {
+	"ImWchar32": "rune",
+}
+
 def write_typedefs(file: typing.IO, typedefs):
 	write_section(file, "Typedefs")
 	aligned = []
 
 	for typedef in typedefs:
+		if not passes_conditionals(typedef): continue
+
 		entire_name = typedef["name"]
+
+		if entire_name in _imgui_typedef_overrides:
+			append_aligned_field(aligned, [strip_imgui_branding(entire_name), f' :: {_imgui_typedef_overrides[entire_name]}'], typedef)
+			continue
 
 		if not entire_name in _imgui_allowed_typedefs: continue
 		append_aligned_field(aligned, [strip_imgui_branding(entire_name), f' :: {parse_type(typedef["type"])}'], typedef)
@@ -738,13 +837,12 @@ def main():
 
 	# Write the things
 	write_header(file)
-	write_defines(file, info["defines"])
+	parse_and_write_defines(file, info["defines"])
 	write_enums(file, info["enums"])
 	write_structs(file, info["structs"])
 	write_functions(file, info["functions"])
 	write_typedefs(file, info["typedefs"])
 
-	# TODO: Duplicate wchar typedef. Easy fix, but ignoring for now!
-	write_line(file, "Wchar :: Wchar16")
+	# for k, v in processed_defines.items(): print(k, v)
 
 if __name__ == "__main__": main()
