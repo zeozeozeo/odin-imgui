@@ -1,8 +1,8 @@
 import json
 import typing
 import ast
-import math
 import argparse
+import sys
 
 # TODO:
 # - Get rid of any special handling of values
@@ -147,35 +147,35 @@ def parse_type(type_dict, in_function=False) -> str:
 
 # TODO[TS]: Clean this up a bit
 def parse_type_desc(type_desc, in_function=False) -> str:
-	match type_desc["kind"]:
-		case "Builtin":
+	kind = type_desc["kind"]
+	if kind == "Builtin":
 			return make_type_odiney(type_desc["builtin_type"])
 
-		case "User":
-			return make_type_odiney(type_desc["name"])
+	elif kind == "User":
+		return make_type_odiney(type_desc["name"])
 
-		case "Pointer":
-			named_type = peek_named_type(type_desc["inner_type"])
-			if named_type != None:
-				if named_type in _pointer_aliases:
-					return _pointer_aliases[named_type]
+	elif kind == "Pointer":
+		named_type = peek_named_type(type_desc["inner_type"])
+		if named_type != None:
+			if named_type in _pointer_aliases:
+				return _pointer_aliases[named_type]
 
-			return "^" + parse_type_desc(type_desc["inner_type"], in_function)
+		return "^" + parse_type_desc(type_desc["inner_type"], in_function)
 
-		case "Array":
-			array_bounds = get_array_count(type_desc)
-			array_str = None
-			if in_function:
-				if    array_bounds == None: array_str = f'[^]' # Pointer decay
-				else: array_str = f'^[{array_bounds}]'
-			else:     array_str = f'[{array_bounds}]'
+	elif kind == "Array":
+		array_bounds = get_array_count(type_desc)
+		array_str = None
+		if in_function:
+			if    array_bounds == None: array_str = f'[^]' # Pointer decay
+			else: array_str = f'^[{array_bounds}]'
+		else:     array_str = f'[{array_bounds}]'
 
-			assert array_str != None
+		assert array_str != None
 
-			return array_str + parse_type_desc(type_desc["inner_type"], in_function)
+		return array_str + parse_type_desc(type_desc["inner_type"], in_function)
 
-		case kind:
-			raise Exception(f'Unhandled type kind "{kind}"')
+	else:
+		raise Exception(f'Unhandled type kind "{kind}"')
 
 # Try to parse a string containing an imgui enum, and convert it to an odin imgui enum
 def try_convert_enum_literal(name: str) -> str:
@@ -720,6 +720,12 @@ def write_typedefs(file: typing.IO, typedefs):
 	write_aligned_fields(file, aligned)
 
 def main():
+	if not sys.version.startswith("3.11.5"):
+		print("", file=sys.stderr)
+		print(f"Warning: odin-imgui has been tested against Python version 3.11.5. (Yours: {sys.version})", file=sys.stderr)
+		print("The script will still likely work, but it is untested!", file=sys.stderr)
+		print("", file=sys.stderr)
+
 	parser = argparse.ArgumentParser()
 
 	parser.add_argument("imgui_json", default="imgui.json")
