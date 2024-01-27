@@ -10,12 +10,12 @@ CHECKVERSION :: proc() {
 // DEFINES
 ////////////////////////////////////////////////////////////
 
-VERSION                      :: "1.90 WIP"
-VERSION_NUM                  :: 18998
-PAYLOAD_TYPE_COLOR_3F        :: "_COL3F"   // float[3]: Standard type for colors, without alpha. User code may use this type.
-PAYLOAD_TYPE_COLOR_4F        :: "_COL4F"   // float[4]: Standard type for colors. User code may use this type.
-UNICODE_CODEPOINT_INVALID    :: 0xFFFD     // Invalid Unicode code point (standard value).
-UNICODE_CODEPOINT_MAX        :: 0x10FFFF   // Maximum Unicode code point supported by this build.
+VERSION                      :: "1.90.1"
+VERSION_NUM                  :: 19010
+PAYLOAD_TYPE_COLOR_3F        :: "_COL3F" // float[3]: Standard type for colors, without alpha. User code may use this type.
+PAYLOAD_TYPE_COLOR_4F        :: "_COL4F" // float[4]: Standard type for colors. User code may use this type.
+UNICODE_CODEPOINT_INVALID    :: 0xFFFD   // Invalid Unicode code point (standard value).
+UNICODE_CODEPOINT_MAX        :: 0xFFFF   // Maximum Unicode code point supported by this build.
 DRAWLIST_TEX_LINES_WIDTH_MAX :: 63
 
 ////////////////////////////////////////////////////////////
@@ -47,7 +47,7 @@ WindowFlag :: enum c.int {
 	UnsavedDocument           = 18, // Display a dot next to the title. When used in a tab/docking context, tab is selected when clicking the X + closure is not assumed (will wait for user to stop submitting the tab). Otherwise closure is assumed when pressing the X, so if you keep submitting the tab may reappear at end of tab bar.
 	NoDocking                 = 19, // Disable docking of this window
 	// [Internal]
-	NavFlattened           = 23, // [BETA] On child window: allow gamepad/keyboard navigation to cross over parent border to this child or between sibling child windows.
+	NavFlattened           = 23, // [BETA] On child window: share focus scope, allow gamepad/keyboard navigation to cross over parent border to this child or between sibling child windows.
 	ChildWindow            = 24, // Don't use! For internal use by BeginChild()
 	Tooltip                = 25, // Don't use! For internal use by BeginTooltip()
 	Popup                  = 26, // Don't use! For internal use by BeginPopup()
@@ -62,7 +62,7 @@ WindowFlags_NoDecoration :: WindowFlags{.NoTitleBar,.NoResize,.NoScrollbar,.NoCo
 WindowFlags_NoInputs     :: WindowFlags{.NoMouseInputs,.NoNavInputs,.NoNavFocus}
 
 // Flags for ImGui::BeginChild()
-// (Legacy: bit 0 must always correspond to ImGuiChildFlags_Border to be backward compatible with old API using 'bool border'.
+// (Legacy: bot 0 must always correspond to ImGuiChildFlags_Border to be backward compatible with old API using 'bool border = false'.
 // About using AutoResizeX/AutoResizeY flags:
 // - May be combined with SetNextWindowSizeConstraints() to set a min/max size for each axis (see "Demo->Child->Auto-resize with Constraints").
 // - Size measurement for a given axis is only performed when the child window is within visible boundaries, or is just appearing.
@@ -72,7 +72,7 @@ WindowFlags_NoInputs     :: WindowFlags{.NoMouseInputs,.NoNavInputs,.NoNavFocus}
 //     HOWEVER PLEASE UNDERSTAND THAT DOING SO WILL PREVENT BeginChild() FROM EVER RETURNING FALSE, disabling benefits of coarse clipping.
 ChildFlags :: bit_set[ChildFlag; c.int]
 ChildFlag :: enum c.int {
-	Border                 = 0, // Show an outer border and enable WindowPadding. (Important: this is always == 1 for legacy reason)
+	Border                 = 0, // Show an outer border and enable WindowPadding. (Important: this is always == 1 == true for legacy reason)
 	AlwaysUseWindowPadding = 1, // Pad with style.WindowPadding even if no border are drawn (no padding by default for non-bordered child windows because it makes more sense)
 	ResizeX                = 2, // Allow resize from right border (layout direction). Enable .ini saving (unless ImGuiWindowFlags_NoSavedSettings passed to window flags)
 	ResizeY                = 3, // Allow resize from bottom border (layout direction). "
@@ -131,7 +131,7 @@ TreeNodeFlag :: enum c.int {
 	NavLeftJumpsBackHere = 14, // (WIP) Nav: left direction may move to this TreeNode() from any of its child (items submitted between TreeNode and TreePop)
 }
 
-//ImGuiTreeNodeFlags_NoScrollOnOpen     = 1 << 14,  // FIXME: TODO: Disable automatic scroll on TreePop() if node got just open and contents is not visible
+//ImGuiTreeNodeFlags_NoScrollOnOpen     = 1 << 15,  // FIXME: TODO: Disable automatic scroll on TreePop() if node got just open and contents is not visible
 TreeNodeFlags_CollapsingHeader :: TreeNodeFlags{.Framed,.NoTreePushOnOpen,.NoAutoOpenOnLog}
 TreeNodeFlags_AllowItemOverlap :: TreeNodeFlags{.AllowOverlap}                              // Renamed in 1.89.7
 
@@ -189,7 +189,7 @@ TabBarFlag :: enum c.int {
 	Reorderable                  = 0, // Allow manually dragging tabs to re-order them + New tabs are appended at the end of list
 	AutoSelectNewTabs            = 1, // Automatically select new tabs when they appear
 	TabListPopupButton           = 2, // Disable buttons to open the tab list popup
-	NoCloseWithMiddleMouseButton = 3, // Disable behavior of closing tabs (that are submitted with p_open != NULL) with middle mouse button. You can still repro this behavior on user's side with if (IsItemHovered() && IsMouseClicked(2)) *p_open = false.
+	NoCloseWithMiddleMouseButton = 3, // Disable behavior of closing tabs (that are submitted with p_open != NULL) with middle mouse button. You may handle this behavior manually on user's side with if (IsItemHovered() && IsMouseClicked(2)) *p_open = false.
 	NoTabListScrollingButtons    = 4, // Disable scrolling buttons (apply when fitting policy is ImGuiTabBarFlags_FittingPolicyScroll)
 	NoTooltip                    = 5, // Disable tooltips when hovering a tab
 	FittingPolicyResizeDown      = 6, // Resize tabs when they don't fit
@@ -202,136 +202,17 @@ TabBarFlags_FittingPolicyDefault_ :: TabBarFlags{.FittingPolicyResizeDown}
 // Flags for ImGui::BeginTabItem()
 TabItemFlags :: bit_set[TabItemFlag; c.int]
 TabItemFlag :: enum c.int {
-	UnsavedDocument              = 0, // Display a dot next to the title + tab is selected when clicking the X + closure is not assumed (will wait for user to stop submitting the tab). Otherwise closure is assumed when pressing the X, so if you keep submitting the tab may reappear at end of tab bar.
+	UnsavedDocument              = 0, // Display a dot next to the title + set ImGuiTabItemFlags_NoAssumedClosure.
 	SetSelected                  = 1, // Trigger flag to programmatically make the tab selected when calling BeginTabItem()
-	NoCloseWithMiddleMouseButton = 2, // Disable behavior of closing tabs (that are submitted with p_open != NULL) with middle mouse button. You can still repro this behavior on user's side with if (IsItemHovered() && IsMouseClicked(2)) *p_open = false.
-	NoPushId                     = 3, // Don't call PushID(tab->ID)/PopID() on BeginTabItem()/EndTabItem()
+	NoCloseWithMiddleMouseButton = 2, // Disable behavior of closing tabs (that are submitted with p_open != NULL) with middle mouse button. You may handle this behavior manually on user's side with if (IsItemHovered() && IsMouseClicked(2)) *p_open = false.
+	NoPushId                     = 3, // Don't call PushID()/PopID() on BeginTabItem()/EndTabItem()
 	NoTooltip                    = 4, // Disable tooltip for the given tab
 	NoReorder                    = 5, // Disable reordering this tab or having another tab cross over this tab
 	Leading                      = 6, // Enforce the tab position to the left of the tab bar (after the tab list popup button)
 	Trailing                     = 7, // Enforce the tab position to the right of the tab bar (before the scrolling buttons)
+	NoAssumedClosure             = 8, // Tab is selected when trying to close + closure is not immediately assumed (will wait for user to stop submitting the tab). Otherwise closure is assumed when pressing the X, so if you keep submitting the tab may reappear at end of tab bar.
 }
 
-
-// Flags for ImGui::BeginTable()
-// - Important! Sizing policies have complex and subtle side effects, much more so than you would expect.
-//   Read comments/demos carefully + experiment with live demos to get acquainted with them.
-// - The DEFAULT sizing policies are:
-//    - Default to ImGuiTableFlags_SizingFixedFit    if ScrollX is on, or if host window has ImGuiWindowFlags_AlwaysAutoResize.
-//    - Default to ImGuiTableFlags_SizingStretchSame if ScrollX is off.
-// - When ScrollX is off:
-//    - Table defaults to ImGuiTableFlags_SizingStretchSame -> all Columns defaults to ImGuiTableColumnFlags_WidthStretch with same weight.
-//    - Columns sizing policy allowed: Stretch (default), Fixed/Auto.
-//    - Fixed Columns (if any) will generally obtain their requested width (unless the table cannot fit them all).
-//    - Stretch Columns will share the remaining width according to their respective weight.
-//    - Mixed Fixed/Stretch columns is possible but has various side-effects on resizing behaviors.
-//      The typical use of mixing sizing policies is: any number of LEADING Fixed columns, followed by one or two TRAILING Stretch columns.
-//      (this is because the visible order of columns have subtle but necessary effects on how they react to manual resizing).
-// - When ScrollX is on:
-//    - Table defaults to ImGuiTableFlags_SizingFixedFit -> all Columns defaults to ImGuiTableColumnFlags_WidthFixed
-//    - Columns sizing policy allowed: Fixed/Auto mostly.
-//    - Fixed Columns can be enlarged as needed. Table will show a horizontal scrollbar if needed.
-//    - When using auto-resizing (non-resizable) fixed columns, querying the content width to use item right-alignment e.g. SetNextItemWidth(-FLT_MIN) doesn't make sense, would create a feedback loop.
-//    - Using Stretch columns OFTEN DOES NOT MAKE SENSE if ScrollX is on, UNLESS you have specified a value for 'inner_width' in BeginTable().
-//      If you specify a value for 'inner_width' then effectively the scrolling space is known and Stretch or mixed Fixed/Stretch columns become meaningful again.
-// - Read on documentation at the top of imgui_tables.cpp for details.
-TableFlags :: distinct c.int
-// Features
-TableFlags_None              :: TableFlags(0)
-TableFlags_Resizable         :: TableFlags(1<<0) // Enable resizing columns.
-TableFlags_Reorderable       :: TableFlags(1<<1) // Enable reordering columns in header row (need calling TableSetupColumn() + TableHeadersRow() to display headers)
-TableFlags_Hideable          :: TableFlags(1<<2) // Enable hiding/disabling columns in context menu.
-TableFlags_Sortable          :: TableFlags(1<<3) // Enable sorting. Call TableGetSortSpecs() to obtain sort specs. Also see ImGuiTableFlags_SortMulti and ImGuiTableFlags_SortTristate.
-TableFlags_NoSavedSettings   :: TableFlags(1<<4) // Disable persisting columns order, width and sort settings in the .ini file.
-TableFlags_ContextMenuInBody :: TableFlags(1<<5) // Right-click on columns body/contents will display table context menu. By default it is available in TableHeadersRow().
-// Decorations
-TableFlags_RowBg                      :: TableFlags(1<<6)                                                // Set each RowBg color with ImGuiCol_TableRowBg or ImGuiCol_TableRowBgAlt (equivalent of calling TableSetBgColor with ImGuiTableBgFlags_RowBg0 on each row manually)
-TableFlags_BordersInnerH              :: TableFlags(1<<7)                                                // Draw horizontal borders between rows.
-TableFlags_BordersOuterH              :: TableFlags(1<<8)                                                // Draw horizontal borders at the top and bottom.
-TableFlags_BordersInnerV              :: TableFlags(1<<9)                                                // Draw vertical borders between columns.
-TableFlags_BordersOuterV              :: TableFlags(1<<10)                                               // Draw vertical borders on the left and right sides.
-TableFlags_BordersH                   :: TableFlags(TableFlags_BordersInnerH | TableFlags_BordersOuterH) // Draw horizontal borders.
-TableFlags_BordersV                   :: TableFlags(TableFlags_BordersInnerV | TableFlags_BordersOuterV) // Draw vertical borders.
-TableFlags_BordersInner               :: TableFlags(TableFlags_BordersInnerV | TableFlags_BordersInnerH) // Draw inner borders.
-TableFlags_BordersOuter               :: TableFlags(TableFlags_BordersOuterV | TableFlags_BordersOuterH) // Draw outer borders.
-TableFlags_Borders                    :: TableFlags(TableFlags_BordersInner | TableFlags_BordersOuter)   // Draw all borders.
-TableFlags_NoBordersInBody            :: TableFlags(1<<11)                                               // [ALPHA] Disable vertical borders in columns Body (borders will always appear in Headers). -> May move to style
-TableFlags_NoBordersInBodyUntilResize :: TableFlags(1<<12)                                               // [ALPHA] Disable vertical borders in columns Body until hovered for resize (borders will always appear in Headers). -> May move to style
-// Sizing Policy (read above for defaults)
-TableFlags_SizingFixedFit    :: TableFlags(1<<13) // Columns default to _WidthFixed or _WidthAuto (if resizable or not resizable), matching contents width.
-TableFlags_SizingFixedSame   :: TableFlags(2<<13) // Columns default to _WidthFixed or _WidthAuto (if resizable or not resizable), matching the maximum contents width of all columns. Implicitly enable ImGuiTableFlags_NoKeepColumnsVisible.
-TableFlags_SizingStretchProp :: TableFlags(3<<13) // Columns default to _WidthStretch with default weights proportional to each columns contents widths.
-TableFlags_SizingStretchSame :: TableFlags(4<<13) // Columns default to _WidthStretch with default weights all equal, unless overridden by TableSetupColumn().
-// Sizing Extra Options
-TableFlags_NoHostExtendX        :: TableFlags(1<<16) // Make outer width auto-fit to columns, overriding outer_size.x value. Only available when ScrollX/ScrollY are disabled and Stretch columns are not used.
-TableFlags_NoHostExtendY        :: TableFlags(1<<17) // Make outer height stop exactly at outer_size.y (prevent auto-extending table past the limit). Only available when ScrollX/ScrollY are disabled. Data below the limit will be clipped and not visible.
-TableFlags_NoKeepColumnsVisible :: TableFlags(1<<18) // Disable keeping column always minimally visible when ScrollX is off and table gets too small. Not recommended if columns are resizable.
-TableFlags_PreciseWidths        :: TableFlags(1<<19) // Disable distributing remainder width to stretched columns (width allocation on a 100-wide table with 3 columns: Without this flag: 33,33,34. With this flag: 33,33,33). With larger number of columns, resizing will appear to be less smooth.
-// Clipping
-TableFlags_NoClip :: TableFlags(1<<20) // Disable clipping rectangle for every individual columns (reduce draw command count, items will be able to overflow into other columns). Generally incompatible with TableSetupScrollFreeze().
-// Padding
-TableFlags_PadOuterX   :: TableFlags(1<<21) // Default if BordersOuterV is on. Enable outermost padding. Generally desirable if you have headers.
-TableFlags_NoPadOuterX :: TableFlags(1<<22) // Default if BordersOuterV is off. Disable outermost padding.
-TableFlags_NoPadInnerX :: TableFlags(1<<23) // Disable inner padding between columns (double inner padding if BordersOuterV is on, single inner padding if BordersOuterV is off).
-// Scrolling
-TableFlags_ScrollX :: TableFlags(1<<24) // Enable horizontal scrolling. Require 'outer_size' parameter of BeginTable() to specify the container size. Changes default sizing policy. Because this creates a child window, ScrollY is currently generally recommended when using ScrollX.
-TableFlags_ScrollY :: TableFlags(1<<25) // Enable vertical scrolling. Require 'outer_size' parameter of BeginTable() to specify the container size.
-// Sorting
-TableFlags_SortMulti    :: TableFlags(1<<26) // Hold shift when clicking headers to sort on multiple column. TableGetSortSpecs() may return specs where (SpecsCount > 1).
-TableFlags_SortTristate :: TableFlags(1<<27) // Allow no sorting, disable default sorting. TableGetSortSpecs() may return specs where (SpecsCount == 0).
-// Miscellaneous
-TableFlags_HighlightHoveredColumn :: TableFlags(1<<28) // Highlight column headers when hovered (may evolve into a fuller highlight)
-// [Internal] Combinations and masks
-TableFlags_SizingMask_ :: TableFlags(TableFlags_SizingFixedFit | TableFlags_SizingFixedSame | TableFlags_SizingStretchProp | TableFlags_SizingStretchSame)
-
-// Flags for ImGui::TableSetupColumn()
-TableColumnFlags :: bit_set[TableColumnFlag; c.int]
-TableColumnFlag :: enum c.int {
-	Disabled             = 0,  // Overriding/master disable flag: hide column, won't show in context menu (unlike calling TableSetColumnEnabled() which manipulates the user accessible state)
-	DefaultHide          = 1,  // Default as a hidden/disabled column.
-	DefaultSort          = 2,  // Default as a sorting column.
-	WidthStretch         = 3,  // Column will stretch. Preferable with horizontal scrolling disabled (default if table sizing policy is _SizingStretchSame or _SizingStretchProp).
-	WidthFixed           = 4,  // Column will not stretch. Preferable with horizontal scrolling enabled (default if table sizing policy is _SizingFixedFit and table is resizable).
-	NoResize             = 5,  // Disable manual resizing.
-	NoReorder            = 6,  // Disable manual reordering this column, this will also prevent other columns from crossing over this column.
-	NoHide               = 7,  // Disable ability to hide/disable this column.
-	NoClip               = 8,  // Disable clipping for this column (all NoClip columns will render in a same draw command).
-	NoSort               = 9,  // Disable ability to sort on this field (even if ImGuiTableFlags_Sortable is set on the table).
-	NoSortAscending      = 10, // Disable ability to sort in the ascending direction.
-	NoSortDescending     = 11, // Disable ability to sort in the descending direction.
-	NoHeaderLabel        = 12, // TableHeadersRow() will not submit horizontal label for this column. Convenient for some small columns. Name will still appear in context menu or in angled headers.
-	NoHeaderWidth        = 13, // Disable header text width contribution to automatic column width.
-	PreferSortAscending  = 14, // Make the initial sort direction Ascending when first sorting on this column (default).
-	PreferSortDescending = 15, // Make the initial sort direction Descending when first sorting on this column.
-	IndentEnable         = 16, // Use current Indent value when entering cell (default for column 0).
-	IndentDisable        = 17, // Ignore current Indent value when entering cell (default for columns > 0). Indentation changes _within_ the cell will still be honored.
-	AngledHeader         = 18, // TableHeadersRow() will submit an angled header row for this column. Note this will add an extra row.
-	// Output status flags, read-only via TableGetColumnFlags()
-	IsEnabled       = 24, // Status: is enabled == not hidden by user/api (referred to as "Hide" in _DefaultHide and _NoHide) flags.
-	IsVisible       = 25, // Status: is visible == is enabled AND not clipped by scrolling.
-	IsSorted        = 26, // Status: is currently part of the sort specs
-	IsHovered       = 27, // Status: is hovered by mouse
-	NoDirectResize_ = 30, // [Internal] Disable user resizing this column directly (it may however we resized indirectly from its left edge)
-}
-
-// [Internal] Combinations and masks
-TableColumnFlags_WidthMask_  :: TableColumnFlags{.WidthStretch,.WidthFixed}
-TableColumnFlags_IndentMask_ :: TableColumnFlags{.IndentEnable,.IndentDisable}
-TableColumnFlags_StatusMask_ :: TableColumnFlags{.IsEnabled,.IsVisible,.IsSorted,.IsHovered}
-
-// Flags for ImGui::TableNextRow()
-TableRowFlags :: bit_set[TableRowFlag; c.int]
-TableRowFlag :: enum c.int {
-	Headers = 0, // Identify header row (set default background color + width of its contents accounted differently for auto column width)
-}
-
-
-TableBgTarget :: enum c.int {
-	None = 0,
-	RowBg0 = 1,
-	RowBg1 = 2,
-	CellBg = 3,
-}
 
 // Flags for ImGui::IsWindowFocused()
 FocusedFlags :: bit_set[FocusedFlag; c.int]
@@ -621,7 +502,6 @@ Key :: enum c.int {
 	// ModShift = Key.ImGuiMod_Shift,
 	// ModAlt = Key.ImGuiMod_Alt,
 	// ModSuper = Key.ImGuiMod_Super,
-	// KeyPadEnter = Key.KeypadEnter,
 }
 
 NavInput :: enum c.int {
@@ -872,6 +752,126 @@ Cond :: enum c.int {
 	Appearing = 1<<3,
 }
 
+// Flags for ImGui::BeginTable()
+// - Important! Sizing policies have complex and subtle side effects, much more so than you would expect.
+//   Read comments/demos carefully + experiment with live demos to get acquainted with them.
+// - The DEFAULT sizing policies are:
+//    - Default to ImGuiTableFlags_SizingFixedFit    if ScrollX is on, or if host window has ImGuiWindowFlags_AlwaysAutoResize.
+//    - Default to ImGuiTableFlags_SizingStretchSame if ScrollX is off.
+// - When ScrollX is off:
+//    - Table defaults to ImGuiTableFlags_SizingStretchSame -> all Columns defaults to ImGuiTableColumnFlags_WidthStretch with same weight.
+//    - Columns sizing policy allowed: Stretch (default), Fixed/Auto.
+//    - Fixed Columns (if any) will generally obtain their requested width (unless the table cannot fit them all).
+//    - Stretch Columns will share the remaining width according to their respective weight.
+//    - Mixed Fixed/Stretch columns is possible but has various side-effects on resizing behaviors.
+//      The typical use of mixing sizing policies is: any number of LEADING Fixed columns, followed by one or two TRAILING Stretch columns.
+//      (this is because the visible order of columns have subtle but necessary effects on how they react to manual resizing).
+// - When ScrollX is on:
+//    - Table defaults to ImGuiTableFlags_SizingFixedFit -> all Columns defaults to ImGuiTableColumnFlags_WidthFixed
+//    - Columns sizing policy allowed: Fixed/Auto mostly.
+//    - Fixed Columns can be enlarged as needed. Table will show a horizontal scrollbar if needed.
+//    - When using auto-resizing (non-resizable) fixed columns, querying the content width to use item right-alignment e.g. SetNextItemWidth(-FLT_MIN) doesn't make sense, would create a feedback loop.
+//    - Using Stretch columns OFTEN DOES NOT MAKE SENSE if ScrollX is on, UNLESS you have specified a value for 'inner_width' in BeginTable().
+//      If you specify a value for 'inner_width' then effectively the scrolling space is known and Stretch or mixed Fixed/Stretch columns become meaningful again.
+// - Read on documentation at the top of imgui_tables.cpp for details.
+TableFlags :: distinct c.int
+// Features
+TableFlags_None              :: TableFlags(0)
+TableFlags_Resizable         :: TableFlags(1<<0) // Enable resizing columns.
+TableFlags_Reorderable       :: TableFlags(1<<1) // Enable reordering columns in header row (need calling TableSetupColumn() + TableHeadersRow() to display headers)
+TableFlags_Hideable          :: TableFlags(1<<2) // Enable hiding/disabling columns in context menu.
+TableFlags_Sortable          :: TableFlags(1<<3) // Enable sorting. Call TableGetSortSpecs() to obtain sort specs. Also see ImGuiTableFlags_SortMulti and ImGuiTableFlags_SortTristate.
+TableFlags_NoSavedSettings   :: TableFlags(1<<4) // Disable persisting columns order, width and sort settings in the .ini file.
+TableFlags_ContextMenuInBody :: TableFlags(1<<5) // Right-click on columns body/contents will display table context menu. By default it is available in TableHeadersRow().
+// Decorations
+TableFlags_RowBg                      :: TableFlags(1<<6)                                                // Set each RowBg color with ImGuiCol_TableRowBg or ImGuiCol_TableRowBgAlt (equivalent of calling TableSetBgColor with ImGuiTableBgFlags_RowBg0 on each row manually)
+TableFlags_BordersInnerH              :: TableFlags(1<<7)                                                // Draw horizontal borders between rows.
+TableFlags_BordersOuterH              :: TableFlags(1<<8)                                                // Draw horizontal borders at the top and bottom.
+TableFlags_BordersInnerV              :: TableFlags(1<<9)                                                // Draw vertical borders between columns.
+TableFlags_BordersOuterV              :: TableFlags(1<<10)                                               // Draw vertical borders on the left and right sides.
+TableFlags_BordersH                   :: TableFlags(TableFlags_BordersInnerH | TableFlags_BordersOuterH) // Draw horizontal borders.
+TableFlags_BordersV                   :: TableFlags(TableFlags_BordersInnerV | TableFlags_BordersOuterV) // Draw vertical borders.
+TableFlags_BordersInner               :: TableFlags(TableFlags_BordersInnerV | TableFlags_BordersInnerH) // Draw inner borders.
+TableFlags_BordersOuter               :: TableFlags(TableFlags_BordersOuterV | TableFlags_BordersOuterH) // Draw outer borders.
+TableFlags_Borders                    :: TableFlags(TableFlags_BordersInner | TableFlags_BordersOuter)   // Draw all borders.
+TableFlags_NoBordersInBody            :: TableFlags(1<<11)                                               // [ALPHA] Disable vertical borders in columns Body (borders will always appear in Headers). -> May move to style
+TableFlags_NoBordersInBodyUntilResize :: TableFlags(1<<12)                                               // [ALPHA] Disable vertical borders in columns Body until hovered for resize (borders will always appear in Headers). -> May move to style
+// Sizing Policy (read above for defaults)
+TableFlags_SizingFixedFit    :: TableFlags(1<<13) // Columns default to _WidthFixed or _WidthAuto (if resizable or not resizable), matching contents width.
+TableFlags_SizingFixedSame   :: TableFlags(2<<13) // Columns default to _WidthFixed or _WidthAuto (if resizable or not resizable), matching the maximum contents width of all columns. Implicitly enable ImGuiTableFlags_NoKeepColumnsVisible.
+TableFlags_SizingStretchProp :: TableFlags(3<<13) // Columns default to _WidthStretch with default weights proportional to each columns contents widths.
+TableFlags_SizingStretchSame :: TableFlags(4<<13) // Columns default to _WidthStretch with default weights all equal, unless overridden by TableSetupColumn().
+// Sizing Extra Options
+TableFlags_NoHostExtendX        :: TableFlags(1<<16) // Make outer width auto-fit to columns, overriding outer_size.x value. Only available when ScrollX/ScrollY are disabled and Stretch columns are not used.
+TableFlags_NoHostExtendY        :: TableFlags(1<<17) // Make outer height stop exactly at outer_size.y (prevent auto-extending table past the limit). Only available when ScrollX/ScrollY are disabled. Data below the limit will be clipped and not visible.
+TableFlags_NoKeepColumnsVisible :: TableFlags(1<<18) // Disable keeping column always minimally visible when ScrollX is off and table gets too small. Not recommended if columns are resizable.
+TableFlags_PreciseWidths        :: TableFlags(1<<19) // Disable distributing remainder width to stretched columns (width allocation on a 100-wide table with 3 columns: Without this flag: 33,33,34. With this flag: 33,33,33). With larger number of columns, resizing will appear to be less smooth.
+// Clipping
+TableFlags_NoClip :: TableFlags(1<<20) // Disable clipping rectangle for every individual columns (reduce draw command count, items will be able to overflow into other columns). Generally incompatible with TableSetupScrollFreeze().
+// Padding
+TableFlags_PadOuterX   :: TableFlags(1<<21) // Default if BordersOuterV is on. Enable outermost padding. Generally desirable if you have headers.
+TableFlags_NoPadOuterX :: TableFlags(1<<22) // Default if BordersOuterV is off. Disable outermost padding.
+TableFlags_NoPadInnerX :: TableFlags(1<<23) // Disable inner padding between columns (double inner padding if BordersOuterV is on, single inner padding if BordersOuterV is off).
+// Scrolling
+TableFlags_ScrollX :: TableFlags(1<<24) // Enable horizontal scrolling. Require 'outer_size' parameter of BeginTable() to specify the container size. Changes default sizing policy. Because this creates a child window, ScrollY is currently generally recommended when using ScrollX.
+TableFlags_ScrollY :: TableFlags(1<<25) // Enable vertical scrolling. Require 'outer_size' parameter of BeginTable() to specify the container size.
+// Sorting
+TableFlags_SortMulti    :: TableFlags(1<<26) // Hold shift when clicking headers to sort on multiple column. TableGetSortSpecs() may return specs where (SpecsCount > 1).
+TableFlags_SortTristate :: TableFlags(1<<27) // Allow no sorting, disable default sorting. TableGetSortSpecs() may return specs where (SpecsCount == 0).
+// Miscellaneous
+TableFlags_HighlightHoveredColumn :: TableFlags(1<<28) // Highlight column headers when hovered (may evolve into a fuller highlight)
+// [Internal] Combinations and masks
+TableFlags_SizingMask_ :: TableFlags(TableFlags_SizingFixedFit | TableFlags_SizingFixedSame | TableFlags_SizingStretchProp | TableFlags_SizingStretchSame)
+
+// Flags for ImGui::TableSetupColumn()
+TableColumnFlags :: bit_set[TableColumnFlag; c.int]
+TableColumnFlag :: enum c.int {
+	Disabled             = 0,  // Overriding/master disable flag: hide column, won't show in context menu (unlike calling TableSetColumnEnabled() which manipulates the user accessible state)
+	DefaultHide          = 1,  // Default as a hidden/disabled column.
+	DefaultSort          = 2,  // Default as a sorting column.
+	WidthStretch         = 3,  // Column will stretch. Preferable with horizontal scrolling disabled (default if table sizing policy is _SizingStretchSame or _SizingStretchProp).
+	WidthFixed           = 4,  // Column will not stretch. Preferable with horizontal scrolling enabled (default if table sizing policy is _SizingFixedFit and table is resizable).
+	NoResize             = 5,  // Disable manual resizing.
+	NoReorder            = 6,  // Disable manual reordering this column, this will also prevent other columns from crossing over this column.
+	NoHide               = 7,  // Disable ability to hide/disable this column.
+	NoClip               = 8,  // Disable clipping for this column (all NoClip columns will render in a same draw command).
+	NoSort               = 9,  // Disable ability to sort on this field (even if ImGuiTableFlags_Sortable is set on the table).
+	NoSortAscending      = 10, // Disable ability to sort in the ascending direction.
+	NoSortDescending     = 11, // Disable ability to sort in the descending direction.
+	NoHeaderLabel        = 12, // TableHeadersRow() will not submit horizontal label for this column. Convenient for some small columns. Name will still appear in context menu or in angled headers.
+	NoHeaderWidth        = 13, // Disable header text width contribution to automatic column width.
+	PreferSortAscending  = 14, // Make the initial sort direction Ascending when first sorting on this column (default).
+	PreferSortDescending = 15, // Make the initial sort direction Descending when first sorting on this column.
+	IndentEnable         = 16, // Use current Indent value when entering cell (default for column 0).
+	IndentDisable        = 17, // Ignore current Indent value when entering cell (default for columns > 0). Indentation changes _within_ the cell will still be honored.
+	AngledHeader         = 18, // TableHeadersRow() will submit an angled header row for this column. Note this will add an extra row.
+	// Output status flags, read-only via TableGetColumnFlags()
+	IsEnabled       = 24, // Status: is enabled == not hidden by user/api (referred to as "Hide" in _DefaultHide and _NoHide) flags.
+	IsVisible       = 25, // Status: is visible == is enabled AND not clipped by scrolling.
+	IsSorted        = 26, // Status: is currently part of the sort specs
+	IsHovered       = 27, // Status: is hovered by mouse
+	NoDirectResize_ = 30, // [Internal] Disable user resizing this column directly (it may however we resized indirectly from its left edge)
+}
+
+// [Internal] Combinations and masks
+TableColumnFlags_WidthMask_  :: TableColumnFlags{.WidthStretch,.WidthFixed}
+TableColumnFlags_IndentMask_ :: TableColumnFlags{.IndentEnable,.IndentDisable}
+TableColumnFlags_StatusMask_ :: TableColumnFlags{.IsEnabled,.IsVisible,.IsSorted,.IsHovered}
+
+// Flags for ImGui::TableNextRow()
+TableRowFlags :: bit_set[TableRowFlag; c.int]
+TableRowFlag :: enum c.int {
+	Headers = 0, // Identify header row (set default background color + width of its contents accounted differently for auto column width)
+}
+
+
+TableBgTarget :: enum c.int {
+	None = 0,
+	RowBg0 = 1,
+	RowBg1 = 2,
+	CellBg = 3,
+}
+
 // Flags for ImDrawList functions
 // (Legacy: bit 0 must always correspond to ImDrawFlags_Closed to be backward compatible with old API using a bool. Bits 1..3 must be unused)
 DrawFlags :: distinct c.int
@@ -947,6 +947,24 @@ Context :: struct { // Dear ImGui context (opaque structure, unless including im
 
 Vec2 :: [2]f32
 Vec4 :: [4]f32
+// Sorting specifications for a table (often handling sort specs for a single column, occasionally more)
+// Obtained by calling TableGetSortSpecs().
+// When 'SpecsDirty == true' you can sort your data. It will be true with sorting specs have changed since last call, or the first time.
+// Make sure to set 'SpecsDirty = false' after sorting, else you may wastefully sort your data every frame!
+TableSortSpecs :: struct {
+	Specs:      ^TableColumnSortSpecs, // Pointer to sort spec array.
+	SpecsCount: c.int,                 // Sort spec count. Most often 1. May be > 1 when ImGuiTableFlags_SortMulti is enabled. May be == 0 when ImGuiTableFlags_SortTristate is enabled.
+	SpecsDirty: bool,                  // Set to true when specs have changed since last time! Use this to sort again, then clear the flag.
+}
+
+// Sorting specification for one column of a table (sizeof == 12 bytes)
+TableColumnSortSpecs :: struct {
+	ColumnUserID:  ID,            // User id of the column (if specified by a TableSetupColumn() call)
+	ColumnIndex:   i16,           // Index of the column
+	SortOrder:     i16,           // Index within parent ImGuiTableSortSpecs (always stored in order starting from 0, tables sorted on a single criteria will always have a 0 here)
+	SortDirection: SortDirection, // ImGuiSortDirection_Ascending or ImGuiSortDirection_Descending
+}
+
 Vector_Wchar :: struct {
 	Size:     c.int,
 	Capacity: c.int,
@@ -1174,15 +1192,20 @@ IO :: struct {
 	MouseDragThreshold:      f32, // = 6.0f           // Distance threshold before considering we are dragging.
 	KeyRepeatDelay:          f32, // = 0.275f         // When holding a key/button, time before it starts repeating, in seconds (for buttons in Repeat mode, etc.).
 	KeyRepeatRate:           f32, // = 0.050f         // When holding a key/button, rate at which it repeats, in seconds.
+	// Option to enable various debug tools showing buttons that will call the IM_DEBUG_BREAK() macro.
+	// - The Item Picker tool will be available regardless of this being enabled, in order to maximize its discoverability.
+	// - Requires a debugger being attached, otherwise IM_DEBUG_BREAK() options will appear to crash your application.
+	//   e.g. io.ConfigDebugIsDebuggerPresent = ::IsDebuggerPresent() on Win32, or refer to ImOsIsDebuggerPresent() imgui_test_engine/imgui_te_utils.cpp for a Unix compatible version).
+	ConfigDebugIsDebuggerPresent: bool, // = false          // Enable various tools calling IM_DEBUG_BREAK().
 	// Tools to test correct Begin/End and BeginChild/EndChild behaviors.
-	// Presently Begin()/End() and BeginChild()/EndChild() needs to ALWAYS be called in tandem, regardless of return value of BeginXXX()
-	// This is inconsistent with other BeginXXX functions and create confusion for many users.
-	// We expect to update the API eventually. In the meanwhile we provide tools to facilitate checking user-code behavior.
+	// - Presently Begin()/End() and BeginChild()/EndChild() needs to ALWAYS be called in tandem, regardless of return value of BeginXXX()
+	// - This is inconsistent with other BeginXXX functions and create confusion for many users.
+	// - We expect to update the API eventually. In the meanwhile we provide tools to facilitate checking user-code behavior.
 	ConfigDebugBeginReturnValueOnce: bool, // = false          // First-time calls to Begin()/BeginChild() will return false. NEEDS TO BE SET AT APPLICATION BOOT TIME if you don't want to miss windows.
 	ConfigDebugBeginReturnValueLoop: bool, // = false          // Some calls to Begin()/BeginChild() will return false. Will cycle through window depths then repeat. Suggested use: add "io.ConfigDebugBeginReturnValue = io.KeyShift" in your main loop then occasionally press SHIFT. Windows should be flickering while running.
-	// Option to deactivate io.AddFocusEvent(false) handling. May facilitate interactions with a debugger when focus loss leads to clearing inputs data.
-	// Backends may have other side-effects on focus loss, so this will reduce side-effects but not necessary remove all of them.
-	// Consider using e.g. Win32's IsDebuggerPresent() as an additional filter (or see ImOsIsDebuggerPresent() in imgui_test_engine/imgui_te_utils.cpp for a Unix compatible version).
+	// Option to deactivate io.AddFocusEvent(false) handling.
+	// - May facilitate interactions with a debugger when focus loss leads to clearing inputs data.
+	// - Backends may have other side-effects on focus loss, so this will reduce side-effects but not necessary remove all of them.
 	ConfigDebugIgnoreFocusLoss: bool, // = false          // Ignore io.AddFocusEvent(false), consequently not calling io.ClearInputKeys() in input processing.
 	// Option to audit .ini data
 	ConfigDebugIniSettings: bool, // = false          // Save .ini data with extra comments (particularly helpful for Docking, but makes saving slower)
@@ -1328,24 +1351,6 @@ Payload :: struct {
 	DataType:       [33]c.char, // Data type tag (short user-supplied string, 32 characters max)
 	Preview:        bool,       // Set when AcceptDragDropPayload() was called and mouse has been hovering the target item (nb: handle overlapping drag targets)
 	Delivery:       bool,       // Set when AcceptDragDropPayload() was called and mouse button is released over the target item.
-}
-
-// Sorting specification for one column of a table (sizeof == 12 bytes)
-TableColumnSortSpecs :: struct {
-	ColumnUserID:  ID,            // User id of the column (if specified by a TableSetupColumn() call)
-	ColumnIndex:   i16,           // Index of the column
-	SortOrder:     i16,           // Index within parent ImGuiTableSortSpecs (always stored in order starting from 0, tables sorted on a single criteria will always have a 0 here)
-	SortDirection: SortDirection, // ImGuiSortDirection_Ascending or ImGuiSortDirection_Descending
-}
-
-// Sorting specifications for a table (often handling sort specs for a single column, occasionally more)
-// Obtained by calling TableGetSortSpecs().
-// When 'SpecsDirty == true' you can sort your data. It will be true with sorting specs have changed since last call, or the first time.
-// Make sure to set 'SpecsDirty = false' after sorting, else you may wastefully sort your data every frame!
-TableSortSpecs :: struct {
-	Specs:      ^TableColumnSortSpecs, // Pointer to sort spec array.
-	SpecsCount: c.int,                 // Sort spec count. Most often 1. May be > 1 when ImGuiTableFlags_SortMulti is enabled. May be == 0 when ImGuiTableFlags_SortTristate is enabled.
-	SpecsDirty: bool,                  // Set to true when specs have changed since last time! Use this to sort again, then clear the flag.
 }
 
 // [Internal]
@@ -1531,7 +1536,8 @@ FontConfig :: struct {
 	GlyphMaxAdvanceX:     f32,    // FLT_MAX  // Maximum AdvanceX for glyphs
 	MergeMode:            bool,   // false    // Merge into previous ImFont, so you can combine multiple inputs font into one ImFont (e.g. ASCII font + icons + Japanese glyphs). You may want to use GlyphOffset.y when merge font of different heights.
 	FontBuilderFlags:     c.uint, // 0        // Settings for custom font builder. THIS IS BUILDER IMPLEMENTATION DEPENDENT. Leave as zero if unsure.
-	RasterizerMultiply:   f32,    // 1.0f     // Brighten (>1.0f) or darken (<1.0f) font output. Brightening small fonts may be a good workaround to make them more readable.
+	RasterizerMultiply:   f32,    // 1.0f     // Linearly brighten (>1.0f) or darken (<1.0f) font output. Brightening small fonts may be a good workaround to make them more readable. This is a silly thing we may remove in the future.
+	RasterizerDensity:    f32,    // 1.0f     // DPI scale for rasterization, not altering other font metrics: make it easy to swap between e.g. a 100% and a 400% fonts for a zooming display. IMPORTANT: If you increase this it is expected that you increase font scale accordingly, otherwise quality may look lowered.
 	EllipsisChar:         Wchar,  // -1       // Explicitly specify unicode codepoint of ellipsis character. When fonts are being merged first specified ellipsis will be used.
 	// [Internal]
 	Name:    [40]c.char, // Name (strictly to ease debugging)
@@ -1756,7 +1762,7 @@ foreign lib {
 	@(link_name="ImGui_SetCurrentContext") SetCurrentContext :: proc(ctx: ^Context)                             ---
 	// Main
 	@(link_name="ImGui_GetIO")       GetIO       :: proc() -> ^IO       --- // access the IO structure (mouse/keyboard/gamepad inputs, time, various configuration options/flags)
-	@(link_name="ImGui_GetStyle")    GetStyle    :: proc() -> ^Style    --- // access the Style structure (colors, sizes). Always use PushStyleCol(), PushStyleVar() to modify style mid-frame!
+	@(link_name="ImGui_GetStyle")    GetStyle    :: proc() -> ^Style    --- // access the Style structure (colors, sizes). Always use PushStyleColor(), PushStyleVar() to modify style mid-frame!
 	@(link_name="ImGui_NewFrame")    NewFrame    :: proc()              --- // start a new Dear ImGui frame, you can submit any command from this point until Render()/EndFrame().
 	@(link_name="ImGui_EndFrame")    EndFrame    :: proc()              --- // ends the Dear ImGui frame. automatically called by Render(). If you don't need to render data (skipping rendering) you may call EndFrame() without Render()... but you'll have wasted CPU already! If you don't need to render, better to not create any windows and not call NewFrame() at all!
 	@(link_name="ImGui_Render")      Render      :: proc()              --- // ends the Dear ImGui frame, finalize the draw data. You can then get call GetDrawData().
@@ -1793,6 +1799,11 @@ foreign lib {
 	@(link_name="ImGui_End")   End   :: proc()                                                         ---
 	// Child Windows
 	// - Use child windows to begin into a self-contained independent scrolling/clipping regions within a host window. Child windows can embed their own child.
+	// - Before 1.90 (November 2023), the "ImGuiChildFlags child_flags = 0" parameter was "bool border = false".
+	//   This API is backward compatible with old code, as we guarantee that ImGuiChildFlags_Border == true.
+	//   Consider updating your old call sites:
+	//      BeginChild("Name", size, false)   -> Begin("Name", size, 0); or Begin("Name", size, ImGuiChildFlags_None);
+	//      BeginChild("Name", size, true)    -> Begin("Name", size, ImGuiChildFlags_Border);
 	// - Manual sizing (each axis can use a different setting e.g. ImVec2(0.0f, 400.0f)):
 	//     == 0.0f: use remaining parent window size for this axis.
 	//      > 0.0f: use specified size for this axis.
@@ -1804,16 +1815,15 @@ foreign lib {
 	//   [Important: due to legacy reason, Begin/End and BeginChild/EndChild are inconsistent with all other functions
 	//    such as BeginMenu/EndMenu, BeginPopup/EndPopup, etc. where the EndXXX call should only be called if the corresponding
 	//    BeginXXX function returned true. Begin and BeginChild are the only odd ones out. Will be fixed in a future update.]
-	@(link_name="ImGui_BeginChild")                          BeginChild                          :: proc(str_id: cstring, size: Vec2, child_flags: ChildFlags, window_flags: WindowFlags) -> bool ---
-	@(link_name="ImGui_BeginChildIDImVec2ImGuiChildFlags")   BeginChildIDImVec2ImGuiChildFlags   :: proc(id: ID) -> bool                                                                          --- // Implied size = ImVec2(0, 0), child_flags = 0, window_flags = 0
-	@(link_name="ImGui_BeginChildIDImVec2ImGuiChildFlagsEx") BeginChildIDImVec2ImGuiChildFlagsEx :: proc(id: ID, size: Vec2, child_flags: ChildFlags, window_flags: WindowFlags) -> bool          ---
-	@(link_name="ImGui_EndChild")                            EndChild                            :: proc()                                                                                        ---
+	@(link_name="ImGui_BeginChild")   BeginChild   :: proc(str_id: cstring, size: Vec2, child_flags: ChildFlags, window_flags: WindowFlags) -> bool ---
+	@(link_name="ImGui_BeginChildID") BeginChildID :: proc(id: ID, size: Vec2, child_flags: ChildFlags, window_flags: WindowFlags) -> bool          ---
+	@(link_name="ImGui_EndChild")     EndChild     :: proc()                                                                                        ---
 	// Windows Utilities
 	// - 'current window' = the window we are appending into while inside a Begin()/End() block. 'next window' = next window we will Begin() into.
 	@(link_name="ImGui_IsWindowAppearing") IsWindowAppearing :: proc() -> bool                    ---
 	@(link_name="ImGui_IsWindowCollapsed") IsWindowCollapsed :: proc() -> bool                    ---
 	@(link_name="ImGui_IsWindowFocused")   IsWindowFocused   :: proc(flags: FocusedFlags) -> bool --- // is current window focused? or its root/child, depending on flags. see flags for options.
-	@(link_name="ImGui_IsWindowHovered")   IsWindowHovered   :: proc(flags: HoveredFlags) -> bool --- // is current window hovered (and typically: not blocked by a popup/modal)? see flags for options. NB: If you are trying to check whether your mouse should be dispatched to imgui or to your app, you should use the 'io.WantCaptureMouse' boolean for that! Please read the FAQ!
+	@(link_name="ImGui_IsWindowHovered")   IsWindowHovered   :: proc(flags: HoveredFlags) -> bool --- // is current window hovered and hoverable (e.g. not blocked by a popup/modal)? See ImGuiHoveredFlags_ for options. IMPORTANT: If you are trying to check whether your mouse should be dispatched to Dear ImGui or to your underlying app, you should not use this function! Use the 'io.WantCaptureMouse' boolean for that! Refer to FAQ entry "How can I tell whether to dispatch mouse/keyboard to Dear ImGui or my application?" for details.
 	@(link_name="ImGui_GetWindowDrawList") GetWindowDrawList :: proc() -> ^DrawList               --- // get draw list associated to the current window, to append your own drawing primitives
 	@(link_name="ImGui_GetWindowDpiScale") GetWindowDpiScale :: proc() -> f32                     --- // get DPI scale currently associated to the current window's viewport.
 	@(link_name="ImGui_GetWindowPos")      GetWindowPos      :: proc() -> Vec2                    --- // get current window position in screen space (note: it is unlikely you need to use this. Consider using current layout pos instead, GetCursorScreenPos())
@@ -1826,7 +1836,7 @@ foreign lib {
 	@(link_name="ImGui_SetNextWindowPos")             SetNextWindowPos             :: proc(pos: Vec2, cond: Cond)                                                                       --- // Implied pivot = ImVec2(0, 0)
 	@(link_name="ImGui_SetNextWindowPosEx")           SetNextWindowPosEx           :: proc(pos: Vec2, cond: Cond, pivot: Vec2)                                                          --- // set next window position. call before Begin(). use pivot=(0.5f,0.5f) to center on given point, etc.
 	@(link_name="ImGui_SetNextWindowSize")            SetNextWindowSize            :: proc(size: Vec2, cond: Cond)                                                                      --- // set next window size. set axis to 0.0f to force an auto-fit on this axis. call before Begin()
-	@(link_name="ImGui_SetNextWindowSizeConstraints") SetNextWindowSizeConstraints :: proc(size_min: Vec2, size_max: Vec2, custom_callback: SizeCallback, custom_callback_data: rawptr) --- // set next window size limits. use -1,-1 on either X/Y axis to preserve the current size. Sizes will be rounded down. Use callback to apply non-trivial programmatic constraints.
+	@(link_name="ImGui_SetNextWindowSizeConstraints") SetNextWindowSizeConstraints :: proc(size_min: Vec2, size_max: Vec2, custom_callback: SizeCallback, custom_callback_data: rawptr) --- // set next window size limits. use 0.0f or FLT_MAX if you don't want limits. Use -1 for both min and max of same axis to preserve current size (which itself is a constraint). Use callback to apply non-trivial programmatic constraints.
 	@(link_name="ImGui_SetNextWindowContentSize")     SetNextWindowContentSize     :: proc(size: Vec2)                                                                                  --- // set next window content size (~ scrollable client area, which enforce the range of scrollbars). Not including window decorations (title bar, menu bar, etc.) nor WindowPadding. set an axis to 0.0f to leave it automatic. call before Begin()
 	@(link_name="ImGui_SetNextWindowCollapsed")       SetNextWindowCollapsed       :: proc(collapsed: bool, cond: Cond)                                                                 --- // set next window collapsed state. call before Begin()
 	@(link_name="ImGui_SetNextWindowFocus")           SetNextWindowFocus           :: proc()                                                                                            --- // set next window to be focused / top-most. call before Begin()
@@ -1981,9 +1991,10 @@ foreign lib {
 	@(link_name="ImGui_Bullet")               Bullet               :: proc()                                                            --- // draw a small circle + keep the cursor on the same line. advance cursor x position by GetTreeNodeToLabelSpacing(), same distance that TreeNode() uses
 	// Widgets: Images
 	// - Read about ImTextureID here: https://github.com/ocornut/imgui/wiki/Image-Loading-and-Displaying-Examples
-	// - Note that ImageButton() adds style.FramePadding*2.0f to provided size. This is in order to facilitate fitting an image in a button.
-	@(link_name="ImGui_Image")         Image         :: proc(user_texture_id: TextureID, size: Vec2)                                                                                    --- // Implied uv0 = ImVec2(0, 0), uv1 = ImVec2(1, 1), tint_col = ImVec4(1, 1, 1, 1), border_col = ImVec4(0, 0, 0, 0)
-	@(link_name="ImGui_ImageEx")       ImageEx       :: proc(user_texture_id: TextureID, size: Vec2, uv0: Vec2, uv1: Vec2, tint_col: Vec4, border_col: Vec4)                            ---
+	// - 'uv0' and 'uv1' are texture coordinates. Read about them from the same link above.
+	// - Note that Image() may add +2.0f to provided size if a border is visible, ImageButton() adds style.FramePadding*2.0f to provided size.
+	@(link_name="ImGui_Image")         Image         :: proc(user_texture_id: TextureID, image_size: Vec2)                                                                              --- // Implied uv0 = ImVec2(0, 0), uv1 = ImVec2(1, 1), tint_col = ImVec4(1, 1, 1, 1), border_col = ImVec4(0, 0, 0, 0)
+	@(link_name="ImGui_ImageEx")       ImageEx       :: proc(user_texture_id: TextureID, image_size: Vec2, uv0: Vec2, uv1: Vec2, tint_col: Vec4, border_col: Vec4)                      ---
 	@(link_name="ImGui_ImageButton")   ImageButton   :: proc(str_id: cstring, user_texture_id: TextureID, image_size: Vec2) -> bool                                                     --- // Implied uv0 = ImVec2(0, 0), uv1 = ImVec2(1, 1), bg_col = ImVec4(0, 0, 0, 0), tint_col = ImVec4(1, 1, 1, 1)
 	@(link_name="ImGui_ImageButtonEx") ImageButtonEx :: proc(str_id: cstring, user_texture_id: TextureID, image_size: Vec2, uv0: Vec2, uv1: Vec2, bg_col: Vec4, tint_col: Vec4) -> bool ---
 	// Widgets: Combo Box (Dropdown)
@@ -2117,9 +2128,9 @@ foreign lib {
 	@(link_name="ImGui_TreeNodeExPtr")             TreeNodeExPtr             :: proc(ptr_id: rawptr, flags: TreeNodeFlags, fmt: cstring, #c_vararg args: ..any) -> bool  ---
 	// @(link_name="ImGui_TreeNodeExV")            TreeNodeExV               :: proc(str_id: cstring, flags: TreeNodeFlags, fmt: cstring, args: libc.va_list) -> bool    ---
 	// @(link_name="ImGui_TreeNodeExVPtr")         TreeNodeExVPtr            :: proc(ptr_id: rawptr, flags: TreeNodeFlags, fmt: cstring, args: libc.va_list) -> bool     ---
-	@(link_name="ImGui_TreePush")                  TreePush                  :: proc(str_id: cstring)                                                                    --- // ~ Indent()+PushId(). Already called by TreeNode() when returning true, but you can call TreePush/TreePop yourself if desired.
+	@(link_name="ImGui_TreePush")                  TreePush                  :: proc(str_id: cstring)                                                                    --- // ~ Indent()+PushID(). Already called by TreeNode() when returning true, but you can call TreePush/TreePop yourself if desired.
 	@(link_name="ImGui_TreePushPtr")               TreePushPtr               :: proc(ptr_id: rawptr)                                                                     --- // "
-	@(link_name="ImGui_TreePop")                   TreePop                   :: proc()                                                                                   --- // ~ Unindent()+PopId()
+	@(link_name="ImGui_TreePop")                   TreePop                   :: proc()                                                                                   --- // ~ Unindent()+PopID()
 	@(link_name="ImGui_GetTreeNodeToLabelSpacing") GetTreeNodeToLabelSpacing :: proc() -> f32                                                                            --- // horizontal distance preceding label when using TreeNode*() or Bullet() == (g.FontSize + style.FramePadding.x*2) for a regular unframed TreeNode
 	@(link_name="ImGui_CollapsingHeader")          CollapsingHeader          :: proc(label: cstring, flags: TreeNodeFlags) -> bool                                       --- // if returning 'true' the header is open. doesn't indent nor push on ID stack. user doesn't have to call TreePop().
 	@(link_name="ImGui_CollapsingHeaderBoolPtr")   CollapsingHeaderBoolPtr   :: proc(label: cstring, p_visible: ^bool, flags: TreeNodeFlags) -> bool                     --- // when 'p_visible != NULL': if '*p_visible==true' display an additional small close button on upper right of the header which will set the bool to false when clicked, if '*p_visible==false' don't display the header.
@@ -2181,8 +2192,15 @@ foreign lib {
 	@(link_name="ImGui_BeginItemTooltip")   BeginItemTooltip :: proc() -> bool                            --- // begin/append a tooltip window if preceding item was hovered.
 	@(link_name="ImGui_SetItemTooltip")     SetItemTooltip   :: proc(fmt: cstring, #c_vararg args: ..any) --- // set a text-only tooltip if preceeding item was hovered. override any previous call to SetTooltip().
 	// @(link_name="ImGui_SetItemTooltipV") SetItemTooltipV  :: proc(fmt: cstring, args: libc.va_list)    ---
-	// Popups: begin/end functions
-	//  - BeginPopup(): query popup state, if open start appending into the window. Call EndPopup() afterwards. ImGuiWindowFlags are forwarded to the window.
+	// Popups, Modals
+	//  - They block normal mouse hovering detection (and therefore most mouse interactions) behind them.
+	//  - If not modal: they can be closed by clicking anywhere outside them, or by pressing ESCAPE.
+	//  - Their visibility state (~bool) is held internally instead of being held by the programmer as we are used to with regular Begin*() calls.
+	//  - The 3 properties above are related: we need to retain popup visibility state in the library because popups may be closed as any time.
+	//  - You can bypass the hovering restriction by using ImGuiHoveredFlags_AllowWhenBlockedByPopup when calling IsItemHovered() or IsWindowHovered().
+	//  - IMPORTANT: Popup identifiers are relative to the current ID stack, so OpenPopup and BeginPopup generally needs to be at the same level of the stack.
+	//    This is sometimes leading to confusing mistakes. May rework this in the future.
+	//  - BeginPopup(): query popup state, if open start appending into the window. Call EndPopup() afterwards if returned true. ImGuiWindowFlags are forwarded to the window.
 	//  - BeginPopupModal(): block every interaction behind the window, cannot be closed by user, add a dimming background, has a title bar.
 	@(link_name="ImGui_BeginPopup")      BeginPopup      :: proc(str_id: cstring, flags: WindowFlags) -> bool              --- // return true if the popup is open, and you can start outputting to it.
 	@(link_name="ImGui_BeginPopupModal") BeginPopupModal :: proc(name: cstring, p_open: ^bool, flags: WindowFlags) -> bool --- // return true if the modal is open, and you can start outputting to it.
@@ -2231,12 +2249,10 @@ foreign lib {
 	//      TableNextColumn() will automatically wrap-around into the next row if needed.
 	//    - IMPORTANT: Comparatively to the old Columns() API, we need to call TableNextColumn() for the first column!
 	//    - Summary of possible call flow:
-	//        --------------------------------------------------------------------------------------------------------
-	//        TableNextRow() -> TableSetColumnIndex(0) -> Text("Hello 0") -> TableSetColumnIndex(1) -> Text("Hello 1")  // OK
-	//        TableNextRow() -> TableNextColumn()      -> Text("Hello 0") -> TableNextColumn()      -> Text("Hello 1")  // OK
-	//                          TableNextColumn()      -> Text("Hello 0") -> TableNextColumn()      -> Text("Hello 1")  // OK: TableNextColumn() automatically gets to next row!
-	//        TableNextRow()                           -> Text("Hello 0")                                               // Not OK! Missing TableSetColumnIndex() or TableNextColumn()! Text will not appear!
-	//        --------------------------------------------------------------------------------------------------------
+	//        - TableNextRow() -> TableSetColumnIndex(0) -> Text("Hello 0") -> TableSetColumnIndex(1) -> Text("Hello 1")  // OK
+	//        - TableNextRow() -> TableNextColumn()      -> Text("Hello 0") -> TableNextColumn()      -> Text("Hello 1")  // OK
+	//        -                   TableNextColumn()      -> Text("Hello 0") -> TableNextColumn()      -> Text("Hello 1")  // OK: TableNextColumn() automatically gets to next row!
+	//        - TableNextRow()                           -> Text("Hello 0")                                               // Not OK! Missing TableSetColumnIndex() or TableNextColumn()! Text will not appear!
 	// - 5. Call EndTable()
 	@(link_name="ImGui_BeginTable")          BeginTable          :: proc(str_id: cstring, column: c.int, flags: TableFlags) -> bool                                     --- // Implied outer_size = ImVec2(0.0f, 0.0f), inner_width = 0.0f
 	@(link_name="ImGui_BeginTableEx")        BeginTableEx        :: proc(str_id: cstring, column: c.int, flags: TableFlags, outer_size: Vec2, inner_width: f32) -> bool ---
@@ -2448,7 +2464,9 @@ foreign lib {
 	@(link_name="ImGui_SaveIniSettingsToDisk")     SaveIniSettingsToDisk     :: proc(ini_filename: cstring)                 --- // this is automatically called (if io.IniFilename is not empty) a few seconds after any modification that should be reflected in the .ini file (and also by DestroyContext).
 	@(link_name="ImGui_SaveIniSettingsToMemory")   SaveIniSettingsToMemory   :: proc(out_ini_size: ^c.size_t) -> cstring    --- // return a zero-terminated string with the .ini data which you can save by your own mean. call when io.WantSaveIniSettings is set, then save data by your own mean and clear io.WantSaveIniSettings.
 	// Debug Utilities
+	// - Your main debugging friend is the ShowMetricsWindow() function, which is also accessible from Demo->Tools->Metrics Debugger
 	@(link_name="ImGui_DebugTextEncoding")              DebugTextEncoding              :: proc(text: cstring)                                                                                                                                        ---
+	@(link_name="ImGui_DebugFlashStyleColor")           DebugFlashStyleColor           :: proc(idx: Col)                                                                                                                                             ---
 	@(link_name="ImGui_DebugCheckVersionAndDataLayout") DebugCheckVersionAndDataLayout :: proc(version_str: cstring, sz_io: c.size_t, sz_style: c.size_t, sz_vec2: c.size_t, sz_vec4: c.size_t, sz_drawvert: c.size_t, sz_drawidx: c.size_t) -> bool --- // This is called by IMGUI_CHECKVERSION() macro.
 	// Memory Allocators
 	// - Those functions are not reliant on the current context.
@@ -2488,7 +2506,7 @@ foreign lib {
 	@(link_name="ImGuiIO_SetAppAcceptingEvents")             IO_SetAppAcceptingEvents             :: proc(self: ^IO, accepting_events: bool)                                                              --- // Set master flag for accepting key/mouse/text events (default to true). Useful if you have native dialog boxes that are interrupting your application loop/refresh, and you want to disable events being queued while your app is frozen.
 	@(link_name="ImGuiIO_ClearEventsQueue")                  IO_ClearEventsQueue                  :: proc(self: ^IO)                                                                                      --- // Clear all incoming events.
 	@(link_name="ImGuiIO_ClearInputKeys")                    IO_ClearInputKeys                    :: proc(self: ^IO)                                                                                      --- // Clear current keyboard/mouse/gamepad state + current frame text input buffer. Equivalent to releasing all keys/buttons.
-	@(link_name="ImGuiIO_ClearInputCharacters")              IO_ClearInputCharacters              :: proc(self: ^IO)                                                                                      --- // [Obsolete] Clear the current frame text input buffer. Now included within ClearInputKeys().
+	@(link_name="ImGuiIO_ClearInputCharacters")              IO_ClearInputCharacters              :: proc(self: ^IO)                                                                                      --- // [Obsoleted in 1.89.8] Clear the current frame text input buffer. Now included within ClearInputKeys().
 	@(link_name="ImGuiInputTextCallbackData_DeleteChars")    InputTextCallbackData_DeleteChars    :: proc(self: ^InputTextCallbackData, pos: c.int, bytes_count: c.int)                                   ---
 	@(link_name="ImGuiInputTextCallbackData_InsertChars")    InputTextCallbackData_InsertChars    :: proc(self: ^InputTextCallbackData, pos: c.int, text: cstring, text_end: cstring)                     ---
 	@(link_name="ImGuiInputTextCallbackData_SelectAll")      InputTextCallbackData_SelectAll      :: proc(self: ^InputTextCallbackData)                                                                   ---
@@ -2744,16 +2762,16 @@ foreign lib {
 	@(link_name="ImGuiViewport_GetWorkCenter") Viewport_GetWorkCenter :: proc(self: ^Viewport) -> Vec2 ---
 	@(link_name="ImGui_GetKeyIndex")           GetKeyIndex            :: proc(key: Key) -> Key         --- // map ImGuiKey_* values into legacy native key index. == io.KeyMap[key]
 	// OBSOLETED in 1.90.0 (from September 2023)
-	@(link_name="ImGui_BeginChildFrame")         BeginChildFrame         :: proc(id: ID, size: Vec2) -> bool                                                                                                                                                                                --- // Implied window_flags = 0
-	@(link_name="ImGui_BeginChildFrameEx")       BeginChildFrameEx       :: proc(id: ID, size: Vec2, window_flags: WindowFlags) -> bool                                                                                                                                                     ---
-	@(link_name="ImGui_EndChildFrame")           EndChildFrame           :: proc()                                                                                                                                                                                                          ---
-	@(link_name="ImGui_BeginChildStrImVec2Bool") BeginChildStrImVec2Bool :: proc(str_id: cstring, size_arg: Vec2, border: bool, window_flags: WindowFlags) -> bool                                                                                                                          ---
-	@(link_name="ImGui_BeginChildIDImVec2Bool")  BeginChildIDImVec2Bool  :: proc(id: ID, size_arg: Vec2, border: bool, window_flags: WindowFlags) -> bool                                                                                                                                   ---
-	@(link_name="ImGui_ShowStackToolWindow")     ShowStackToolWindow     :: proc(p_open: ^bool)                                                                                                                                                                                             ---
-	@(link_name="ImGui_ListBoxObsolete")         ListBoxObsolete         :: proc(label: cstring, current_item: ^c.int, old_callback: proc "c" (user_data: rawptr, idx: c.int, out_text: ^cstring) -> bool, user_data: rawptr, items_count: c.int) -> bool                                   --- // Implied height_in_items = -1
-	@(link_name="ImGui_ListBoxObsoleteEx")       ListBoxObsoleteEx       :: proc(label: cstring, current_item: ^c.int, old_callback: proc "c" (user_data: rawptr, idx: c.int, out_text: ^cstring) -> bool, user_data: rawptr, items_count: c.int, height_in_items: c.int) -> bool           ---
-	@(link_name="ImGui_ComboObsolete")           ComboObsolete           :: proc(label: cstring, current_item: ^c.int, old_callback: proc "c" (user_data: rawptr, idx: c.int, out_text: ^cstring) -> bool, user_data: rawptr, items_count: c.int) -> bool                                   --- // Implied popup_max_height_in_items = -1
-	@(link_name="ImGui_ComboObsoleteEx")         ComboObsoleteEx         :: proc(label: cstring, current_item: ^c.int, old_callback: proc "c" (user_data: rawptr, idx: c.int, out_text: ^cstring) -> bool, user_data: rawptr, items_count: c.int, popup_max_height_in_items: c.int) -> bool ---
+	@(link_name="ImGui_BeginChildFrame")   BeginChildFrame   :: proc(id: ID, size: Vec2) -> bool                            --- // Implied window_flags = 0
+	@(link_name="ImGui_BeginChildFrameEx") BeginChildFrameEx :: proc(id: ID, size: Vec2, window_flags: WindowFlags) -> bool ---
+	@(link_name="ImGui_EndChildFrame")     EndChildFrame     :: proc()                                                      ---
+	//static inline bool BeginChild(const char* str_id, const ImVec2& size_arg, bool border, ImGuiWindowFlags window_flags){ return BeginChild(str_id, size_arg, border ? ImGuiChildFlags_Border : ImGuiChildFlags_None, window_flags); } // Unnecessary as true == ImGuiChildFlags_Border
+	//static inline bool BeginChild(ImGuiID id, const ImVec2& size_arg, bool border, ImGuiWindowFlags window_flags)        { return BeginChild(id, size_arg, border ? ImGuiChildFlags_Border : ImGuiChildFlags_None, window_flags);     } // Unnecessary as true == ImGuiChildFlags_Border
+	@(link_name="ImGui_ShowStackToolWindow") ShowStackToolWindow :: proc(p_open: ^bool)                                                                                                                                                                                             ---
+	@(link_name="ImGui_ListBoxObsolete")     ListBoxObsolete     :: proc(label: cstring, current_item: ^c.int, old_callback: proc "c" (user_data: rawptr, idx: c.int, out_text: ^cstring) -> bool, user_data: rawptr, items_count: c.int) -> bool                                   --- // Implied height_in_items = -1
+	@(link_name="ImGui_ListBoxObsoleteEx")   ListBoxObsoleteEx   :: proc(label: cstring, current_item: ^c.int, old_callback: proc "c" (user_data: rawptr, idx: c.int, out_text: ^cstring) -> bool, user_data: rawptr, items_count: c.int, height_in_items: c.int) -> bool           ---
+	@(link_name="ImGui_ComboObsolete")       ComboObsolete       :: proc(label: cstring, current_item: ^c.int, old_callback: proc "c" (user_data: rawptr, idx: c.int, out_text: ^cstring) -> bool, user_data: rawptr, items_count: c.int) -> bool                                   --- // Implied popup_max_height_in_items = -1
+	@(link_name="ImGui_ComboObsoleteEx")     ComboObsoleteEx     :: proc(label: cstring, current_item: ^c.int, old_callback: proc "c" (user_data: rawptr, idx: c.int, out_text: ^cstring) -> bool, user_data: rawptr, items_count: c.int, popup_max_height_in_items: c.int) -> bool ---
 	// OBSOLETED in 1.89.7 (from June 2023)
 	@(link_name="ImGui_SetItemAllowOverlap") SetItemAllowOverlap :: proc() --- // Use SetNextItemAllowOverlap() before item.
 	// OBSOLETED in 1.89.4 (from March 2023)
@@ -2764,15 +2782,13 @@ foreign lib {
 	// OBSOLETED in 1.88 (from May 2022)
 	@(link_name="ImGui_CaptureKeyboardFromApp") CaptureKeyboardFromApp :: proc(want_capture_keyboard: bool) --- // Renamed as name was misleading + removed default value.
 	@(link_name="ImGui_CaptureMouseFromApp")    CaptureMouseFromApp    :: proc(want_capture_mouse: bool)    --- // Renamed as name was misleading + removed default value.
-	// OBSOLETED in 1.86 (from November 2021)
-	@(link_name="ImGui_CalcListClipping") CalcListClipping :: proc(items_count: c.int, items_height: f32, out_items_display_start: ^c.int, out_items_display_end: ^c.int) --- // Calculate coarse clipping for large list of evenly sized items. Prefer using ImGuiListClipper.
 }
 
 ////////////////////////////////////////////////////////////
 // TYPEDEFS
 ////////////////////////////////////////////////////////////
 
-KeyChord  :: c.int    // -> ImGuiKey | ImGuiMod_XXX    // Flags: for storage only for now: an ImGuiKey optionally OR-ed with one or more ImGuiMod_XXX values.
+KeyChord  :: c.int    // -> ImGuiKey | ImGuiMod_XXX    // Flags: for IsKeyChordPressed(), Shortcut() etc. an ImGuiKey optionally OR-ed with one or more ImGuiMod_XXX values.
 TextureID :: rawptr   // Default: store a pointer or an integer fitting in a pointer (most renderer backends are ok with that)
 DrawIdx   :: c.ushort // Default: 16-bit (for maximum compatibility with renderer backends)
 // Scalar data types
@@ -2781,7 +2797,7 @@ ID :: c.uint // A unique ID used by widgets (typically the result of hashing a s
 // (we generally use UTF-8 encoded string in the API. This is storage specifically for a decoded character used for keyboard input and display)
 Wchar32 :: rune     // A single decoded U32 character/code point. We encode them as multi bytes UTF-8 when used in strings.
 Wchar16 :: c.ushort // A single decoded U16 character/code point. We encode them as multi bytes UTF-8 when used in strings.
-Wchar   :: Wchar32
+Wchar   :: Wchar16
 // Callback and functions types
 InputTextCallback :: proc "c" (data: ^InputTextCallbackData) -> c.int     // Callback function for ImGui::InputText()
 SizeCallback      :: proc "c" (data: ^SizeCallbackData)                   // Callback function for ImGui::SetNextWindowSizeConstraints()

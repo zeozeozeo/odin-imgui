@@ -17,9 +17,9 @@ import platform
 active_branch = "docking"
 git_heads = {
 	# Default Dear ImGui branch
-	"master": { "imgui": "0d3b468", "dear_bindings": "04e531b" },
+	"master": { "imgui": "v1.90.1", "dear_bindings": "0c33579" },
 	# Docking branch
-	"docking": { "imgui": "37ea320", "dear_bindings": "04e531b" },
+	"docking": { "imgui": "v1.90.1-docking", "dear_bindings": "0c33579" },
 }
 
 # @CONFIGURE: Elements must be keys into below table

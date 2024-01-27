@@ -369,41 +369,67 @@ _allowed_ifdef = [
 ]
 
 # Defines to process whatsoever
-_processed_defines = []
+_defines_to_process = []
 for define in (_emitted_defines + _allowed_user_defines + _allowed_ifdef):
-	if not define in _processed_defines: _processed_defines.append(define)
+	if not define in _defines_to_process: _defines_to_process.append(define)
 
 # Evaluated define and value
-processed_defines = {
-}
+processed_defines = {}
 
-def _unwrap_defined(condition_str: str) -> str:
-	# Technically "defined(FOO) && defined(BAR)" passes incorrectly.
-	if condition_str.startswith("defined(") and condition_str.endswith(")"):
-		return condition_str.removeprefix("defined(").removesuffix(")")
-	return None
+# Checks if define is defined, and make sure that we're allowed to use the define in the first place.
+def _ifdef(define: str) -> bool:
+	if not define in _allowed_ifdef: die("Not allowed to check define '" + define + "'")
+	return define in processed_defines
 
+# Checks #ifdef/#ifndef, which is simple: we can only have a single string define to check, no expressions
 def condition_ifdef(condition_str) -> bool:
-	if not condition_str in _allowed_ifdef: die("Not allowed to evaluate condition '" + condition_str + "'")
-	return condition_str in processed_defines
+	return _ifdef(condition_str)
+
+# returns [chomped string, ok]
+def _chomp(prefix: str, string: str) -> [str, bool]:
+	if string.startswith(prefix):
+		return [string.removeprefix(prefix), True]
+	return [string, False]
+
+# returns [chomped string, found string, ok]
+def _chomp_until(until: str, string: str) -> [str, str, bool]:
+	pos = string.find(until)
+	if pos == -1:
+		return [string, "", False]
+
+	return [string[pos:], string[:pos+len(until)-1], True]
 
 def condition_if(expression_str) -> bool:
-	defined_str = _unwrap_defined(expression_str)
-	if defined_str == None: die("For now only defined() defines are supported with #if (" + expression_str + ")")
-	return condition_ifdef(defined_str)
+	# This is hardcoded for the path where we have [optional !, defined(, some_def, ), optional &&] and repeat
+	while len(expression_str) > 0:
+		[expression_str, invert] = _chomp("!", expression_str)
+		[expression_str, ok] = _chomp("defined(", expression_str)
+		assert ok
+		[expression_str, found_str, ok] = _chomp_until(")", expression_str)
+		assert ok
+		[expression_str, ok] = _chomp(")", expression_str)
+		assert ok
+		if _ifdef(found_str) == invert: return False
+		[expression_str, ok] = _chomp("&&", expression_str)
+		if ok: assert len(expression_str) > 0
 
 def passes_conditionals(thing_with_conditionals) -> bool:
 	if not "conditionals" in thing_with_conditionals: return True
 
 	for conditional in thing_with_conditionals["conditionals"]:
-		condition = conditional["condition"]
+		condition_kind = conditional["condition"]
+		expression = conditional["expression"]
 
-		if condition == "ifdef":    return condition_ifdef(conditional["expression"])
-		elif condition == "ifndef": return not condition_ifdef(conditional["expression"])
-		elif condition == "if":     return condition_if(conditional["expression"])
-		elif condition == "ifnot":  return not condition_if(conditional["expression"])
+		if condition_kind == "ifdef":
+			if not condition_ifdef(expression): return False
+		elif condition_kind == "ifndef":
+			if condition_ifdef(expression): return False
+		elif condition_kind == "if":
+			if not condition_if(expression): return False
+		elif condition_kind == "ifnot":
+			if condition_if(expression): return False
 		else:
-			die("Unexpected condition: " + condition)
+			die("Unexpected condition kind: " + condition_kind)
 			return False
 
 	return True
@@ -423,7 +449,7 @@ def parse_and_write_defines(file: typing.IO, defines):
 	aligned = []
 
 	for define in defines:
-		if not define["name"] in _processed_defines: continue
+		if not define["name"] in _defines_to_process: continue
 		is_user_define = not define["source_location"]["filename"].endswith("imgui.h")
 		if not passes_conditionals(define): continue
 
