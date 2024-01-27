@@ -97,7 +97,7 @@ main :: proc() {
 			}
 		}
 
-		g_pSwapChain->Present(1, 0)
+		g_pSwapChain->Present(1, {})
 	}
 }
 
@@ -113,7 +113,7 @@ create_device_d3d :: proc(hwnd: windows.HWND) -> bool {
 				Denominator = 1,
 			},
 		},
-		Flags = u32(dxgi.SWAP_CHAIN_FLAG.ALLOW_MODE_SWITCH),
+		Flags = {.ALLOW_MODE_SWITCH},
 		BufferUsage = {.RENDER_TARGET_OUTPUT},
 		OutputWindow = hwnd,
 		SampleDesc = {
