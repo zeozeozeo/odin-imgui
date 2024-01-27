@@ -2,6 +2,7 @@ package imgui_example_null
 
 // This is a copy of the "null" example from ImGui
 // https://github.com/ocornut/imgui/blob/docking/examples/example_null/main.cpp
+// (for updating: based on https://github.com/ocornut/imgui/blob/96839b445e32e46d87a44fd43a9cdd60c806f7e1/examples/example_null/main.cpp)
 
 import imgui "../.."
 

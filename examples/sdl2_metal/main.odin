@@ -3,6 +3,7 @@ package imgui_example_sdl2_metal
 // This is an example of using the bindings with SDL2 and Metal
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/master/examples/example_sdl2_metal/main.mm
+// (for updating: based on https://github.com/ocornut/imgui/blob/96839b445e32e46d87a44fd43a9cdd60c806f7e1/examples/example_sdl2_metal/main.mm)
 
 // WARNING:
 // This has been tested and is now working, but as an OjbC noob, the code is probably pretty bad.
