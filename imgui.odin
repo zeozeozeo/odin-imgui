@@ -1959,17 +1959,11 @@ foreign lib {
 	@(link_name="ImGui_TextUnformatted")   TextUnformatted   :: proc(text: cstring)                                       --- // Implied text_end = NULL
 	@(link_name="ImGui_TextUnformattedEx") TextUnformattedEx :: proc(text: cstring, text_end: cstring)                    --- // raw text without formatting. Roughly equivalent to Text("%s", text) but: A) doesn't require null terminated string if 'text_end' is specified, B) it's faster, no memory copy is done, no buffer size limits, recommended for long chunks of text.
 	@(link_name="ImGui_Text")              Text              :: proc(fmt: cstring, #c_vararg args: ..any)                 --- // formatted text
-	// @(link_name="ImGui_TextV")          TextV             :: proc(fmt: cstring, args: libc.va_list)                    ---
 	@(link_name="ImGui_TextColored")       TextColored       :: proc(col: Vec4, fmt: cstring, #c_vararg args: ..any)      --- // shortcut for PushStyleColor(ImGuiCol_Text, col); Text(fmt, ...); PopStyleColor();
-	// @(link_name="ImGui_TextColoredV")   TextColoredV      :: proc(col: Vec4, fmt: cstring, args: libc.va_list)         ---
 	@(link_name="ImGui_TextDisabled")      TextDisabled      :: proc(fmt: cstring, #c_vararg args: ..any)                 --- // shortcut for PushStyleColor(ImGuiCol_Text, style.Colors[ImGuiCol_TextDisabled]); Text(fmt, ...); PopStyleColor();
-	// @(link_name="ImGui_TextDisabledV")  TextDisabledV     :: proc(fmt: cstring, args: libc.va_list)                    ---
 	@(link_name="ImGui_TextWrapped")       TextWrapped       :: proc(fmt: cstring, #c_vararg args: ..any)                 --- // shortcut for PushTextWrapPos(0.0f); Text(fmt, ...); PopTextWrapPos();. Note that this won't work on an auto-resizing window if there's no other widgets to extend the window width, yoy may need to set a size using SetNextWindowSize().
-	// @(link_name="ImGui_TextWrappedV")   TextWrappedV      :: proc(fmt: cstring, args: libc.va_list)                    ---
 	@(link_name="ImGui_LabelText")         LabelText         :: proc(label: cstring, fmt: cstring, #c_vararg args: ..any) --- // display text+label aligned the same way as value+label widgets
-	// @(link_name="ImGui_LabelTextV")     LabelTextV        :: proc(label: cstring, fmt: cstring, args: libc.va_list)    ---
 	@(link_name="ImGui_BulletText")        BulletText        :: proc(fmt: cstring, #c_vararg args: ..any)                 --- // shortcut for Bullet()+Text()
-	// @(link_name="ImGui_BulletTextV")    BulletTextV       :: proc(fmt: cstring, args: libc.va_list)                    ---
 	@(link_name="ImGui_SeparatorText")     SeparatorText     :: proc(label: cstring)                                      --- // currently: formatted text with an horizontal line
 	// Widgets: Main
 	// - Most widgets return true when the value has been changed or when pressed/selected
@@ -2118,13 +2112,9 @@ foreign lib {
 	@(link_name="ImGui_TreeNode")                  TreeNode                  :: proc(label: cstring) -> bool                                                             ---
 	@(link_name="ImGui_TreeNodeStr")               TreeNodeStr               :: proc(str_id: cstring, fmt: cstring, #c_vararg args: ..any) -> bool                       --- // helper variation to easily decorelate the id from the displayed string. Read the FAQ about why and how to use ID. to align arbitrary text at the same level as a TreeNode() you can use Bullet().
 	@(link_name="ImGui_TreeNodePtr")               TreeNodePtr               :: proc(ptr_id: rawptr, fmt: cstring, #c_vararg args: ..any) -> bool                        --- // "
-	// @(link_name="ImGui_TreeNodeV")              TreeNodeV                 :: proc(str_id: cstring, fmt: cstring, args: libc.va_list) -> bool                          ---
-	// @(link_name="ImGui_TreeNodeVPtr")           TreeNodeVPtr              :: proc(ptr_id: rawptr, fmt: cstring, args: libc.va_list) -> bool                           ---
 	@(link_name="ImGui_TreeNodeEx")                TreeNodeEx                :: proc(label: cstring, flags: TreeNodeFlags) -> bool                                       ---
 	@(link_name="ImGui_TreeNodeExStr")             TreeNodeExStr             :: proc(str_id: cstring, flags: TreeNodeFlags, fmt: cstring, #c_vararg args: ..any) -> bool ---
 	@(link_name="ImGui_TreeNodeExPtr")             TreeNodeExPtr             :: proc(ptr_id: rawptr, flags: TreeNodeFlags, fmt: cstring, #c_vararg args: ..any) -> bool  ---
-	// @(link_name="ImGui_TreeNodeExV")            TreeNodeExV               :: proc(str_id: cstring, flags: TreeNodeFlags, fmt: cstring, args: libc.va_list) -> bool    ---
-	// @(link_name="ImGui_TreeNodeExVPtr")         TreeNodeExVPtr            :: proc(ptr_id: rawptr, flags: TreeNodeFlags, fmt: cstring, args: libc.va_list) -> bool     ---
 	@(link_name="ImGui_TreePush")                  TreePush                  :: proc(str_id: cstring)                                                                    --- // ~ Indent()+PushID(). Already called by TreeNode() when returning true, but you can call TreePush/TreePop yourself if desired.
 	@(link_name="ImGui_TreePushPtr")               TreePushPtr               :: proc(ptr_id: rawptr)                                                                     --- // "
 	@(link_name="ImGui_TreePop")                   TreePop                   :: proc()                                                                                   --- // ~ Unindent()+PopID()
@@ -2178,17 +2168,15 @@ foreign lib {
 	// Tooltips
 	// - Tooltips are windows following the mouse. They do not take focus away.
 	// - A tooltip window can contain items of any types. SetTooltip() is a shortcut for the 'if (BeginTooltip()) { Text(...); EndTooltip(); }' idiom.
-	@(link_name="ImGui_BeginTooltip")   BeginTooltip :: proc() -> bool                            --- // begin/append a tooltip window.
-	@(link_name="ImGui_EndTooltip")     EndTooltip   :: proc()                                    --- // only call EndTooltip() if BeginTooltip()/BeginItemTooltip() returns true!
-	@(link_name="ImGui_SetTooltip")     SetTooltip   :: proc(fmt: cstring, #c_vararg args: ..any) --- // set a text-only tooltip. Often used after a ImGui::IsItemHovered() check. Override any previous call to SetTooltip().
-	// @(link_name="ImGui_SetTooltipV") SetTooltipV  :: proc(fmt: cstring, args: libc.va_list)    ---
+	@(link_name="ImGui_BeginTooltip") BeginTooltip :: proc() -> bool                            --- // begin/append a tooltip window.
+	@(link_name="ImGui_EndTooltip")   EndTooltip   :: proc()                                    --- // only call EndTooltip() if BeginTooltip()/BeginItemTooltip() returns true!
+	@(link_name="ImGui_SetTooltip")   SetTooltip   :: proc(fmt: cstring, #c_vararg args: ..any) --- // set a text-only tooltip. Often used after a ImGui::IsItemHovered() check. Override any previous call to SetTooltip().
 	// Tooltips: helpers for showing a tooltip when hovering an item
 	// - BeginItemTooltip() is a shortcut for the 'if (IsItemHovered(ImGuiHoveredFlags_ForTooltip) && BeginTooltip())' idiom.
 	// - SetItemTooltip() is a shortcut for the 'if (IsItemHovered(ImGuiHoveredFlags_ForTooltip)) { SetTooltip(...); }' idiom.
 	// - Where 'ImGuiHoveredFlags_ForTooltip' itself is a shortcut to use 'style.HoverFlagsForTooltipMouse' or 'style.HoverFlagsForTooltipNav' depending on active input type. For mouse it defaults to 'ImGuiHoveredFlags_Stationary | ImGuiHoveredFlags_DelayShort'.
-	@(link_name="ImGui_BeginItemTooltip")   BeginItemTooltip :: proc() -> bool                            --- // begin/append a tooltip window if preceding item was hovered.
-	@(link_name="ImGui_SetItemTooltip")     SetItemTooltip   :: proc(fmt: cstring, #c_vararg args: ..any) --- // set a text-only tooltip if preceeding item was hovered. override any previous call to SetTooltip().
-	// @(link_name="ImGui_SetItemTooltipV") SetItemTooltipV  :: proc(fmt: cstring, args: libc.va_list)    ---
+	@(link_name="ImGui_BeginItemTooltip") BeginItemTooltip :: proc() -> bool                            --- // begin/append a tooltip window if preceding item was hovered.
+	@(link_name="ImGui_SetItemTooltip")   SetItemTooltip   :: proc(fmt: cstring, #c_vararg args: ..any) --- // set a text-only tooltip if preceeding item was hovered. override any previous call to SetTooltip().
 	// Popups, Modals
 	//  - They block normal mouse hovering detection (and therefore most mouse interactions) behind them.
 	//  - If not modal: they can be closed by clicking anywhere outside them, or by pressing ESCAPE.
@@ -2334,7 +2322,6 @@ foreign lib {
 	@(link_name="ImGui_LogFinish")      LogFinish      :: proc()                                          --- // stop logging (close file, etc.)
 	@(link_name="ImGui_LogButtons")     LogButtons     :: proc()                                          --- // helper to display buttons for logging to tty/file/clipboard
 	@(link_name="ImGui_LogText")        LogText        :: proc(fmt: cstring, #c_vararg args: ..any)       --- // pass text data straight to log (without being displayed)
-	// @(link_name="ImGui_LogTextV")    LogTextV       :: proc(fmt: cstring, args: libc.va_list)          ---
 	// Drag and Drop
 	// - On source items, call BeginDragDropSource(), if it returns true also call SetDragDropPayload() + EndDragDropSource().
 	// - On target candidates, call BeginDragDropTarget(), if it returns true also call AcceptDragDropPayload() + EndDragDropTarget().
@@ -2529,7 +2516,6 @@ foreign lib {
 	@(link_name="ImGuiTextBuffer_c_str")                     TextBuffer_c_str                     :: proc(self: ^TextBuffer) -> cstring                                                                   ---
 	@(link_name="ImGuiTextBuffer_append")                    TextBuffer_append                    :: proc(self: ^TextBuffer, str: cstring, str_end: cstring)                                              ---
 	@(link_name="ImGuiTextBuffer_appendf")                   TextBuffer_appendf                   :: proc(self: ^TextBuffer, fmt: cstring, #c_vararg args: ..any)                                         ---
-	// @(link_name="ImGuiTextBuffer_appendfv")               TextBuffer_appendfv                  :: proc(self: ^TextBuffer, fmt: cstring, args: libc.va_list)                                            ---
 	// - Get***() functions find pair, never add/allocate. Pairs are sorted so a query is O(log N)
 	// - Set***() functions find pair, insertion on demand if missing.
 	// - Sorted insertion is costly, paid once. A typical frame shouldn't need to insert any new pair.

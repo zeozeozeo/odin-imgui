@@ -16,6 +16,8 @@ from os import path
 # - Check for IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 # - In general, conditionals should be checked to see if they cause any issues.
 # - There should be an option to emit a more complete version of IMGUI_CHECKVERSION() that checks all structs (and more?)
+# @(link_name) Should be avoided where possible to reduce noise
+# Investigate whether Ex functions can be removed in favor of actually respecting default args and proc groups
 
 # HELPERS
 def nice_stack(start: int = 0):
@@ -773,21 +775,14 @@ def write_functions(file: typing.IO, functions):
 	for function in functions:
 		entire_name = function["name"]
 		if entire_name in _imgui_functions_skip: continue
-
 		if not passes_conditionals(function): continue
+		if function_uses_va_list(function): continue
 
 		[_prefix, remainder] = strip_list(entire_name, _imgui_function_prefixes)
 
 		aligned_components = []
 
-		comment_prefix = ""
-
-		if function_uses_va_list(function):
-			# TODO[TS]: Just skip these entirely?
-			# Functions with va_list always have a vararg counterpart, and va_list cannot be constructed from Odin
-			comment_prefix = "// "
-
-		aligned_components.append(f'{comment_prefix}@(link_name="{entire_name}") ')
+		aligned_components.append(f'@(link_name="{entire_name}") ')
 		aligned_components.append(remainder)
 		aligned_components.append(f' :: {function_to_string(function, False)}')
 		aligned_components.append(" ---")
