@@ -10,17 +10,17 @@ import "core:fmt"
 
 main :: proc() {
 	imgui.CHECKVERSION()
-	imgui.CreateContext(nil)
+	imgui.CreateContext()
 	defer {
 		fmt.println("DestroyContext()")
-		imgui.DestroyContext(nil)
+		imgui.DestroyContext()
 	}
 	io := imgui.GetIO()
 
 	// Build atlas
 	tex_pixels: ^u8
 	tex_w, tex_h: i32
-	imgui.FontAtlas_GetTexDataAsRGBA32(io.Fonts, &tex_pixels, &tex_w, &tex_h, nil)
+	imgui.FontAtlas_GetTexDataAsRGBA32(io.Fonts, &tex_pixels, &tex_w, &tex_h)
 
 	for i in 0..<20 {
 		fmt.printf("NewFrame() {}\n", i)
@@ -32,7 +32,7 @@ main :: proc() {
 		imgui.Text("Hello, world!")
 		imgui.SliderFloat("float", &f, 0, 1)
 		imgui.Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0 / io.Framerate, io.Framerate)
-		imgui.ShowDemoWindow(nil)
+		imgui.ShowDemoWindow()
 
 		imgui.Render()
 	}

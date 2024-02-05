@@ -41,8 +41,8 @@ main :: proc() {
 	})
 
 	imgui.CHECKVERSION()
-	imgui.CreateContext(nil)
-	defer imgui.DestroyContext(nil)
+	imgui.CreateContext()
+	defer imgui.DestroyContext()
 	io := imgui.GetIO()
 	io.ConfigFlags += {.NavEnableKeyboard, .NavEnableGamepad}
 	when imgui.IMGUI_BRANCH == "docking" {
@@ -54,7 +54,7 @@ main :: proc() {
 		style.Colors[imgui.Col.WindowBg].w =1
 	}
 
-	imgui.StyleColorsDark(nil)
+	imgui.StyleColorsDark()
 
 	imgui_impl_sdl2.InitForOpenGL(window, gl_ctx)
 	defer imgui_impl_sdl2.Shutdown()
@@ -78,7 +78,7 @@ main :: proc() {
 
 		imgui.ShowDemoWindow(nil)
 
-		if imgui.Begin("Window containing a quit button", nil, {}) {
+		if imgui.Begin("Window containing a quit button") {
 			if imgui.Button("The quit button in question") {
 				running = false
 			}
