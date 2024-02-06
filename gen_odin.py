@@ -851,10 +851,10 @@ def write_functions(file: typing.IO, functions):
 		if function_uses_va_list(function): continue
 		if function["is_default_argument_helper"]: continue
 
-		if entire_name in _imgui_extended_arg_funcs:
-			entire_name = strip_suffix("Ex", entire_name)
-
 		[_prefix, remainder] = strip_list(entire_name, _imgui_function_prefixes)
+
+		if entire_name in _imgui_extended_arg_funcs:
+			remainder = strip_suffix("Ex", remainder)
 
 		aligned_components = []
 
