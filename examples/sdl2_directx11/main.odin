@@ -24,7 +24,7 @@ main :: proc() {
 	defer sdl.Quit()
 
 	window := sdl.CreateWindow(
-		"Dear ImGui SDL2+OpenGl3 example",
+		"Dear ImGui SDL2+DirectX11 example",
 		sdl.WINDOWPOS_CENTERED,
 		sdl.WINDOWPOS_CENTERED,
 		1280, 720,
