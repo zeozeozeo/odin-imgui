@@ -23,7 +23,7 @@ git_heads = {
 }
 
 # @CONFIGURE: Elements must be keys into below table
-wanted_backends = ["vulkan", "sdl2", "opengl3", "sdlrenderer2", "glfw", "dx11", "dx12", "win32", "osx", "metal"]
+wanted_backends = ["vulkan", "sdl2", "opengl3", "sdlrenderer2", "glfw", "dx11", "dx12", "win32", "osx", "metal", "wgpu"]
 # Supported means that an impl bindings file exists, and that it has been tested.
 # Some backends (like dx12, win32) have bindings but not been tested.
 backends = {
@@ -45,16 +45,17 @@ backends = {
 	"sdlrenderer2": { "supported": True,  "deps": ["sdl2"] },
 	"sdlrenderer3": { "supported": False },
 	"vulkan":       { "supported": True,  "defines": ["VK_NO_PROTOTYPES"], "deps": ["vulkan"] },
-	"wgpu":         { "supported": False },
+	"wgpu":         { "supported": True,  "deps": ["wgpu"] },
 	# Bindings exist for win32, but they are untested
 	"win32":        { "supported": False, "enabled_on": ["windows"] },
 }
 
 # Indirection for backend dependencies, as some might have the same dependency, and their commits can't get out of sync.
 backend_deps = {
-	"sdl2":   { "repo": "https://github.com/libsdl-org/SDL.git",              "commit": "release-2.28.3", "path": "SDL2" },
-	"glfw":   { "repo": "https://github.com/glfw/glfw.git",                   "commit": "3eaf125",        "path": "glfw" },
-	"vulkan": { "repo": "https://github.com/KhronosGroup/Vulkan-Headers.git", "commit": "4f51aac",        "path": "Vulkan-Headers" },
+	"sdl2":   { "repo": "https://github.com/libsdl-org/SDL.git",               "commit": "release-2.28.3", "path": "SDL2" },
+	"glfw":   { "repo": "https://github.com/glfw/glfw.git",                    "commit": "3eaf125",        "path": "glfw" },
+	"vulkan": { "repo": "https://github.com/KhronosGroup/Vulkan-Headers.git",  "commit": "4f51aac",        "path": "Vulkan-Headers" },
+	"wgpu":   { "repo": "https://github.com/webgpu-native/webgpu-headers.git", "commit": "aef5e42",        "path": "webgpu-headers/webgpu", "include": "webgpu-headers" },
 }
 
 # @CONFIGURE:
@@ -248,10 +249,12 @@ def main():
 
 	# Add backend dependency include paths
 	for backend_dep in backend_deps_names:
-		# NOTE: For all backend deps so far, the include path is simply repo/include.
-		# So we just hard code this here. One day we might have to specify this in `backend_deps`
-		if platform_win32_like:  compile_flags += ["/I" + path.join("..", "backend_deps", backend_deps[backend_dep]["path"], "include")]
-		elif platform_unix_like: compile_flags += ["-I" + path.join("..", "backend_deps", backend_deps[backend_dep]["path"], "include")]
+		include_path = path.join(backend_deps[backend_dep]["path"], "include")
+		if "include" in backend_deps[backend_dep]:
+			include_path = backend_deps[backend_dep]["include"]
+
+		if platform_win32_like:  compile_flags += ["/I" + path.join("..", "backend_deps", include_path)]
+		elif platform_unix_like: compile_flags += ["-I" + path.join("..", "backend_deps", include_path)]
 
 	all_objects = []
 	if platform_win32_like:  all_objects += map(lambda file: file.removesuffix(".cpp") + ".obj", all_sources)

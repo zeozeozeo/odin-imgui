@@ -14,10 +14,11 @@ import im "../.."
 import "../../imgui_impl_sdl2"
 import "../../imgui_impl_metal"
 
+import NS "core:sys/darwin/Foundation"
+
 import sdl "vendor:sdl2"
 import MTL "vendor:darwin/Metal"
-import CA "vendor:darwin/QuartzCore"
-import NS "vendor:darwin/Foundation"
+import CA  "vendor:darwin/QuartzCore"
 
 main :: proc() {
 	im.CHECKVERSION()

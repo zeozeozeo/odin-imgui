@@ -5,11 +5,11 @@
  - Generates bindings for both the `master` and `docking` ImGui branches, using [`dear_bindings`](https://github.com/dearimgui/dear_bindings)
  - Contains bindings for most of the Dear ImGui implementations
 	- All backends which exist in `vendor:` have bindings
-	- These include: `vulkan, sdl2, opengl3, sdlrenderer2, glfw, dx11, dx12, win32, osx, metal`
+	- These include: `vulkan, sdl2, opengl3, sdlrenderer2, glfw, dx11, dx12, win32, osx, metal, wgpu`
  - Compiles bindings as well as any wanted backends
  - Tested on Windows, Linux, and Mac
  - Includes several examples which can be used as a reference
-	- `GLFW + OpenGL, SDL2 + D3D11, SDL2 + Metal, SDL2 + OpenGL, SDL2 + SDL2 Renderer, SDL2 + Vulkan`
+	- `GLFW + OpenGL, SDL2 + D3D11, SDL2 + Metal, SDL2 + OpenGL, SDL2 + SDL2 Renderer, SDL2 + Vulkan, GLFW + WGPU`
 
 ## Usage
 If you don't want to configure and or build yourself, a prebuilt binary has been committed to the repository.
@@ -61,7 +61,7 @@ There are some examples in `examples/`. They are runnable directly.
 ## Available backends
 
 All backends which can be supported with only `vendor` have bindings now.
-It seems likely to me that SDL3, maybe WebGPU (and Android?) will exist in vendor in the future, at which point I'll add support.
+It seems likely to me that SDL3, and maybe Android will exist in vendor in the future, at which point I'll add support.
 
 | Backend        | Has bindings | Has example | Comment                                                              |
 |----------------|:------------:|:-----------:|----------------------------------------------------------------------|
@@ -82,7 +82,7 @@ It seems likely to me that SDL3, maybe WebGPU (and Android?) will exist in vendo
 | SDL_Renderer 2 |     Yes      |     Yes     | Has example, but Odin vendor library lacks required version (2.0.18) |
 | SDL_Renderer 3 |      No      |     No      | No odin bindings in vendor (yet)                                     |
 | Vulkan         |     Yes      |     No      | Tested in my own engine, but no example yet due to size              |
-| WebGPU         |      No      |     No      | No odin bindings in vendor                                           |
+| WebGPU         |     Yes      |     Yes     | Browser/JS not supported, would require some emscripten workaround   |
 | win32          |      No      |     No      | Bindings created, but not tested                                     |
 
 ## Updating
