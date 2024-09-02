@@ -82,6 +82,13 @@ def exec(cmd: typing.List[str], what: str) -> str:
 	print(what + (" " * (max_what_len - len(what))) + "> " + " ".join(cmd))
 	return subprocess.check_output(cmd).decode().strip()
 
+def exec_vcvars(cmd: typing.List[str], what):
+	max_what_len = 40
+	if len(what) > max_what_len:
+		what = what[:max_what_len - 2] + ".."
+	print(what + (" " * (max_what_len - len(what))) + "> " + " ".join(cmd))
+	assertx(subprocess.run(f"vcvarsall.bat x64 && {' '.join(cmd)}").returncode == 0, f"Failed to run command '{cmd}'")
+
 def copy(from_path: str, files: typing.List[str], to_path: str):
 	for file in files:
 		shutil.copy(path.join(from_path, file), to_path)
@@ -136,9 +143,6 @@ def get_platform_imgui_lib_name() -> str:
 	assertx(processor != None, f"Unexpected processor: {platform.machine()}")
 
 	return f'imgui_{system.lower()}_{processor}.{binary_ext}'
-
-def run_vcvars(cmd: typing.List[str], what):
-	assertx(subprocess.run(f"vcvarsall.bat x64 && {' '.join(cmd)}").returncode == 0, f"Failed to run command '{cmd}'")
 
 # TODO[TS]: This works, but there's a bug in Python, which makes cl.exe return with
 # exit code 2 for no god damn reason at all, if not run with run_vcvars.
@@ -267,7 +271,7 @@ def main():
 
 	# cl.exe, *in particular*, won't work without running vcvarsall first, even if cl.exe is in the path.
 	# See did_re_execute
-	if platform_win32_like:  run_vcvars(["cl"] + compile_flags + ["/c"] + all_sources, "Compiling sources")
+	if platform_win32_like:  exec_vcvars(["cl"] + compile_flags + ["/c"] + all_sources, "Compiling sources")
 	elif platform_unix_like: exec(["clang"] + compile_flags + ["-c"] + all_sources, "Compiling sources")
 
 	os.chdir("..")
