@@ -83,7 +83,7 @@ It seems likely to me that SDL3, and maybe Android will exist in vendor in the f
 | SDL_Renderer 3 |      No      |     No      | No odin bindings in vendor (yet)                                     |
 | Vulkan         |     Yes      |     No      | Tested in my own engine, but no example yet due to size              |
 | WebGPU         |     Yes      |     Yes     | Browser/JS not supported, would require some emscripten workaround   |
-| win32          |      No      |     No      | Bindings created, but not tested                                     |
+| win32          |     Yes      |     No      | Bindings created, but not tested                                     |
 
 ## Updating
 
