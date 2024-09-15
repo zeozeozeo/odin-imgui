@@ -8,7 +8,7 @@ else when ODIN_OS == .Darwin {
 }
 
 // imgui_impl_osx.h
-// Last checked `v1.90.2-docking` (a68303)
+// Last checked `v1.90.3-docking` (a68303)
 @(link_prefix="ImGui_ImplOSX_")
 foreign lib {
 	Init     :: proc(view: rawptr) -> bool ---

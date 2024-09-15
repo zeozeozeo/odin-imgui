@@ -9,7 +9,13 @@ else when ODIN_OS == .Darwin {
 }
 
 // imgui_impl_sdl2.h
-// Last checked `v1.90.2-docking` (7e246a7)
+// Last checked `v1.90.3-docking` (d79514)
+GamepadMode :: enum i32 {
+	AutoFirst,
+	AutoAll,
+	Manual,
+};
+
 @(link_prefix="ImGui_ImplSDL2_")
 foreign lib {
 	InitForOpenGL      :: proc(window: ^sdl.Window, sdl_gl_context: rawptr) -> bool ---
@@ -21,7 +27,8 @@ foreign lib {
 	Shutdown           :: proc() ---
 	NewFrame           :: proc() ---
 	ProcessEvent       :: proc(event: ^sdl.Event) -> bool ---
-}
 
-// ImGui_ImplSDL2_NewFrame is elided as it is obsolete.
-// Delete this when it's removed from dear imgui.
+	// Gamepad selection automatically starts in AutoFirst mode, picking first available SDL_Gamepad. You may override this.
+	// When using manual mode, caller is responsible for opening/closing gamepad.
+	SetGamepadMode :: proc(mode: GamepadMode, manual_gamepads_array: [^]^sdl.GameController, manual_gamepads_count := i32(-1)) ---
+}

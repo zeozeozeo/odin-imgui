@@ -3,7 +3,7 @@ package imgui_example_glfw_opengl3
 // This is an example of using the bindings with GLFW and OpenGL 3.
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/docking/examples/example_glfw_opengl3/main.cpp
-// Based on the above at tag `v1.90.2-docking` (4aa811)
+// Based on the above at tag `v1.90.3-docking` (4aa811)
 
 DISABLE_DOCKING :: #config(DISABLE_DOCKING, false)
 

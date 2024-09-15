@@ -3,7 +3,7 @@ package imgui_example_sdl2_sdlrenderer2
 // This is an example of using the bindings with SDL2 and SDL_Renderer
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/docking/examples/example_sdl2_sdlrenderer2/main.cpp
-// Based on the above at tag `v1.90.2-docking` (55073a)
+// Based on the above at tag `v1.90.3-docking` (55073a)
 
 import im "../.."
 import "../../imgui_impl_sdl2"
