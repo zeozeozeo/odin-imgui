@@ -3,7 +3,7 @@ package imgui_example_sdl2_directx11
 // This is an example of using the bindings with SDL2 and DirectX 11
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/docking/examples/example_sdl2_directx11/main.cpp
-// Based on the above at tag `v1.90.9-docking` (4aa811)
+// Based on the above at tag `v1.91.1-docking` (d8c98c)
 
 DISABLE_DOCKING :: #config(DISABLE_DOCKING, false)
 

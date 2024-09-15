@@ -421,6 +421,8 @@ _allowed_ifdef = [
 	"IM_DRAWLIST_TEX_LINES_WIDTH_MAX", # Overridden by user, int
 	"IMGUI_DISABLE_OBSOLETE_FUNCTIONS", # User defined only, bool
 	"IMGUI_DISABLE_OBSOLETE_KEYIO", # User defined only, bool
+	"IMGUI_DISABLE_DEBUG_TOOLS", # User defined only, bool
+	"IMGUI_DISABLE_METRICS_WINDOW", # User defined only, bool
 	"IMGUI_OVERRIDE_DRAWVERT_STRUCT_LAYOUT", # User defined only, bool. Indicates custom ImDrawVert struct. Should not be set for Odin purposes
 	"ImTextureID", # Concrete type overridden by user. Hard to deal with in Odin, so for now should not be set up by user
 	"ImDrawIdx", # Concrete type overridden by user. Hard to deal with in Odin, so for now should not be set up by user
@@ -895,6 +897,7 @@ _imgui_allowed_typedefs = [
 	"ImGuiInputTextCallback",
 	"ImGuiMemAllocFunc",
 	"ImGuiMemFreeFunc",
+	"ImGuiSelectionUserData",
 ]
 
 _imgui_typedef_overrides = {
