@@ -11,14 +11,14 @@ else when ODIN_OS == .Darwin {
 	when ODIN_ARCH == .amd64 { foreign import lib "../imgui_darwin_x64.a" } else { foreign import lib "../imgui_darwin_arm64.a" }
 }
 
-// imgui_impl_win32.h
-// Last checked 357f752b
-
 // Note a difference between the bindings an the actual impl:
 // In the impl they didn't want to pull in <windows.h>, so they just used void*
 // instead of HWND.
 // ImGui_ImplWin32_WndProcHandler is additionally #if 0'd, for the same reason.
 // This poses no issue for Odin, so we use HWND, and don't #if 0 out this function.
+
+// imgui_impl_win32.h
+// Last checked `v1.90.1-docking` (7e246a7)
 @(link_prefix="ImGui_ImplWin32_")
 foreign lib {
 	Init          :: proc(hwnd: windows.HWND) -> bool ---

@@ -10,8 +10,7 @@ else when ODIN_OS == .Darwin {
 }
 
 // imgui_impl_wgpu.h
-// Last checked 357f752
-
+// Last checked `v1.90.1-docking` (7e246a7)
 @(link_prefix="ImGui_ImplWGPU_")
 foreign lib {
     Init           :: proc(device: wgpu.Device, num_frames_in_flight: i32, rt_format: wgpu.TextureFormat, depth_format: wgpu.TextureFormat) -> bool ---

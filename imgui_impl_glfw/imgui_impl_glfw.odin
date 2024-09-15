@@ -11,7 +11,7 @@ else when ODIN_OS == .Darwin {
 }
 
 // imgui_impl_glfw.h
-// Last checked 3cb8054
+// Last checked `v1.90.1-docking` (4aa811)
 @(link_prefix="ImGui_ImplGlfw_")
 foreign lib {
 	InitForOpenGL :: proc(window: glfw.WindowHandle, install_callbacks: bool) -> bool ---

@@ -14,6 +14,7 @@ import platform
 # - It could be nice to be able to generate into another folder, or just say --copy-into../../my_cool_folder
 
 # @CONFIGURE: Must be key into below table
+# Note that the backend files and examples may also have to be updated, if you use these.
 git_heads = {
 	"imgui": "v1.90.1-docking",
 	"dear_bindings": "89a02bb",

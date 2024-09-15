@@ -3,7 +3,7 @@ package imgui_example_glfw_opengl3
 // This is an example of using the bindings with GLFW and OpenGL 3.
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/docking/examples/example_glfw_opengl3/main.cpp
-// (for updating: based on https://github.com/ocornut/imgui/blob/96839b445e32e46d87a44fd43a9cdd60c806f7e1/examples/example_glfw_opengl3/main.cpp)
+// Based on the above at tag `v1.90.1-docking` (4aa811)
 
 DISABLE_DOCKING :: #config(DISABLE_DOCKING, false)
 
@@ -22,8 +22,6 @@ main :: proc() {
 	glfw.WindowHint(glfw.CONTEXT_VERSION_MINOR, 2)
 	glfw.WindowHint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
 	glfw.WindowHint(glfw.OPENGL_FORWARD_COMPAT, 1) // i32(true)
-	glfw.WindowHint(glfw.FOCUSED, 1) // i32(true)
-	glfw.WindowHint(glfw.VISIBLE, 1) // i32(true)
 
 	window := glfw.CreateWindow(1280, 720, "Dear ImGui GLFW+OpenGL3 example", nil, nil)
 	assert(window != nil)

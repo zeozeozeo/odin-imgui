@@ -9,7 +9,7 @@ else when ODIN_OS == .Darwin {
 }
 
 // imgui_impl_sdl2.h
-// Last checked 357f752b
+// Last checked `v1.90.1-docking` (7e246a7)
 @(link_prefix="ImGui_ImplSDL2_")
 foreign lib {
 	InitForOpenGL      :: proc(window: ^sdl.Window, sdl_gl_context: rawptr) -> bool ---

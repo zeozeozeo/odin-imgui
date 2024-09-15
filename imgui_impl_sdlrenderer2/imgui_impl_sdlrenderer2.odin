@@ -8,8 +8,9 @@ else when ODIN_OS == .Linux   do foreign import lib "../imgui_linux_x64.a"
 else when ODIN_OS == .Darwin {
 	when ODIN_ARCH == .amd64 { foreign import lib "../imgui_darwin_x64.a" } else { foreign import lib "../imgui_darwin_arm64.a" }
 }
+
 // imgui_impl_sdlrenderer2.h
-// Last checked 357f752b
+// Last checked `v1.90.1-docking` (7e246a7)
 @(link_prefix="ImGui_ImplSDLRenderer2_")
 foreign lib {
 	Init           :: proc(renderer: ^sdl.Renderer) -> bool ---
