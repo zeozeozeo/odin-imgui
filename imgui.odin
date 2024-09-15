@@ -2390,8 +2390,8 @@ foreign lib {
 	@(link_name="ImGuiListClipper_IncludeRangeByIndices")      ListClipper_IncludeRangeByIndices      :: proc(self: ^ListClipper, item_begin: c.int, item_end: c.int) --- // [renamed in 1.89.9]
 	@(link_name="ImGuiListClipper_ForceDisplayRangeByIndices") ListClipper_ForceDisplayRangeByIndices :: proc(self: ^ListClipper, item_begin: c.int, item_end: c.int) --- // [renamed in 1.89.6]
 	// FIXME-OBSOLETE: May need to obsolete/cleanup those helpers.
-	@(link_name="ImColor_SetHSV") Color_SetHSV :: proc(self: ^Color, h: f32, s: f32, v: f32, a: f32 = 1.0)          ---
-	@(link_name="ImColor_HSV")    Color_HSV    :: proc(self: ^Color, h: f32, s: f32, v: f32, a: f32 = 1.0) -> Color ---
+	@(link_name="ImColor_SetHSV") Color_SetHSV :: proc(self: ^Color, h: f32, s: f32, v: f32, a: f32 = 1.0) ---
+	@(link_name="ImColor_HSV")    Color_HSV    :: proc(h: f32, s: f32, v: f32, a: f32 = 1.0) -> Color      ---
 	// Since 1.83: returns ImTextureID associated with this draw call. Warning: DO NOT assume this is always same as 'TextureId' (we will change this function for an upcoming feature)
 	@(link_name="ImDrawCmd_GetTexID")                   DrawCmd_GetTexID                   :: proc(self: ^DrawCmd) -> TextureID                                                                                                                                                                   ---
 	@(link_name="ImDrawListSplitter_Clear")             DrawListSplitter_Clear             :: proc(self: ^DrawListSplitter)                                                                                                                                                                       --- // Do not clear Channels[] so our allocations are reused next frame

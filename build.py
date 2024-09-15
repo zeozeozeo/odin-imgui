@@ -17,10 +17,12 @@ import platform
 active_branch = "docking"
 git_heads = {
 	# Default Dear ImGui branch
-	"master": { "imgui": "v1.90.1", "dear_bindings": "0c33579" },
+	"master": { "imgui": "v1.90.1", "dear_bindings": "89a02bb" },
 	# Docking branch
-	"docking": { "imgui": "v1.90.1-docking", "dear_bindings": "0c33579" },
+	"docking": { "imgui": "v1.90.1-docking", "dear_bindings": "89a02bb" },
 }
+
+# Note - tested with Odin version `dev-2024-09`
 
 # @CONFIGURE: Elements must be keys into below table
 wanted_backends = ["vulkan", "sdl2", "opengl3", "sdlrenderer2", "glfw", "dx11", "dx12", "win32", "osx", "metal", "wgpu"]

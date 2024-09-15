@@ -195,7 +195,7 @@ def parse_type(type_dict, in_function=False) -> str:
 def parse_type_desc(type_desc, in_function=False) -> str:
 	kind = type_desc["kind"]
 	if kind == "Builtin":
-			return make_type_odiney(type_desc["builtin_type"])
+		return make_type_odiney(type_desc["builtin_type"])
 
 	elif kind == "User":
 		return make_type_odiney(type_desc["name"])
