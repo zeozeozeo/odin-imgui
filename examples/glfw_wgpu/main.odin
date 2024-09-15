@@ -166,5 +166,11 @@ on_device :: proc "c" (status: wgpu.RequestDeviceStatus, the_device: wgpu.Device
 	}
 	wgpu.SurfaceConfigure(surface, &config)
 
-	assert(imgui_impl_wgpu.Init(device, 3, preferred_surface_format, .Undefined))
+	init_info := imgui_impl_wgpu.INIT_INFO_DEFAULT
+	init_info.Device = device
+	init_info.NumFramesInFlight = 3
+	init_info.RenderTargetFormat = preferred_surface_format
+	init_info.DepthStencilFormat = .Undefined
+
+	assert(imgui_impl_wgpu.Init(&init_info))
 }

@@ -10,15 +10,34 @@ else when ODIN_OS == .Darwin {
 }
 
 // imgui_impl_wgpu.h
-// Last checked `v1.90.1-docking` (7e246a7)
+// Last checked `v1.90.2-docking` (eb42e1)
+InitInfo :: struct {
+	Device:                   wgpu.Device,
+	NumFramesInFlight:        i32,
+	RenderTargetFormat:       wgpu.TextureFormat,
+	DepthStencilFormat:       wgpu.TextureFormat,
+	PipelineMultisampleState: wgpu.MultisampleState,
+}
+
+// In Dear ImGui, `InitInfo` has a constructor and field defaults. This is the equivalent
+INIT_INFO_DEFAULT :: InitInfo {
+	RenderTargetFormat = .Undefined,
+	DepthStencilFormat = .Undefined,
+	PipelineMultisampleState = {
+		count                  = 1,
+		mask                   = ~u32(0), // -1u
+		alphaToCoverageEnabled = false,
+	}
+}
+
 @(link_prefix="ImGui_ImplWGPU_")
 foreign lib {
-    Init           :: proc(device: wgpu.Device, num_frames_in_flight: i32, rt_format: wgpu.TextureFormat, depth_format: wgpu.TextureFormat) -> bool ---
-    Shutdown       :: proc() ---
-    NewFrame       :: proc() ---
-    RenderDrawData :: proc(draw_data: ^imgui.DrawData, pass_encoder: wgpu.RenderPassEncoder) ---
+	Init           :: proc(init_info: ^InitInfo) -> bool ---
+	Shutdown       :: proc() ---
+	NewFrame       :: proc() ---
+	RenderDrawData :: proc(draw_data: ^imgui.DrawData, pass_encoder: wgpu.RenderPassEncoder) ---
 
-    // Use if you want to reset your rendering device without losing Dear ImGui state.
-    InvalidateDeviceObjects :: proc() ---
-    CreateDeviceObjects     :: proc() -> bool ---
+	// Use if you want to reset your rendering device without losing Dear ImGui state.
+	InvalidateDeviceObjects :: proc() ---
+	CreateDeviceObjects     :: proc() -> bool ---
 }

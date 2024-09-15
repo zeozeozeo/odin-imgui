@@ -10,7 +10,7 @@ else when ODIN_OS == .Darwin {
 }
 
 // imgui_impl_vulkan.h
-// Last checked `v1.90.1-docking` (e3d7cd)
+// Last checked `v1.90.2-docking` (eb42e1)
 InitInfo :: struct {
 	Instance:        vk.Instance,
 	PhysicalDevice:  vk.PhysicalDevice,

@@ -20,8 +20,8 @@ CHECKVERSION :: proc() {
 // DEFINES
 ////////////////////////////////////////////////////////////
 
-VERSION                      :: "1.90.1"
-VERSION_NUM                  :: 19010
+VERSION                      :: "1.90.2"
+VERSION_NUM                  :: 19020
 PAYLOAD_TYPE_COLOR_3F        :: "_COL3F" // float[3]: Standard type for colors, without alpha. User code may use this type.
 PAYLOAD_TYPE_COLOR_4F        :: "_COL4F" // float[4]: Standard type for colors. User code may use this type.
 UNICODE_CODEPOINT_INVALID    :: 0xFFFD   // Invalid Unicode code point (standard value).
@@ -72,7 +72,7 @@ WindowFlags_NoDecoration :: WindowFlags{.NoTitleBar,.NoResize,.NoScrollbar,.NoCo
 WindowFlags_NoInputs     :: WindowFlags{.NoMouseInputs,.NoNavInputs,.NoNavFocus}
 
 // Flags for ImGui::BeginChild()
-// (Legacy: bot 0 must always correspond to ImGuiChildFlags_Border to be backward compatible with old API using 'bool border = false'.
+// (Legacy: bit 0 must always correspond to ImGuiChildFlags_Border to be backward compatible with old API using 'bool border = false'.
 // About using AutoResizeX/AutoResizeY flags:
 // - May be combined with SetNextWindowSizeConstraints() to set a min/max size for each axis (see "Demo->Child->Auto-resize with Constraints").
 // - Size measurement for a given axis is only performed when the child window is within visible boundaries, or is just appearing.
@@ -82,7 +82,7 @@ WindowFlags_NoInputs     :: WindowFlags{.NoMouseInputs,.NoNavInputs,.NoNavFocus}
 //     HOWEVER PLEASE UNDERSTAND THAT DOING SO WILL PREVENT BeginChild() FROM EVER RETURNING FALSE, disabling benefits of coarse clipping.
 ChildFlags :: bit_set[ChildFlag; c.int]
 ChildFlag :: enum c.int {
-	Border                 = 0, // Show an outer border and enable WindowPadding. (Important: this is always == 1 == true for legacy reason)
+	Border                 = 0, // Show an outer border and enable WindowPadding. (IMPORTANT: this is always == 1 == true for legacy reason)
 	AlwaysUseWindowPadding = 1, // Pad with style.WindowPadding even if no border are drawn (no padding by default for non-bordered child windows because it makes more sense)
 	ResizeX                = 2, // Allow resize from right border (layout direction). Enable .ini saving (unless ImGuiWindowFlags_NoSavedSettings passed to window flags)
 	ResizeY                = 3, // Allow resize from bottom border (layout direction). "
@@ -146,24 +146,26 @@ TreeNodeFlags_CollapsingHeader :: TreeNodeFlags{.Framed,.NoTreePushOnOpen,.NoAut
 TreeNodeFlags_AllowItemOverlap :: TreeNodeFlags{.AllowOverlap}                              // Renamed in 1.89.7
 
 // Flags for OpenPopup*(), BeginPopupContext*(), IsPopupOpen() functions.
-// - To be backward compatible with older API which took an 'int mouse_button = 1' argument, we need to treat
-//   small flags values as a mouse button index, so we encode the mouse button in the first few bits of the flags.
+// - To be backward compatible with older API which took an 'int mouse_button = 1' argument instead of 'ImGuiPopupFlags flags',
+//   we need to treat small flags values as a mouse button index, so we encode the mouse button in the first few bits of the flags.
 //   It is therefore guaranteed to be legal to pass a mouse button index in ImGuiPopupFlags.
 // - For the same reason, we exceptionally default the ImGuiPopupFlags argument of BeginPopupContextXXX functions to 1 instead of 0.
 //   IMPORTANT: because the default parameter is 1 (==ImGuiPopupFlags_MouseButtonRight), if you rely on the default parameter
 //   and want to use another flag, you need to pass in the ImGuiPopupFlags_MouseButtonRight flag explicitly.
 // - Multiple buttons currently cannot be combined/or-ed in those functions (we could allow it later).
 PopupFlags :: distinct c.int
-PopupFlags_None                    :: PopupFlags(0)
-PopupFlags_MouseButtonLeft         :: PopupFlags(0)                                                // For BeginPopupContext*(): open on Left Mouse release. Guaranteed to always be == 0 (same as ImGuiMouseButton_Left)
-PopupFlags_MouseButtonRight        :: PopupFlags(1)                                                // For BeginPopupContext*(): open on Right Mouse release. Guaranteed to always be == 1 (same as ImGuiMouseButton_Right)
-PopupFlags_MouseButtonMiddle       :: PopupFlags(2)                                                // For BeginPopupContext*(): open on Middle Mouse release. Guaranteed to always be == 2 (same as ImGuiMouseButton_Middle)
-PopupFlags_MouseButtonMask_        :: PopupFlags(0x1F)
-PopupFlags_MouseButtonDefault_     :: PopupFlags(1)
-PopupFlags_NoOpenOverExistingPopup :: PopupFlags(1<<5)                                             // For OpenPopup*(), BeginPopupContext*(): don't open if there's already a popup at the same level of the popup stack
-PopupFlags_NoOpenOverItems         :: PopupFlags(1<<6)                                             // For BeginPopupContextWindow(): don't return true when hovering items, only when hovering empty space
-PopupFlags_AnyPopupId              :: PopupFlags(1<<7)                                             // For IsPopupOpen(): ignore the ImGuiID parameter and test for any popup.
-PopupFlags_AnyPopupLevel           :: PopupFlags(1<<8)                                             // For IsPopupOpen(): search/test at any level of the popup stack (default test in the current level)
+PopupFlags_None                :: PopupFlags(0)
+PopupFlags_MouseButtonLeft     :: PopupFlags(0)    // For BeginPopupContext*(): open on Left Mouse release. Guaranteed to always be == 0 (same as ImGuiMouseButton_Left)
+PopupFlags_MouseButtonRight    :: PopupFlags(1)    // For BeginPopupContext*(): open on Right Mouse release. Guaranteed to always be == 1 (same as ImGuiMouseButton_Right)
+PopupFlags_MouseButtonMiddle   :: PopupFlags(2)    // For BeginPopupContext*(): open on Middle Mouse release. Guaranteed to always be == 2 (same as ImGuiMouseButton_Middle)
+PopupFlags_MouseButtonMask_    :: PopupFlags(0x1F)
+PopupFlags_MouseButtonDefault_ :: PopupFlags(1)
+PopupFlags_NoReopen            :: PopupFlags(1<<5) // For OpenPopup*(), BeginPopupContext*(): don't reopen same popup if already open (won't reposition, won't reinitialize navigation)
+//ImGuiPopupFlags_NoReopenAlwaysNavInit = 1 << 6,   // For OpenPopup*(), BeginPopupContext*(): focus and initialize navigation even when not reopening.
+PopupFlags_NoOpenOverExistingPopup :: PopupFlags(1<<7)                                             // For OpenPopup*(), BeginPopupContext*(): don't open if there's already a popup at the same level of the popup stack
+PopupFlags_NoOpenOverItems         :: PopupFlags(1<<8)                                             // For BeginPopupContextWindow(): don't return true when hovering items, only when hovering empty space
+PopupFlags_AnyPopupId              :: PopupFlags(1<<10)                                            // For IsPopupOpen(): ignore the ImGuiID parameter and test for any popup.
+PopupFlags_AnyPopupLevel           :: PopupFlags(1<<11)                                            // For IsPopupOpen(): search/test at any level of the popup stack (default test in the current level)
 PopupFlags_AnyPopup                :: PopupFlags(PopupFlags_AnyPopupId | PopupFlags_AnyPopupLevel)
 
 // Flags for ImGui::Selectable()
@@ -1251,7 +1253,6 @@ IO :: struct {
 	KeyMap:                     [Key.COUNT]c.int,    // [LEGACY] Input: map of indices into the KeysDown[512] entries array which represent your "native" keyboard state. The first 512 are now unused and should be kept zero. Legacy backend will write into KeyMap[] using ImGuiKey_ indices which are always >512.
 	KeysDown:                   [Key.COUNT]bool,     // [LEGACY] Input: Keyboard keys that are pressed (ideally left in the "native" order your engine has access to keyboard keys, so you can use your own defines/enums for keys). This used to be [512] sized. It is now ImGuiKey_COUNT to allow legacy io.KeysDown[GetKeyIndex(...)] to work without an overflow.
 	NavInputs:                  [NavInput.COUNT]f32, // [LEGACY] Since 1.88, NavInputs[] was removed. Backends from 1.60 to 1.86 won't build. Feed gamepad inputs via io.AddKeyEvent() and ImGuiKey_GamepadXXX enums.
-	ImeWindowHandle:            rawptr,              // = NULL   // [Obsoleted in 1.87] Set ImGuiViewport::PlatformHandleRaw instead. Set this to your HWND to get automatic IME cursor positioning.
 	Ctx:                        ^Context,            // Parent UI context (needs to be set explicitly by parent).
 	// Main Input State
 	// (this block used to be written by backend, since 1.87 it is best to NOT write to those directly, call the AddXXX functions above instead)
@@ -1341,6 +1342,7 @@ SizeCallbackData :: struct {
 WindowClass :: struct {
 	ClassId:                    ID,            // User data. 0 = Default class (unclassed). Windows of different classes cannot be docked with each others.
 	ParentViewportId:           ID,            // Hint for the platform backend. -1: use default. 0: request platform backend to not parent the platform. != 0: request platform backend to create a parent<>child relationship between the platform windows. Not conforming backends are free to e.g. parent every viewport to the main viewport or not.
+	FocusRouteParentWindowId:   ID,            // ID of parent window for shortcut focus route evaluation, e.g. Shortcut() call from Parent Window will succeed when this window is focused.
 	ViewportFlagsOverrideSet:   ViewportFlags, // Viewport flags to set when a window of this class owns a viewport. This allows you to enforce OS decoration or task bar icon, override the defaults on a per-window basis.
 	ViewportFlagsOverrideClear: ViewportFlags, // Viewport flags to clear when a window of this class owns a viewport. This allows you to enforce OS decoration or task bar icon, override the defaults on a per-window basis.
 	TabItemFlagsOverrideSet:    TabItemFlags,  // [EXPERIMENTAL] TabItem flags to set when a window of this class gets submitted into a dock node tab bar. May use with ImGuiTabItemFlags_Leading or ImGuiTabItemFlags_Trailing.
@@ -1803,7 +1805,7 @@ foreign lib {
 	// - Use child windows to begin into a self-contained independent scrolling/clipping regions within a host window. Child windows can embed their own child.
 	// - Before 1.90 (November 2023), the "ImGuiChildFlags child_flags = 0" parameter was "bool border = false".
 	//   This API is backward compatible with old code, as we guarantee that ImGuiChildFlags_Border == true.
-	//   Consider updating your old call sites:
+	//   Consider updating your old code:
 	//      BeginChild("Name", size, false)   -> Begin("Name", size, 0); or Begin("Name", size, ImGuiChildFlags_None);
 	//      BeginChild("Name", size, true)    -> Begin("Name", size, ImGuiChildFlags_Border);
 	// - Manual sizing (each axis can use a different setting e.g. ImVec2(0.0f, 400.0f)):
