@@ -20,8 +20,8 @@ CHECKVERSION :: proc() {
 // DEFINES
 ////////////////////////////////////////////////////////////
 
-VERSION                      :: "1.90.8"
-VERSION_NUM                  :: 19080
+VERSION                      :: "1.90.9"
+VERSION_NUM                  :: 19090
 PAYLOAD_TYPE_COLOR_3F        :: "_COL3F" // float[3]: Standard type for colors, without alpha. User code may use this type.
 PAYLOAD_TYPE_COLOR_4F        :: "_COL4F" // float[4]: Standard type for colors. User code may use this type.
 UNICODE_CODEPOINT_INVALID    :: 0xFFFD   // Invalid Unicode code point (standard value).
@@ -57,7 +57,6 @@ WindowFlag :: enum c.int {
 	UnsavedDocument           = 18, // Display a dot next to the title. When used in a tab/docking context, tab is selected when clicking the X + closure is not assumed (will wait for user to stop submitting the tab). Otherwise closure is assumed when pressing the X, so if you keep submitting the tab may reappear at end of tab bar.
 	NoDocking                 = 19, // Disable docking of this window
 	// [Internal]
-	NavFlattened           = 23, // [BETA] On child window: share focus scope, allow gamepad/keyboard navigation to cross over parent border to this child or between sibling child windows.
 	ChildWindow            = 24, // Don't use! For internal use by BeginChild()
 	Tooltip                = 25, // Don't use! For internal use by BeginTooltip()
 	Popup                  = 26, // Don't use! For internal use by BeginPopup()
@@ -65,6 +64,7 @@ WindowFlag :: enum c.int {
 	ChildMenu              = 28, // Don't use! For internal use by BeginMenu()
 	DockNodeHost           = 29, // Don't use! For internal use by Begin()/NewFrame()
 	AlwaysUseWindowPadding = 30, // Obsoleted in 1.90: Use ImGuiChildFlags_AlwaysUseWindowPadding in BeginChild() call.
+	NavFlattened           = 31, // Obsoleted in 1.90.9: Use ImGuiChildFlags_NavFlattened in BeginChild() call.
 }
 
 WindowFlags_NoNav        :: WindowFlags{.NoNavInputs,.NoNavFocus}
@@ -90,6 +90,7 @@ ChildFlag :: enum c.int {
 	AutoResizeY            = 5, // Enable auto-resizing height. Read "IMPORTANT: Size measurement" details above.
 	AlwaysAutoResize       = 6, // Combined with AutoResizeX/AutoResizeY. Always measure size even when child is hidden, always return true, always disable clipping optimization! NOT RECOMMENDED.
 	FrameStyle             = 7, // Style the child window like a framed item: use FrameBg, FrameRounding, FrameBorderSize, FramePadding instead of ChildBg, ChildRounding, ChildBorderSize, WindowPadding.
+	NavFlattened           = 8, // Share focus scope, allow gamepad/keyboard navigation to cross over parent border to this child or between sibling child windows.
 }
 
 
@@ -210,8 +211,9 @@ TabBarFlag :: enum c.int {
 	NoCloseWithMiddleMouseButton = 3, // Disable behavior of closing tabs (that are submitted with p_open != NULL) with middle mouse button. You may handle this behavior manually on user's side with if (IsItemHovered() && IsMouseClicked(2)) *p_open = false.
 	NoTabListScrollingButtons    = 4, // Disable scrolling buttons (apply when fitting policy is ImGuiTabBarFlags_FittingPolicyScroll)
 	NoTooltip                    = 5, // Disable tooltips when hovering a tab
-	FittingPolicyResizeDown      = 6, // Resize tabs when they don't fit
-	FittingPolicyScroll          = 7, // Add scroll buttons when tabs don't fit
+	DrawSelectedOverline         = 6, // Draw selected overline markers over selected tab
+	FittingPolicyResizeDown      = 7, // Resize tabs when they don't fit
+	FittingPolicyScroll          = 8, // Add scroll buttons when tabs don't fit
 }
 
 TabBarFlags_FittingPolicyMask_    :: TabBarFlags{.FittingPolicyResizeDown,.FittingPolicyScroll}
@@ -307,14 +309,17 @@ DragDropFlag :: enum c.int {
 	SourceNoHoldToOpenOthers = 2, // Disable the behavior that allows to open tree nodes and collapsing header by holding over them while dragging a source item.
 	SourceAllowNullID        = 3, // Allow items such as Text(), Image() that have no unique identifier to be used as drag source, by manufacturing a temporary identifier based on their window-relative position. This is extremely unusual within the dear imgui ecosystem and so we made it explicit.
 	SourceExtern             = 4, // External source (from outside of dear imgui), won't attempt to read current item/window info. Will always return true. Only one Extern source can be active simultaneously.
-	SourceAutoExpirePayload  = 5, // Automatically expire the payload if the source cease to be submitted (otherwise payloads are persisting while being dragged)
+	PayloadAutoExpire        = 5, // Automatically expire the payload if the source cease to be submitted (otherwise payloads are persisting while being dragged)
+	PayloadNoCrossContext    = 6, // Hint to specify that the payload may not be copied outside current dear imgui context.
+	PayloadNoCrossProcess    = 7, // Hint to specify that the payload may not be copied outside current process.
 	// AcceptDragDropPayload() flags
 	AcceptBeforeDelivery    = 10, // AcceptDragDropPayload() will returns true even before the mouse button is released. You can then call IsDelivery() to test if the payload needs to be delivered.
 	AcceptNoDrawDefaultRect = 11, // Do not draw the default highlight rectangle when hovering over target.
 	AcceptNoPreviewTooltip  = 12, // Request hiding the BeginDragDropSource tooltip from the BeginDragDropTarget site.
 }
 
-DragDropFlags_AcceptPeekOnly :: DragDropFlags{.AcceptBeforeDelivery,.AcceptNoDrawDefaultRect} // For peeking ahead and inspecting the payload before delivery.
+DragDropFlags_AcceptPeekOnly          :: DragDropFlags{.AcceptBeforeDelivery,.AcceptNoDrawDefaultRect} // For peeking ahead and inspecting the payload before delivery.
+DragDropFlags_SourceAutoExpirePayload :: DragDropFlags{.PayloadAutoExpire}                             // Renamed in 1.90.9
 
 DataType :: enum c.int {
 	S8,
@@ -572,10 +577,11 @@ ConfigFlag :: enum c.int {
 	NavEnableGamepad     = 1, // Master gamepad navigation enable flag. Backend also needs to set ImGuiBackendFlags_HasGamepad.
 	NavEnableSetMousePos = 2, // Instruct navigation to move the mouse cursor. May be useful on TV/console systems where moving a virtual mouse is awkward. Will update io.MousePos and set io.WantSetMousePos=true. If enabled you MUST honor io.WantSetMousePos requests in your backend, otherwise ImGui will react as if the mouse is jumping around back and forth.
 	NavNoCaptureKeyboard = 3, // Instruct navigation to not set the io.WantCaptureKeyboard flag when io.NavActive is set.
-	NoMouse              = 4, // Instruct imgui to clear mouse position/buttons in NewFrame(). This allows ignoring the mouse information set by the backend.
+	NoMouse              = 4, // Instruct dear imgui to disable mouse inputs and interactions.
 	NoMouseCursorChange  = 5, // Instruct backend to not alter mouse cursor shape and visibility. Use if the backend cursor changes are interfering with yours and you don't want to use SetMouseCursor() to change mouse cursor. You may want to honor requests from imgui by reading GetMouseCursor() yourself instead.
+	NoKeyboard           = 6, // Instruct dear imgui to disable keyboard inputs and interactions. This is done by ignoring keyboard events and clearing existing states.
 	// [BETA] Docking
-	DockingEnable = 6, // Docking enable flags.
+	DockingEnable = 7, // Docking enable flags.
 	// [BETA] Viewports
 	// When using viewports it is recommended that your default value for ImGuiCol_WindowBg is opaque (Alpha=1.0) so transition to a viewport won't be noticeable.
 	ViewportsEnable         = 10, // Viewport enable flags (require both ImGuiBackendFlags_PlatformHasViewports + ImGuiBackendFlags_RendererHasViewports set by the respective backends)
@@ -635,11 +641,13 @@ Col :: enum c.int {
 	ResizeGrip,
 	ResizeGripHovered,
 	ResizeGripActive,
-	Tab,
 	TabHovered,
-	TabActive,
-	TabUnfocused,
-	TabUnfocusedActive,
+	Tab,
+	TabSelected,
+	TabSelectedOverline,
+	TabDimmed,
+	TabDimmedSelected,
+	TabDimmedSelectedOverline,
 	DockingPreview,
 	DockingEmptyBg,
 	PlotLines,
@@ -658,6 +666,11 @@ Col :: enum c.int {
 	NavWindowingDimBg,
 	ModalWindowDimBg,
 	COUNT,
+	// Some of the next enum values are self referential, which currently causes issues
+	// Search for this in the generator for more info.
+	// TabActive = Col.TabSelected,
+	// TabUnfocused = Col.TabDimmed,
+	// TabUnfocusedActive = Col.TabDimmedSelected,
 }
 
 StyleVar :: enum c.int {
@@ -752,8 +765,9 @@ SliderFlags :: bit_set[SliderFlag; c.int]
 SliderFlag :: enum c.int {
 	AlwaysClamp     = 4, // Clamp value to min/max bounds when input manually with CTRL+Click. By default CTRL+Click allows going out of bounds.
 	Logarithmic     = 5, // Make the widget logarithmic (linear otherwise). Consider using ImGuiSliderFlags_NoRoundToFormat with this if using a format-string with small amount of digits.
-	NoRoundToFormat = 6, // Disable rounding underlying value to match precision of the display format string (e.g. %.3f values are rounded to those 3 digits)
-	NoInput         = 7, // Disable CTRL+Click or Enter key allowing to input text directly into the widget
+	NoRoundToFormat = 6, // Disable rounding underlying value to match precision of the display format string (e.g. %.3f values are rounded to those 3 digits).
+	NoInput         = 7, // Disable CTRL+Click or Enter key allowing to input text directly into the widget.
+	WrapAround      = 8, // Enable wrapping around from max to min and from min to max (only supported by DragXXX() functions for now.
 }
 
 SliderFlags_InvalidMask_ :: c.int(0x7000000F) // Meant to be of type SliderFlags // [Internal] We treat using those bits as being potentially a 'float power' argument from the previous API that has got miscast to this enum, and will trigger an assert if needed.
@@ -1025,10 +1039,10 @@ Vector_char :: struct {
 	Data:     cstring,
 }
 
-Vector_Storage_StoragePair :: struct {
+Vector_StoragePair :: struct {
 	Size:     c.int,
 	Capacity: c.int,
-	Data:     ^Storage_StoragePair,
+	Data:     ^StoragePair,
 }
 
 Vector_DrawCmd :: struct {
@@ -1249,7 +1263,7 @@ IO :: struct {
 	// Option to deactivate io.AddFocusEvent(false) handling.
 	// - May facilitate interactions with a debugger when focus loss leads to clearing inputs data.
 	// - Backends may have other side-effects on focus loss, so this will reduce side-effects but not necessary remove all of them.
-	ConfigDebugIgnoreFocusLoss: bool, // = false          // Ignore io.AddFocusEvent(false), consequently not calling io.ClearInputKeys() in input processing.
+	ConfigDebugIgnoreFocusLoss: bool, // = false          // Ignore io.AddFocusEvent(false), consequently not calling io.ClearInputKeys()/io.ClearInputMouse() in input processing.
 	// Option to audit .ini data
 	ConfigDebugIniSettings: bool, // = false          // Save .ini data with extra comments (particularly helpful for Docking, but makes saving slower)
 	// Optional: Platform/Renderer backend name (informational only! will be displayed in About Window) + User data for backend/wrappers to store their own stuff.
@@ -1418,8 +1432,8 @@ TextBuffer :: struct {
 	Buf: Vector_char,
 }
 
-// [Internal]
-Storage_StoragePair :: struct {
+// [Internal] Key+Value for ImGuiStorage
+StoragePair :: struct {
 	key:               ID,
 	__anonymous_type0: __anonymous_type0,
 }
@@ -1439,7 +1453,8 @@ __anonymous_type0 :: struct {
 // - You want to store custom debug data easily without adding or editing structures in your code (probably not efficient, but convenient)
 // Types are NOT stored, so it is up to you to make sure your Key don't collide with different types.
 Storage :: struct {
-	Data: Vector_Storage_StoragePair,
+	// [Internal]
+	Data: Vector_StoragePair,
 }
 
 // Helper: Manually clip large list of items.
@@ -1723,7 +1738,7 @@ Viewport :: struct {
 	// The library never uses those fields, they are merely storage to facilitate backend implementation.
 	RendererUserData:      rawptr, // void* to hold custom data structure for the renderer (e.g. swap chain, framebuffers etc.). generally set by your Renderer_CreateWindow function.
 	PlatformUserData:      rawptr, // void* to hold custom data structure for the OS / platform (e.g. windowing info, render context). generally set by your Platform_CreateWindow function.
-	PlatformHandle:        rawptr, // void* for FindViewportByPlatformHandle(). (e.g. suggested to use natural platform handle such as HWND, GLFWWindow*, SDL_Window*)
+	PlatformHandle:        rawptr, // void* to hold higher-level, platform window handle (e.g. HWND, GLFWWindow*, SDL_Window*), for FindViewportByPlatformHandle().
 	PlatformHandleRaw:     rawptr, // void* to hold lower-level, platform-native window handle (under Win32 this is expected to be a HWND, unused for other platforms), when using an abstraction layer like GLFW or SDL (where PlatformHandle would be a SDL_Window*)
 	PlatformWindowCreated: bool,   // Platform window has been created (Platform_CreateWindow() has been called). This is false during the first frame where a viewport is being created.
 	PlatformRequestMove:   bool,   // Platform window requested move (e.g. window was moved by the OS / host window manager, authoritative position will be OS window position)
@@ -2154,17 +2169,17 @@ foreign lib {
 	//  - IsPopupOpen(): return true if the popup is open at the current BeginPopup() level of the popup stack.
 	//  - IsPopupOpen() with ImGuiPopupFlags_AnyPopupId: return true if any popup is open at the current BeginPopup() level of the popup stack.
 	//  - IsPopupOpen() with ImGuiPopupFlags_AnyPopupId + ImGuiPopupFlags_AnyPopupLevel: return true if any popup is open.
-	@(link_name="ImGui_IsPopupOpen")            IsPopupOpen            :: proc(str_id: cstring, flags: PopupFlags = {}) -> bool                                                                       --- // return true if the popup is open.
-	@(link_name="ImGui_BeginTableEx")           BeginTable             :: proc(str_id: cstring, column: c.int, flags: TableFlags = {}, outer_size: Vec2 = {0.0, 0.0}, inner_width: f32 = 0.0) -> bool ---
-	@(link_name="ImGui_EndTable")               EndTable               :: proc()                                                                                                                      --- // only call EndTable() if BeginTable() returns true!
-	@(link_name="ImGui_TableNextRowEx")         TableNextRow           :: proc(row_flags: TableRowFlags = {}, min_row_height: f32 = 0.0)                                                              --- // append into the first cell of a new row.
-	@(link_name="ImGui_TableNextColumn")        TableNextColumn        :: proc() -> bool                                                                                                              --- // append into the next column (or first column of next row if currently in last column). Return true when column is visible.
-	@(link_name="ImGui_TableSetColumnIndex")    TableSetColumnIndex    :: proc(column_n: c.int) -> bool                                                                                               --- // append into the specified column. Return true when column is visible.
-	@(link_name="ImGui_TableSetupColumnEx")     TableSetupColumn       :: proc(label: cstring, flags: TableColumnFlags = {}, init_width_or_weight: f32 = 0.0, user_id: ID = {})                       ---
-	@(link_name="ImGui_TableSetupScrollFreeze") TableSetupScrollFreeze :: proc(cols: c.int, rows: c.int)                                                                                              --- // lock columns/rows so they stay visible when scrolled.
-	@(link_name="ImGui_TableHeader")            TableHeader            :: proc(label: cstring)                                                                                                        --- // submit one header cell manually (rarely used)
-	@(link_name="ImGui_TableHeadersRow")        TableHeadersRow        :: proc()                                                                                                                      --- // submit a row with headers cells based on data provided to TableSetupColumn() + submit context menu
-	@(link_name="ImGui_TableAngledHeadersRow")  TableAngledHeadersRow  :: proc()                                                                                                                      --- // submit a row with angled headers for every column with the ImGuiTableColumnFlags_AngledHeader flag. MUST BE FIRST ROW.
+	@(link_name="ImGui_IsPopupOpen")            IsPopupOpen            :: proc(str_id: cstring, flags: PopupFlags = {}) -> bool                                                                        --- // return true if the popup is open.
+	@(link_name="ImGui_BeginTableEx")           BeginTable             :: proc(str_id: cstring, columns: c.int, flags: TableFlags = {}, outer_size: Vec2 = {0.0, 0.0}, inner_width: f32 = 0.0) -> bool ---
+	@(link_name="ImGui_EndTable")               EndTable               :: proc()                                                                                                                       --- // only call EndTable() if BeginTable() returns true!
+	@(link_name="ImGui_TableNextRowEx")         TableNextRow           :: proc(row_flags: TableRowFlags = {}, min_row_height: f32 = 0.0)                                                               --- // append into the first cell of a new row.
+	@(link_name="ImGui_TableNextColumn")        TableNextColumn        :: proc() -> bool                                                                                                               --- // append into the next column (or first column of next row if currently in last column). Return true when column is visible.
+	@(link_name="ImGui_TableSetColumnIndex")    TableSetColumnIndex    :: proc(column_n: c.int) -> bool                                                                                                --- // append into the specified column. Return true when column is visible.
+	@(link_name="ImGui_TableSetupColumnEx")     TableSetupColumn       :: proc(label: cstring, flags: TableColumnFlags = {}, init_width_or_weight: f32 = 0.0, user_id: ID = {})                        ---
+	@(link_name="ImGui_TableSetupScrollFreeze") TableSetupScrollFreeze :: proc(cols: c.int, rows: c.int)                                                                                               --- // lock columns/rows so they stay visible when scrolled.
+	@(link_name="ImGui_TableHeader")            TableHeader            :: proc(label: cstring)                                                                                                         --- // submit one header cell manually (rarely used)
+	@(link_name="ImGui_TableHeadersRow")        TableHeadersRow        :: proc()                                                                                                                       --- // submit a row with headers cells based on data provided to TableSetupColumn() + submit context menu
+	@(link_name="ImGui_TableAngledHeadersRow")  TableAngledHeadersRow  :: proc()                                                                                                                       --- // submit a row with angled headers for every column with the ImGuiTableColumnFlags_AngledHeader flag. MUST BE FIRST ROW.
 	// Tables: Sorting & Miscellaneous functions
 	// - Sorting: call TableGetSortSpecs() to retrieve latest sort specs for the table. NULL when not sorting.
 	//   When 'sort_specs->SpecsDirty == true' you should sort your data. It will be true when sorting specs have
@@ -2178,6 +2193,7 @@ foreign lib {
 	@(link_name="ImGui_TableGetColumnName")    TableGetColumnName    :: proc(column_n: c.int = -1) -> cstring                          --- // return "" if column didn't have a name declared by TableSetupColumn(). Pass -1 to use current column.
 	@(link_name="ImGui_TableGetColumnFlags")   TableGetColumnFlags   :: proc(column_n: c.int = -1) -> TableColumnFlags                 --- // return column flags so you can query their Enabled/Visible/Sorted/Hovered status flags. Pass -1 to use current column.
 	@(link_name="ImGui_TableSetColumnEnabled") TableSetColumnEnabled :: proc(column_n: c.int, v: bool)                                 --- // change user accessible enabled/disabled state of a column. Set to false to hide the column. User can use the context menu to change this themselves (right-click in headers, or right-click in columns body with ImGuiTableFlags_ContextMenuInBody)
+	@(link_name="ImGui_TableGetHoveredColumn") TableGetHoveredColumn :: proc() -> c.int                                                --- // return hovered column. return -1 when table is not hovered. return columns_count if the unused space at the right of visible columns is hovered. Can also use (TableGetColumnFlags() & ImGuiTableColumnFlags_IsHovered) instead.
 	@(link_name="ImGui_TableSetBgColor")       TableSetBgColor       :: proc(target: TableBgTarget, color: u32, column_n: c.int = -1)  --- // change the color of a cell, row, or column. See ImGuiTableBgTarget_ flags for details.
 	@(link_name="ImGui_ColumnsEx")             Columns               :: proc(count: c.int = 1, id: cstring = nil, border: bool = true) ---
 	@(link_name="ImGui_NextColumn")            NextColumn            :: proc()                                                         --- // next column, defaults to current row or next row if the current row is finished
@@ -2224,6 +2240,7 @@ foreign lib {
 	// Disabling [BETA API]
 	// - Disable all user interactions and dim items visuals (applying style.DisabledAlpha over current colors)
 	// - Those can be nested but it cannot be used to enable an already disabled section (a single BeginDisabled(true) in the stack is enough to keep everything disabled)
+	// - Tooltips windows by exception are opted out of disabling.
 	// - BeginDisabled(false) essentially does nothing useful but is provided to facilitate use of boolean expressions. If you can avoid calling BeginDisabled(False)/EndDisabled() best to avoid it.
 	@(link_name="ImGui_BeginDisabled") BeginDisabled :: proc(disabled: bool = true) ---
 	@(link_name="ImGui_EndDisabled")   EndDisabled   :: proc()                      ---
@@ -2261,12 +2278,9 @@ foreign lib {
 	// - Currently represents the Platform Window created by the application which is hosting our Dear ImGui windows.
 	// - In 'docking' branch with multi-viewport enabled, we extend this concept to have multiple active viewports.
 	// - In the future we will extend this concept further to also represent Platform Monitor and support a "no main platform window" operation mode.
-	@(link_name="ImGui_GetMainViewport") GetMainViewport :: proc() -> ^Viewport --- // return primary/default viewport. This can never be NULL.
-	// Background/Foreground Draw Lists
-	@(link_name="ImGui_GetBackgroundDrawList")                 GetBackgroundDrawList                 :: proc() -> ^DrawList                    --- // get background draw list for the viewport associated to the current window. this draw list will be the first rendering one. Useful to quickly draw shapes/text behind dear imgui contents.
-	@(link_name="ImGui_GetForegroundDrawList")                 GetForegroundDrawList                 :: proc() -> ^DrawList                    --- // get foreground draw list for the viewport associated to the current window. this draw list will be the last rendered one. Useful to quickly draw shapes/text over dear imgui contents.
-	@(link_name="ImGui_GetBackgroundDrawListImGuiViewportPtr") GetBackgroundDrawListImGuiViewportPtr :: proc(viewport: ^Viewport) -> ^DrawList --- // get background draw list for the given viewport. this draw list will be the first rendering one. Useful to quickly draw shapes/text behind dear imgui contents.
-	@(link_name="ImGui_GetForegroundDrawListImGuiViewportPtr") GetForegroundDrawListImGuiViewportPtr :: proc(viewport: ^Viewport) -> ^DrawList --- // get foreground draw list for the given viewport. this draw list will be the last rendered one. Useful to quickly draw shapes/text over dear imgui contents.
+	@(link_name="ImGui_GetMainViewport")         GetMainViewport       :: proc() -> ^Viewport                          --- // return primary/default viewport. This can never be NULL.
+	@(link_name="ImGui_GetBackgroundDrawListEx") GetBackgroundDrawList :: proc(viewport: ^Viewport = nil) -> ^DrawList --- // get background draw list for the given viewport or viewport associated to the current window. this draw list will be the first rendering one. Useful to quickly draw shapes/text behind dear imgui contents.
+	@(link_name="ImGui_GetForegroundDrawListEx") GetForegroundDrawList :: proc(viewport: ^Viewport = nil) -> ^DrawList --- // get foreground draw list for the given viewport or viewport associated to the current window. this draw list will be the top-most rendered one. Useful to quickly draw shapes/text over dear imgui contents.
 	// Miscellaneous Utilities
 	@(link_name="ImGui_IsRectVisibleBySize")   IsRectVisibleBySize   :: proc(size: Vec2) -> bool                                                                                                --- // test if rectangle (of given size, starting from cursor position) is visible / not clipped.
 	@(link_name="ImGui_IsRectVisible")         IsRectVisible         :: proc(rect_min: Vec2, rect_max: Vec2) -> bool                                                                            --- // test if rectangle (in screen space) is visible / not clipped. to perform coarse clipping on user's side.
@@ -2384,7 +2398,8 @@ foreign lib {
 	@(link_name="ImGuiIO_SetKeyEventNativeDataEx")           IO_SetKeyEventNativeData             :: proc(self: ^IO, key: Key, native_keycode: c.int, native_scancode: c.int, native_legacy_index: c.int = -1) --- // [Optional] Specify index for legacy <1.87 IsKeyXXX() functions with native indices + specify native keycode, scancode.
 	@(link_name="ImGuiIO_SetAppAcceptingEvents")             IO_SetAppAcceptingEvents             :: proc(self: ^IO, accepting_events: bool)                                                                   --- // Set master flag for accepting key/mouse/text events (default to true). Useful if you have native dialog boxes that are interrupting your application loop/refresh, and you want to disable events being queued while your app is frozen.
 	@(link_name="ImGuiIO_ClearEventsQueue")                  IO_ClearEventsQueue                  :: proc(self: ^IO)                                                                                           --- // Clear all incoming events.
-	@(link_name="ImGuiIO_ClearInputKeys")                    IO_ClearInputKeys                    :: proc(self: ^IO)                                                                                           --- // Clear current keyboard/mouse/gamepad state + current frame text input buffer. Equivalent to releasing all keys/buttons.
+	@(link_name="ImGuiIO_ClearInputKeys")                    IO_ClearInputKeys                    :: proc(self: ^IO)                                                                                           --- // Clear current keyboard/gamepad state + current frame text input buffer. Equivalent to releasing all keys/buttons.
+	@(link_name="ImGuiIO_ClearInputMouse")                   IO_ClearInputMouse                   :: proc(self: ^IO)                                                                                           --- // Clear current mouse state.
 	@(link_name="ImGuiIO_ClearInputCharacters")              IO_ClearInputCharacters              :: proc(self: ^IO)                                                                                           --- // [Obsoleted in 1.89.8] Clear the current frame text input buffer. Now included within ClearInputKeys().
 	@(link_name="ImGuiInputTextCallbackData_DeleteChars")    InputTextCallbackData_DeleteChars    :: proc(self: ^InputTextCallbackData, pos: c.int, bytes_count: c.int)                                        ---
 	@(link_name="ImGuiInputTextCallbackData_InsertChars")    InputTextCallbackData_InsertChars    :: proc(self: ^InputTextCallbackData, pos: c.int, text: cstring, text_end: cstring = nil)                    ---

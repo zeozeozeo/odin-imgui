@@ -694,6 +694,7 @@ _imgui_enum_skip = [
 # (as they may depend on the previous element value)
 _imgui_enum_stop_after = {
 	"ImGuiKey": "ImGuiKey_NamedKey_BEGIN",
+	"ImGuiCol_": "ImGuiCol_TabActive",
 }
 
 def write_enums(file: typing.IO, enums):
