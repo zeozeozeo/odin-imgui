@@ -149,10 +149,15 @@ on_device :: proc "c" (status: wgpu.RequestDeviceStatus, the_device: wgpu.Device
 
 	queue = wgpu.DeviceGetQueue(device)
 
+	surface_capabilities := wgpu.SurfaceGetCapabilities(surface, adapter)
+	assert(surface_capabilities.formatCount >= 1)
+	// The first present mode is the preferred one
+	preferred_surface_format := surface_capabilities.formats[0]
+
 	display_w, display_h := glfw.GetFramebufferSize(window)
 	config  = {
 		device      = device,
-		format      = wgpu.SurfaceGetPreferredFormat(surface, adapter),
+		format      = preferred_surface_format,
 		usage       = { .RenderAttachment },
 		width       = u32(display_w),
 		height      = u32(display_h),
@@ -161,5 +166,5 @@ on_device :: proc "c" (status: wgpu.RequestDeviceStatus, the_device: wgpu.Device
 	}
 	wgpu.SurfaceConfigure(surface, &config)
 
-	assert(imgui_impl_wgpu.Init(device, 3, wgpu.SurfaceGetPreferredFormat(surface, adapter), .Undefined))
+	assert(imgui_impl_wgpu.Init(device, 3, preferred_surface_format, .Undefined))
 }
