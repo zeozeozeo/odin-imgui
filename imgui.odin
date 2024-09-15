@@ -20,8 +20,8 @@ CHECKVERSION :: proc() {
 // DEFINES
 ////////////////////////////////////////////////////////////
 
-VERSION                      :: "1.90.3"
-VERSION_NUM                  :: 19030
+VERSION                      :: "1.90.4"
+VERSION_NUM                  :: 19040
 PAYLOAD_TYPE_COLOR_3F        :: "_COL3F" // float[3]: Standard type for colors, without alpha. User code may use this type.
 PAYLOAD_TYPE_COLOR_4F        :: "_COL4F" // float[4]: Standard type for colors. User code may use this type.
 UNICODE_CODEPOINT_INVALID    :: 0xFFFD   // Invalid Unicode code point (standard value).
@@ -1900,7 +1900,7 @@ foreign lib {
 	@(link_name="ImGui_GetFontTexUvWhitePixel") GetFontTexUvWhitePixel :: proc() -> Vec2                              --- // get UV coordinate for a while pixel, useful to draw custom shapes via the ImDrawList API
 	@(link_name="ImGui_GetColorU32Ex")          GetColorU32            :: proc(idx: Col, alpha_mul: f32 = 1.0) -> u32 --- // retrieve given style color with style alpha applied and optional extra alpha multiplier, packed as a 32-bit value suitable for ImDrawList
 	@(link_name="ImGui_GetColorU32ImVec4")      GetColorU32ImVec4      :: proc(col: Vec4) -> u32                      --- // retrieve given color with style alpha applied, packed as a 32-bit value suitable for ImDrawList
-	@(link_name="ImGui_GetColorU32ImU32")       GetColorU32ImU32       :: proc(col: u32) -> u32                       --- // retrieve given color with style alpha applied, packed as a 32-bit value suitable for ImDrawList
+	@(link_name="ImGui_GetColorU32ImU32Ex")     GetColorU32ImU32       :: proc(col: u32, alpha_mul: f32 = 1.0) -> u32 --- // retrieve given color with style alpha applied, packed as a 32-bit value suitable for ImDrawList
 	@(link_name="ImGui_GetStyleColorVec4")      GetStyleColorVec4      :: proc(idx: Col) -> ^Vec4                     --- // retrieve style color as stored in ImGuiStyle structure. use to feed back into PushStyleColor(), otherwise use GetColorU32() to get style color with style alpha baked in.
 	// Layout cursor positioning
 	// - By "cursor" we mean the current output position.
@@ -2295,6 +2295,7 @@ foreign lib {
 	// - Your main debugging friend is the ShowMetricsWindow() function, which is also accessible from Demo->Tools->Metrics Debugger
 	@(link_name="ImGui_DebugTextEncoding")              DebugTextEncoding              :: proc(text: cstring)                                                                                                                                        ---
 	@(link_name="ImGui_DebugFlashStyleColor")           DebugFlashStyleColor           :: proc(idx: Col)                                                                                                                                             ---
+	@(link_name="ImGui_DebugStartItemPicker")           DebugStartItemPicker           :: proc()                                                                                                                                                     ---
 	@(link_name="ImGui_DebugCheckVersionAndDataLayout") DebugCheckVersionAndDataLayout :: proc(version_str: cstring, sz_io: c.size_t, sz_style: c.size_t, sz_vec2: c.size_t, sz_vec4: c.size_t, sz_drawvert: c.size_t, sz_drawidx: c.size_t) -> bool --- // This is called by IMGUI_CHECKVERSION() macro.
 	// Memory Allocators
 	// - Those functions are not reliant on the current context.
@@ -2432,7 +2433,8 @@ foreign lib {
 	@(link_name="ImDrawList_AddImageQuadEx")            DrawList_AddImageQuad              :: proc(self: ^DrawList, user_texture_id: TextureID, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, uv1: Vec2 = {0, 0}, uv2: Vec2 = {1, 0}, uv3: Vec2 = {1, 1}, uv4: Vec2 = {0, 1}, col: u32 = 0xff_ff_ff_ff) ---
 	@(link_name="ImDrawList_AddImageRounded")           DrawList_AddImageRounded           :: proc(self: ^DrawList, user_texture_id: TextureID, p_min: Vec2, p_max: Vec2, uv_min: Vec2, uv_max: Vec2, col: u32, rounding: f32, flags: DrawFlags = {})                                             ---
 	// Stateful path API, add points then finish with PathFillConvex() or PathStroke()
-	// - Filled shapes must always use clockwise winding order. The anti-aliasing fringe depends on it. Counter-clockwise shapes will have "inward" anti-aliasing.
+	// - Important: filled shapes must always use clockwise winding order! The anti-aliasing fringe depends on it. Counter-clockwise shapes will have "inward" anti-aliasing.
+	//   so e.g. 'PathArcTo(center, radius, PI * -0.5f, PI)' is ok, whereas 'PathArcTo(center, radius, PI, PI * -0.5f)' won't have correct anti-aliasing when followed by PathFillConvex().
 	@(link_name="ImDrawList_PathClear")                  DrawList_PathClear                  :: proc(self: ^DrawList)                                                                                                         ---
 	@(link_name="ImDrawList_PathLineTo")                 DrawList_PathLineTo                 :: proc(self: ^DrawList, pos: Vec2)                                                                                              ---
 	@(link_name="ImDrawList_PathLineToMergeDuplicate")   DrawList_PathLineToMergeDuplicate   :: proc(self: ^DrawList, pos: Vec2)                                                                                              ---

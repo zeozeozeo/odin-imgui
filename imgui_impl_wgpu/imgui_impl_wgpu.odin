@@ -10,7 +10,7 @@ else when ODIN_OS == .Darwin {
 }
 
 // imgui_impl_wgpu.h
-// Last checked `v1.90.3-docking` (eb42e1)
+// Last checked `v1.90.4-docking` (eb42e1)
 InitInfo :: struct {
 	Device:                   wgpu.Device,
 	NumFramesInFlight:        i32,
