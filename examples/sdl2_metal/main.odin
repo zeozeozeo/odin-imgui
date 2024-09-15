@@ -8,6 +8,8 @@ package imgui_example_sdl2_metal
 // WARNING:
 // This has been tested and is now working, but as an OjbC noob, the code is probably pretty bad.
 
+DISABLE_DOCKING :: #config(DISABLE_DOCKING, false)
+
 #assert(ODIN_OS == .Darwin)
 
 import im "../.."
@@ -26,7 +28,7 @@ main :: proc() {
 	defer im.DestroyContext()
 	io := im.GetIO()
 	io.ConfigFlags += {.NavEnableKeyboard, .NavEnableGamepad}
-	when im.IMGUI_BRANCH == "docking" {
+	when !DISABLE_DOCKING {
 		io.ConfigFlags += {.DockingEnable}
 		io.ConfigFlags += {.ViewportsEnable}
 
@@ -105,7 +107,7 @@ main :: proc() {
 		im.Render()
 		imgui_impl_metal.RenderDrawData(im.GetDrawData(), command_buffer, render_encoder)
 
-		when im.IMGUI_BRANCH == "docking" {
+		when !DISABLE_DOCKING {
 			im.UpdatePlatformWindows()
 			im.RenderPlatformWindowsDefault()
 		}

@@ -5,6 +5,8 @@ package imgui_example_glfw_opengl3
 // https://github.com/ocornut/imgui/blob/docking/examples/example_glfw_opengl3/main.cpp
 // (for updating: based on https://github.com/ocornut/imgui/blob/96839b445e32e46d87a44fd43a9cdd60c806f7e1/examples/example_glfw_opengl3/main.cpp)
 
+DISABLE_DOCKING :: #config(DISABLE_DOCKING, false)
+
 import im "../.."
 import "../../imgui_impl_glfw"
 import "../../imgui_impl_opengl3"
@@ -20,6 +22,8 @@ main :: proc() {
 	glfw.WindowHint(glfw.CONTEXT_VERSION_MINOR, 2)
 	glfw.WindowHint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
 	glfw.WindowHint(glfw.OPENGL_FORWARD_COMPAT, 1) // i32(true)
+	glfw.WindowHint(glfw.FOCUSED, 1) // i32(true)
+	glfw.WindowHint(glfw.VISIBLE, 1) // i32(true)
 
 	window := glfw.CreateWindow(1280, 720, "Dear ImGui GLFW+OpenGL3 example", nil, nil)
 	assert(window != nil)
@@ -37,7 +41,7 @@ main :: proc() {
 	defer im.DestroyContext()
 	io := im.GetIO()
 	io.ConfigFlags += {.NavEnableKeyboard, .NavEnableGamepad}
-	when im.IMGUI_BRANCH == "docking" {
+	when !DISABLE_DOCKING {
 		io.ConfigFlags += {.DockingEnable}
 		io.ConfigFlags += {.ViewportsEnable}
 
@@ -76,7 +80,7 @@ main :: proc() {
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		imgui_impl_opengl3.RenderDrawData(im.GetDrawData())
 
-		when im.IMGUI_BRANCH == "docking" {
+		when !DISABLE_DOCKING {
 			backup_current_window := glfw.GetCurrentContext()
 			im.UpdatePlatformWindows()
 			im.RenderPlatformWindowsDefault()

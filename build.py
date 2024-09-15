@@ -14,12 +14,9 @@ import platform
 # - It could be nice to be able to generate into another folder, or just say --copy-into../../my_cool_folder
 
 # @CONFIGURE: Must be key into below table
-active_branch = "docking"
 git_heads = {
-	# Default Dear ImGui branch
-	"master": { "imgui": "v1.90.1", "dear_bindings": "89a02bb" },
-	# Docking branch
-	"docking": { "imgui": "v1.90.1-docking", "dear_bindings": "89a02bb" },
+	"imgui": "v1.90.1-docking",
+	"dear_bindings": "89a02bb",
 }
 
 # Note - tested with Odin version `dev-2024-09`
@@ -174,8 +171,8 @@ def main():
 		assertx(has_tool("ar"), "ar not found!")
 
 	# Check out bindings generator tools
-	ensure_checked_out_with_commit("imgui", "https://github.com/ocornut/imgui.git", git_heads[active_branch]["imgui"])
-	ensure_checked_out_with_commit("dear_bindings", "https://github.com/dearimgui/dear_bindings.git", git_heads[active_branch]["dear_bindings"])
+	ensure_checked_out_with_commit("imgui", "https://github.com/ocornut/imgui.git", git_heads["imgui"])
+	ensure_checked_out_with_commit("dear_bindings", "https://github.com/dearimgui/dear_bindings.git", git_heads["dear_bindings"])
 
 	# Check out backend dependencies
 	if not path.isdir("backend_deps"): os.mkdir("backend_deps")
@@ -194,7 +191,7 @@ def main():
 	shutil.rmtree(path="temp", ignore_errors=True)
 	os.mkdir("temp")
 
-	# Generate bindings for active ImGui branch
+	# Generate bindings for active ImGui commit
 	exec([sys.executable, pp("dear_bindings/dear_bindings.py"), "-o", pp("temp/c_imgui"), pp("imgui/imgui.h")], "Running dear_bindings")
 	# Generate odin bindings from dear_bindings json file
 	exec([sys.executable, pp("gen_odin.py"), path.join("temp", "c_imgui.json"), "imgui.odin"], "Running odin-imgui")
@@ -226,9 +223,6 @@ def main():
 		"// implementations have been compiled into the bindings.\n",
 		"\n",
 	])
-
-	# Write branch. This can be used to toggle docking and multi viewports at compile time
-	f.writelines([f'IMGUI_BRANCH :: "{active_branch}"\n\n'])
 
 	for backend_name in backends:
 		f.writelines([f"BACKEND_{backend_name.upper()}_ENABLED :: {'true' if backend_name in wanted_backends else 'false'}\n"])

@@ -2,7 +2,8 @@
 
 ## Generated Dear ImGui bindings using dear_bindings
 
- - Generates bindings for both the `master` and `docking` ImGui branches, using [`dear_bindings`](https://github.com/dearimgui/dear_bindings)
+ - Generates bindings for the and `docking` ImGui branche, using [`dear_bindings`](https://github.com/dearimgui/dear_bindings)
+	- No longer supports `master` branch.
  - Contains bindings for most of the Dear ImGui implementations
 	- All backends which exist in `vendor:` have bindings
 	- These include: `vulkan, sdl2, opengl3, sdlrenderer2, glfw, dx11, dx12, win32, osx, metal, wgpu`
@@ -35,10 +36,6 @@ Building is entirely automated, using `build.py`. All platforms should work (not
 ## Configuring
 
 Search for `@CONFIGURE` to see everything configurable.
-
-### `active_branch`
-The bindings have been tested against the main two branches of Dear ImGui: `master` and `docking`.
-You can choose between the two by changing `active_branch`
 
 ### `wanted_backends`
 This project allows you to compile ImGui backends alongside imgui itself, which is what Dear ImGui recommends you do.

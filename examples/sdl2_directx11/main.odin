@@ -5,6 +5,8 @@ package imgui_example_sdl2_directx11
 // https://github.com/ocornut/imgui/blob/docking/examples/example_sdl2_directx11/main.cpp
 // (for updating: based on https://github.com/ocornut/imgui/blob/96839b445e32e46d87a44fd43a9cdd60c806f7e1/examples/example_sdl2_directx11/main.cpp)
 
+DISABLE_DOCKING :: #config(DISABLE_DOCKING, false)
+
 import im "../.."
 import "../../imgui_impl_sdl2"
 import "../../imgui_impl_dx11"
@@ -46,7 +48,7 @@ main :: proc() {
 	defer im.DestroyContext()
 	io := im.GetIO()
 	io.ConfigFlags += {.NavEnableKeyboard, .NavEnableGamepad}
-	when im.IMGUI_BRANCH == "docking" {
+	when !DISABLE_DOCKING {
 		io.ConfigFlags += {.DockingEnable}
 		io.ConfigFlags += {.ViewportsEnable}
 
@@ -91,7 +93,7 @@ main :: proc() {
 		g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, &{ 0, 0, 0, 1 })
 		imgui_impl_dx11.RenderDrawData(im.GetDrawData())
 
-		when im.IMGUI_BRANCH == "docking" {
+		when !DISABLE_DOCKING {
 			if .ViewportsEnable in io.ConfigFlags {
 				im.UpdatePlatformWindows()
 				im.RenderPlatformWindowsDefault()
