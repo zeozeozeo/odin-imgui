@@ -10,13 +10,13 @@ else when ODIN_OS == .Darwin {
 }
 
 // imgui_impl_sdlrenderer2.h
-// Last checked `v1.90.4-docking` (7e246a7)
+// Last checked `v1.90.8-docking` (b39fc8)
 @(link_prefix="ImGui_ImplSDLRenderer2_")
 foreign lib {
 	Init           :: proc(renderer: ^sdl.Renderer) -> bool ---
 	Shutdown       :: proc() ---
 	NewFrame       :: proc() ---
-	RenderDrawData :: proc(draw_data: ^imgui.DrawData) ---
+	RenderDrawData :: proc(draw_data: ^imgui.DrawData, renderer: ^sdl.Renderer) ---
 
 	// Called by Init/NewFrame/Shutdown
 	CreateFontsTexture   :: proc() -> bool ---

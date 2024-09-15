@@ -14,7 +14,7 @@ else when ODIN_OS == .Darwin {
 }
 
 // imgui_impl_dx12.h
-// Last checked `v1.90.4-docking` (7e246a7)
+// Last checked `v1.90.8-docking` (7e246a7)
 @(link_prefix="ImGui_ImplDX12_")
 foreign lib {
 	// cmd_list is the command list that the implementation will use to render imgui draw lists.

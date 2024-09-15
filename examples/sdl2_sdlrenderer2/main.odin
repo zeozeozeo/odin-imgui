@@ -3,7 +3,7 @@ package imgui_example_sdl2_sdlrenderer2
 // This is an example of using the bindings with SDL2 and SDL_Renderer
 // For a more complete example with comments, see:
 // https://github.com/ocornut/imgui/blob/docking/examples/example_sdl2_sdlrenderer2/main.cpp
-// Based on the above at tag `v1.90.4-docking` (55073a)
+// Based on the above at tag `v1.90.8-docking` (b39fc8)
 
 import im "../.."
 import "../../imgui_impl_sdl2"
@@ -36,7 +36,7 @@ main :: proc() {
 	im.CreateContext()
 	defer im.DestroyContext()
 	io := im.GetIO()
-	io.ConfigFlags += {.NavEnableKeyboard, .NavEnableGamepad}
+	io.ConfigFlags += {.NavEnableKeyboard, .NavEnableGamepad, .DockingEnable}
 
 	im.StyleColorsDark()
 
@@ -73,7 +73,7 @@ main :: proc() {
 		sdl.RenderSetScale(renderer, io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y)
 		sdl.SetRenderDrawColor(renderer, 0, 0, 0, 255)
 		sdl.RenderClear(renderer)
-		imgui_impl_sdlrenderer2.RenderDrawData(im.GetDrawData())
+		imgui_impl_sdlrenderer2.RenderDrawData(im.GetDrawData(), renderer)
 		sdl.RenderPresent(renderer)
 	}
 }

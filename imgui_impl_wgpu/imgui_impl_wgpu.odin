@@ -10,7 +10,7 @@ else when ODIN_OS == .Darwin {
 }
 
 // imgui_impl_wgpu.h
-// Last checked `v1.90.4-docking` (eb42e1)
+// Last checked `v1.90.8-docking` (1db579)
 InitInfo :: struct {
 	Device:                   wgpu.Device,
 	NumFramesInFlight:        i32,
@@ -25,7 +25,7 @@ INIT_INFO_DEFAULT :: InitInfo {
 	DepthStencilFormat = .Undefined,
 	PipelineMultisampleState = {
 		count                  = 1,
-		mask                   = ~u32(0), // -1u
+		mask                   = max(u32),
 		alphaToCoverageEnabled = false,
 	}
 }

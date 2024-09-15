@@ -16,7 +16,7 @@ import platform
 # @CONFIGURE: Must be key into below table
 # Note that the backend files and examples may also have to be updated, if you use these.
 git_heads = {
-	"imgui": "v1.90.4-docking",
+	"imgui": "v1.90.8-docking",
 	"dear_bindings": "89a02bb",
 }
 
