@@ -14,7 +14,7 @@ GamepadMode :: enum i32 {
 	AutoFirst,
 	AutoAll,
 	Manual,
-};
+}
 
 @(link_prefix="ImGui_ImplSDL2_")
 foreign lib {
