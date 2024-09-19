@@ -50,7 +50,7 @@ InitInfo :: struct {
 foreign lib {
 	Init :: proc(info: ^InitInfo) -> bool ---
 	Shutdown :: proc() ---
-	NewFame :: proc() ---
+	NewFrame :: proc() ---
 	RenderDrawData :: proc(draw_data: ^imgui.DrawData, command_buffer: vk.CommandBuffer, pipeline: vk.Pipeline = {}) ---
 	CreateFontsTexture :: proc() -> bool ---
 	DestroyFontsTexture :: proc() ---
