@@ -87,7 +87,7 @@ def exec_vcvars(cmd: typing.List[str], what):
 	if len(what) > max_what_len:
 		what = what[:max_what_len - 2] + ".."
 	print(what + (" " * (max_what_len - len(what))) + "> " + " ".join(cmd))
-	assertx(subprocess.run(f"vcvarsall.bat x64 && {' '.join(cmd)}").returncode == 0, f"Failed to run command '{cmd}'")
+	assertx(subprocess.run(f"vcvarsall.bat x64 && {' '.join(cmd)}", shell=True).returncode == 0, f"Failed to run command '{cmd}'")
 
 def copy(from_path: str, files: typing.List[str], to_path: str):
 	for file in files:
