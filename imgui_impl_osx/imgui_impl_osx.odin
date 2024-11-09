@@ -1,4 +1,4 @@
-// +build darwin
+#+build darwin
 package imgui_impl_osx
 
 when      ODIN_OS == .Windows { foreign import lib "../imgui_windows_x64.lib" }

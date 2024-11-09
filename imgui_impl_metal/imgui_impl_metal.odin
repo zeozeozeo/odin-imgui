@@ -1,4 +1,4 @@
-// +build darwin
+#+build darwin
 package imgui_impl_metal
 
 import imgui "../"

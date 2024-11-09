@@ -1,4 +1,4 @@
-// +build windows
+#+build windows
 package imgui_impl_dx12
 
 import "core:c"

@@ -1,4 +1,4 @@
-// +build windows
+#+build windows
 package imgui_impl_dx11
 
 import imgui "../"
