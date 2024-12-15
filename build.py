@@ -17,7 +17,7 @@ import platform
 # Note that the backend files and examples may also have to be updated, if you use these.
 git_heads = {
 	"imgui": "v1.91.1-docking",
-	"dear_bindings": "89a02bb",
+	"dear_bindings": "139b5b",
 }
 
 # Note - tested with Odin version `dev-2024-12`
