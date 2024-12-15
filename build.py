@@ -80,7 +80,13 @@ def exec(cmd: typing.List[str], what: str) -> str:
 	if len(what) > max_what_len:
 		what = what[:max_what_len - 2] + ".."
 	print(what + (" " * (max_what_len - len(what))) + "> " + " ".join(cmd))
-	return subprocess.check_output(cmd).decode().strip()
+	try: subprocess.check_output(cmd)
+	except subprocess.CalledProcessError as uh_oh:
+		print("=" * 80)
+		print("FAILED")
+		print("=" * 80)
+		print(uh_oh.output.decode())
+		exit(1)
 
 def exec_vcvars(cmd: typing.List[str], what):
 	max_what_len = 40
@@ -110,7 +116,7 @@ def platform_select(the_options):
 	assertx(False, f"Couldn't find active platform ({our_platform}) in the above options!")
 
 def pp(the_path: str) -> str:
-	""" Given a path with '/' as a delimiter, returns an appropriate sys.platform path """
+	""" Get Platform Path. Given a path with '/' as a delimiter, returns an appropriate sys.platform path """
 	return path.join(*the_path.split("/"))
 
 def map_to_folder(files: typing.List[str], folder: str) -> typing.List[str]:
