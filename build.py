@@ -17,10 +17,10 @@ import platform
 # Note that the backend files and examples may also have to be updated, if you use these.
 git_heads = {
 	"imgui": "v1.91.1-docking",
-	"dear_bindings": "139b5b",
+	"dear_bindings": "81c906b",
 }
 
-# Note - tested with Odin version `dev-2024-12`
+# Note - tested with Odin version `dev-2025-01`
 
 # @CONFIGURE: Elements must be keys into below table
 wanted_backends = ["vulkan", "sdl2", "opengl3", "sdlrenderer2", "glfw", "dx11", "dx12", "win32", "osx", "metal", "wgpu"]

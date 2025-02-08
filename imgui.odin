@@ -1063,127 +1063,127 @@ TableColumnSortSpecs :: struct {
 	SortDirection: SortDirection, // ImGuiSortDirection_Ascending or ImGuiSortDirection_Descending
 }
 
-Vector_Wchar :: struct {
+Vector_Wchar :: struct { // Instantiation of ImVector<ImWchar>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^Wchar,
 }
 
-Vector_TextFilter_ImGuiTextRange :: struct {
+Vector_TextFilter_ImGuiTextRange :: struct { // Instantiation of ImVector<ImGuiTextFilter_ImGuiTextRange>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^TextFilter_ImGuiTextRange,
 }
 
-Vector_char :: struct {
+Vector_char :: struct { // Instantiation of ImVector<char>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     cstring,
 }
 
-Vector_StoragePair :: struct {
+Vector_StoragePair :: struct { // Instantiation of ImVector<ImGuiStoragePair>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^StoragePair,
 }
 
-Vector_SelectionRequest :: struct {
+Vector_SelectionRequest :: struct { // Instantiation of ImVector<ImGuiSelectionRequest>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^SelectionRequest,
 }
 
-Vector_DrawCmd :: struct {
+Vector_DrawCmd :: struct { // Instantiation of ImVector<ImDrawCmd>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^DrawCmd,
 }
 
-Vector_DrawIdx :: struct {
+Vector_DrawIdx :: struct { // Instantiation of ImVector<ImDrawIdx>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^DrawIdx,
 }
 
-Vector_DrawChannel :: struct {
+Vector_DrawChannel :: struct { // Instantiation of ImVector<ImDrawChannel>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^DrawChannel,
 }
 
-Vector_DrawVert :: struct {
+Vector_DrawVert :: struct { // Instantiation of ImVector<ImDrawVert>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^DrawVert,
 }
 
-Vector_Vec2 :: struct {
+Vector_Vec2 :: struct { // Instantiation of ImVector<ImVec2>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^Vec2,
 }
 
-Vector_Vec4 :: struct {
+Vector_Vec4 :: struct { // Instantiation of ImVector<ImVec4>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^Vec4,
 }
 
-Vector_TextureID :: struct {
+Vector_TextureID :: struct { // Instantiation of ImVector<ImTextureID>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^TextureID,
 }
 
-Vector_DrawListPtr :: struct {
+Vector_DrawListPtr :: struct { // Instantiation of ImVector<ImDrawList*>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^^DrawList,
 }
 
-Vector_U32 :: struct {
+Vector_U32 :: struct { // Instantiation of ImVector<ImU32>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^u32,
 }
 
-Vector_FontPtr :: struct {
+Vector_FontPtr :: struct { // Instantiation of ImVector<ImFont*>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^^Font,
 }
 
-Vector_FontAtlasCustomRect :: struct {
+Vector_FontAtlasCustomRect :: struct { // Instantiation of ImVector<ImFontAtlasCustomRect>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^FontAtlasCustomRect,
 }
 
-Vector_FontConfig :: struct {
+Vector_FontConfig :: struct { // Instantiation of ImVector<ImFontConfig>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^FontConfig,
 }
 
-Vector_float :: struct {
+Vector_float :: struct { // Instantiation of ImVector<float>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^f32,
 }
 
-Vector_FontGlyph :: struct {
+Vector_FontGlyph :: struct { // Instantiation of ImVector<ImFontGlyph>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^FontGlyph,
 }
 
-Vector_PlatformMonitor :: struct {
+Vector_PlatformMonitor :: struct { // Instantiation of ImVector<ImGuiPlatformMonitor>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^PlatformMonitor,
 }
 
-Vector_ViewportPtr :: struct {
+Vector_ViewportPtr :: struct { // Instantiation of ImVector<ImGuiViewport*>
 	Size:     c.int,
 	Capacity: c.int,
 	Data:     ^^Viewport,

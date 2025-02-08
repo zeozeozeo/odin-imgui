@@ -774,7 +774,12 @@ def function_to_string(function, as_type=True) -> str:
 
 		argument_type = "no type yet :)"
 		argument_is_varargs = argument["is_varargs"]
-		argument_name = argument["name"]
+		argument_name = "no name yet :("
+		if "name" in argument:
+			argument_name = argument["name"]
+		else:
+			# We live in a joyous world where arguments don't need to have names
+			argument_name = "arg_" + str(argument_idx)
 
 		if argument_is_varargs:
 			argument_name = "#c_vararg args"
