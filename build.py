@@ -132,7 +132,7 @@ def ensure_checked_out_with_commit(dir: str, repo: str, wanted_commit: str):
 	if not path.exists(dir):
 		exec(["git", "clone", repo, dir], f"Cloning {dir}")
 
-	exec(["git", "-c", "advice.detachedHead=false", "-C", dir, "checkout", wanted_commit], f"Checking out {dir}")
+	exec(["git", "-c", "advice.detachedHead=false", "-C", dir, "checkout", "-f", wanted_commit], f"Checking out {dir}")
 
 def get_platform_imgui_lib_name() -> str:
 	""" Returns imgui binary name for system/processor """
