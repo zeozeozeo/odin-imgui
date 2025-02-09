@@ -185,7 +185,7 @@ def peek_named_type(type_desc) -> str:
 def parse_type(type_dict, in_function=False) -> str:
 	if "type_details" in type_dict:
 		details = type_dict["type_details"]
-		assert(details["flavour"] == "function_pointer")
+		assert details["flavour"] == "function_pointer"
 
 		return function_to_string(details)
 
@@ -752,7 +752,6 @@ def write_structs(file: typing.IO, structs):
 		field_components = []
 		for field in struct["fields"]:
 			if not passes_conditionals(field): continue
-
 			adjusted_name = apply_override(field["name"], _imgui_struct_field_name_override)
 			field_type = parse_type(field["type"])
 			append_aligned_field(field_components, [f'{adjusted_name}: ', f'{field_type},'], field)
@@ -828,15 +827,6 @@ _imgui_functions_skip = [
 
 _imgui_function_prefixes = ["ImGui_", "ImGui", "Im"]
 
-# Functions which have a corresponding default argument helper. Functions in this
-# list will all end in Ex, which should be stripped.
-_imgui_extended_arg_funcs = []
-
-def find_default_arg_funcs(functions):
-	for function in functions:
-		if function["is_default_argument_helper"]:
-			_imgui_extended_arg_funcs.append(function["name"] + "Ex")
-
 def function_has_default_args(function) -> bool:
 	for argument in function["arguments"]:
 		if "default_value" in argument:
@@ -848,8 +838,6 @@ def write_functions(file: typing.IO, functions):
 	write_section(file, "Functions")
 	write_line(file, "foreign lib {")
 
-	find_default_arg_funcs(functions)
-
 	aligned = []
 
 	for function in functions:
@@ -858,12 +846,8 @@ def write_functions(file: typing.IO, functions):
 		if entire_name in _imgui_functions_skip: continue
 		if not passes_conditionals(function): continue
 		if function_uses_va_list(function): continue
-		if function["is_default_argument_helper"]: continue
 
 		[_prefix, remainder] = strip_list(entire_name, _imgui_function_prefixes)
-
-		if entire_name in _imgui_extended_arg_funcs:
-			remainder = strip_suffix("Ex", remainder)
 
 		aligned_components = []
 

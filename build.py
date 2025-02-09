@@ -199,7 +199,7 @@ def main():
 	os.mkdir("temp")
 
 	# Generate bindings for active ImGui commit
-	exec([sys.executable, pp("dear_bindings/dear_bindings.py"), "-o", pp("temp/c_imgui"), pp("imgui/imgui.h")], "Running dear_bindings")
+	exec([sys.executable, pp("dear_bindings/dear_bindings.py"), "-o", pp("temp/c_imgui"), "--nogeneratedefaultargfunctions", pp("imgui/imgui.h")], "Running dear_bindings")
 	# Generate odin bindings from dear_bindings json file
 	exec([sys.executable, pp("gen_odin.py"), path.join("temp", "c_imgui.json"), "imgui.odin"], "Running odin-imgui")
 
