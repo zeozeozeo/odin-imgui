@@ -331,39 +331,49 @@ DragDropFlag :: enum c.int {
 DragDropFlags_AcceptPeekOnly          :: DragDropFlags{.AcceptBeforeDelivery,.AcceptNoDrawDefaultRect} // For peeking ahead and inspecting the payload before delivery.
 DragDropFlags_SourceAutoExpirePayload :: DragDropFlags{.PayloadAutoExpire}                             // Renamed in 1.90.9
 
+// A primary data type
 DataType :: enum c.int {
-	S8,
-	U8,
-	S16,
-	U16,
-	S32,
-	U32,
-	S64,
-	U64,
-	Float,
-	Double,
-	Bool,
+	S8,     // signed char / char (with sensible compilers)
+	U8,     // unsigned char
+	S16,    // short
+	U16,    // unsigned short
+	S32,    // int
+	U32,    // unsigned int
+	S64,    // long long / __int64
+	U64,    // unsigned long long / unsigned __int64
+	Float,  // float
+	Double, // double
+	Bool,   // bool (provided for user convenience, not supported by scalar widgets)
 	COUNT,
 }
 
-Dir :: enum c.int {
+// A cardinal direction
+Dir :: enum c.int { // Forward declared enum type ImGuiDir
 	None = -1,
-	Left = 0,
-	Right = 1,
-	Up = 2,
-	Down = 3,
+	Left,
+	Right,
+	Up,
+	Down,
 	COUNT,
 }
 
-SortDirection :: enum c.int {
-	None = 0,
-	Ascending = 1,
-	Descending = 2,
+// A sorting direction
+SortDirection :: enum c.int { // Forward declared enum type ImGuiSortDirection
+	None,
+	Ascending,  // Ascending = 0->9, A->Z etc.
+	Descending, // Descending = 9->0, Z->A etc.
 }
 
-Key :: enum c.int {
-	None = 0,
-	Tab = 512,
+// A key identifier (ImGuiKey_XXX or ImGuiMod_XXX value): can represent Keyboard, Mouse and Gamepad values.
+// All our named keys are >= 512. Keys value 0 to 511 are left unused as legacy native/opaque key values (< 1.87).
+// Since >= 1.89 we increased typing (went from int to enum), some legacy code may need a cast to ImGuiKey.
+// Read details about the 1.87 and 1.89 transition : https://github.com/ocornut/imgui/issues/4921
+// Note that "Keys" related to physical keys and are not the same concept as input "Characters", the later are submitted via io.AddInputCharacter().
+// The keyboard key enum values are named after the keys on a standard US keyboard, and on other keyboard types the keys reported may not match the keycaps.
+Key :: enum c.int { // Forward declared enum type ImGuiKey
+	// Keyboard
+	None,
+	Tab = 512,      // == ImGuiKey_NamedKey_BEGIN
 	LeftArrow,
 	RightArrow,
 	UpArrow,
@@ -447,17 +457,17 @@ Key :: enum c.int {
 	F22,
 	F23,
 	F24,
-	Apostrophe,
-	Comma,
-	Minus,
-	Period,
-	Slash,
-	Semicolon,
-	Equal,
-	LeftBracket,
-	Backslash,
-	RightBracket,
-	GraveAccent,
+	Apostrophe,     // '
+	Comma,          // ,
+	Minus,          // -
+	Period,         // .
+	Slash,          // /
+	Semicolon,      // ;
+	Equal,          // =
+	LeftBracket,    // [
+	Backslash,      // \ (this text inhibit multiline comment caused by backslash)
+	RightBracket,   // ]
+	GraveAccent,    // `
 	CapsLock,
 	ScrollLock,
 	NumLock,
@@ -480,32 +490,36 @@ Key :: enum c.int {
 	KeypadAdd,
 	KeypadEnter,
 	KeypadEqual,
-	AppBack,
+	AppBack,        // Available on some keyboard/mouses. Often referred as "Browser Back"
 	AppForward,
-	GamepadStart,
-	GamepadBack,
-	GamepadFaceLeft,
-	GamepadFaceRight,
-	GamepadFaceUp,
-	GamepadFaceDown,
-	GamepadDpadLeft,
-	GamepadDpadRight,
-	GamepadDpadUp,
-	GamepadDpadDown,
-	GamepadL1,
-	GamepadR1,
-	GamepadL2,
-	GamepadR2,
-	GamepadL3,
-	GamepadR3,
-	GamepadLStickLeft,
-	GamepadLStickRight,
-	GamepadLStickUp,
-	GamepadLStickDown,
-	GamepadRStickLeft,
-	GamepadRStickRight,
-	GamepadRStickUp,
-	GamepadRStickDown,
+	// Gamepad (some of those are analog values, 0.0f to 1.0f)                          // NAVIGATION ACTION
+	// (download controller mapping PNG/PSD at http://dearimgui.com/controls_sheets)
+	GamepadStart,       // Menu (Xbox)      + (Switch)   Start/Options (PS)
+	GamepadBack,        // View (Xbox)      - (Switch)   Share (PS)
+	GamepadFaceLeft,    // X (Xbox)         Y (Switch)   Square (PS)        // Tap: Toggle Menu. Hold: Windowing mode (Focus/Move/Resize windows)
+	GamepadFaceRight,   // B (Xbox)         A (Switch)   Circle (PS)        // Cancel / Close / Exit
+	GamepadFaceUp,      // Y (Xbox)         X (Switch)   Triangle (PS)      // Text Input / On-screen Keyboard
+	GamepadFaceDown,    // A (Xbox)         B (Switch)   Cross (PS)         // Activate / Open / Toggle / Tweak
+	GamepadDpadLeft,    // D-pad Left                                       // Move / Tweak / Resize Window (in Windowing mode)
+	GamepadDpadRight,   // D-pad Right                                      // Move / Tweak / Resize Window (in Windowing mode)
+	GamepadDpadUp,      // D-pad Up                                         // Move / Tweak / Resize Window (in Windowing mode)
+	GamepadDpadDown,    // D-pad Down                                       // Move / Tweak / Resize Window (in Windowing mode)
+	GamepadL1,          // L Bumper (Xbox)  L (Switch)   L1 (PS)            // Tweak Slower / Focus Previous (in Windowing mode)
+	GamepadR1,          // R Bumper (Xbox)  R (Switch)   R1 (PS)            // Tweak Faster / Focus Next (in Windowing mode)
+	GamepadL2,          // L Trig. (Xbox)   ZL (Switch)  L2 (PS) [Analog]
+	GamepadR2,          // R Trig. (Xbox)   ZR (Switch)  R2 (PS) [Analog]
+	GamepadL3,          // L Stick (Xbox)   L3 (Switch)  L3 (PS)
+	GamepadR3,          // R Stick (Xbox)   R3 (Switch)  R3 (PS)
+	GamepadLStickLeft,  // [Analog]                                         // Move Window (in Windowing mode)
+	GamepadLStickRight, // [Analog]                                         // Move Window (in Windowing mode)
+	GamepadLStickUp,    // [Analog]                                         // Move Window (in Windowing mode)
+	GamepadLStickDown,  // [Analog]                                         // Move Window (in Windowing mode)
+	GamepadRStickLeft,  // [Analog]
+	GamepadRStickRight, // [Analog]
+	GamepadRStickUp,    // [Analog]
+	GamepadRStickDown,  // [Analog]
+	// Aliases: Mouse Buttons (auto-submitted from AddMouseButtonEvent() calls)
+	// - This is mirroring the data also written to io.MouseDown[], io.MouseWheel, in a format allowing them to be accessed via standard key API.
 	MouseLeft,
 	MouseRight,
 	MouseMiddle,
@@ -513,29 +527,40 @@ Key :: enum c.int {
 	MouseX2,
 	MouseWheelX,
 	MouseWheelY,
+	// [Internal] Reserved for mod storage
 	ReservedForModCtrl,
 	ReservedForModShift,
 	ReservedForModAlt,
 	ReservedForModSuper,
 	COUNT,
+	// Keyboard Modifiers (explicitly submitted by backend via AddKeyEvent() calls)
+	// - This is mirroring the data also written to io.KeyCtrl, io.KeyShift, io.KeyAlt, io.KeySuper, in a format allowing
+	//   them to be accessed via standard key API, allowing calls such as IsKeyPressed(), IsKeyReleased(), querying duration etc.
+	// - Code polling every key (e.g. an interface to detect a key press for input mapping) might want to ignore those
+	//   and prefer using the real keys (e.g. ImGuiKey_LeftCtrl, ImGuiKey_RightCtrl instead of ImGuiMod_Ctrl).
+	// - In theory the value of keyboard modifiers should be roughly equivalent to a logical or of the equivalent left/right keys.
+	//   In practice: it's complicated; mods are often provided from different sources. Keyboard layout, IME, sticky keys and
+	//   backends tend to interfere and break that equivalence. The safer decision is to relay that ambiguity down to the end-user...
+	// - On macOS, we swap Cmd(Super) and Ctrl keys at the time of the io.AddKeyEvent() call.
 	ImGuiMod_None = 0,
-	ImGuiMod_Ctrl = 1<<12,
-	ImGuiMod_Shift = 1<<13,
-	ImGuiMod_Alt = 1<<14,
-	ImGuiMod_Super = 1<<15,
-	ImGuiMod_Mask_ = 0xF000,
-	// Some of the next enum values are self referential, which currently causes issues
-	// Search for this in the generator for more info.
-	// NamedKey_BEGIN = 512,
-	// NamedKey_END = Key.COUNT,
-	// NamedKey_COUNT = Key.NamedKey_END-ImGuiKey_NamedKey_BEGIN,
-	// KeysData_SIZE = Key.COUNT,
-	// KeysData_OFFSET = 0,
-	// ImGuiMod_Shortcut = Key.ImGuiMod_Ctrl,
-	// ModCtrl = Key.ImGuiMod_Ctrl,
-	// ModShift = Key.ImGuiMod_Shift,
-	// ModAlt = Key.ImGuiMod_Alt,
-	// ModSuper = Key.ImGuiMod_Super,
+	ImGuiMod_Ctrl = 4096,   // Ctrl (non-macOS), Cmd (macOS)
+	ImGuiMod_Shift = 8192,  // Shift
+	ImGuiMod_Alt = 16384,   // Option/Menu
+	ImGuiMod_Super = 32768, // Windows/Super (non-macOS), Ctrl (macOS)
+	ImGuiMod_Mask_ = 61440, // 4-bits
+	// [Internal] Prior to 1.87 we required user to fill io.KeysDown[512] using their own native index + the io.KeyMap[] array.
+	// We are ditching this method but keeping a legacy path for user code doing e.g. IsKeyPressed(MY_NATIVE_KEY_CODE)
+	// If you need to iterate all keys (for e.g. an input mapper) you may use ImGuiKey_NamedKey_BEGIN..ImGuiKey_NamedKey_END.
+	NamedKey_BEGIN = 512,
+	NamedKey_END = 666,
+	NamedKey_COUNT = 154,
+	KeysData_SIZE = 666,      // Size of KeysData[]: hold legacy 0..512 keycodes + named keys
+	KeysData_OFFSET = 0,      // Accesses to io.KeysData[] must use (key - ImGuiKey_KeysData_OFFSET) index.
+	ImGuiMod_Shortcut = 4096, // Removed in 1.90.7, you can now simply use ImGuiMod_Ctrl
+	ModCtrl = 4096,
+	ModShift = 8192,
+	ModAlt = 16384,
+	ModSuper = 32768,         // Renamed in 1.89
 }
 
 // Flags for Shortcut(), SetNextItemShortcut(),
@@ -561,6 +586,9 @@ InputFlag :: enum c.int {
 }
 
 
+// OBSOLETED in 1.88 (from July 2022): ImGuiNavInput and io.NavInputs[].
+// Official backends between 1.60 and 1.86: will keep working and feed gamepad inputs as long as IMGUI_DISABLE_OBSOLETE_KEYIO is not set.
+// Custom backends: feed gamepad inputs via io.AddKeyEvent() and ImGuiKey_GamepadXXX enums.
 NavInput :: enum c.int {
 	Activate,
 	Cancel,
@@ -618,108 +646,116 @@ BackendFlag :: enum c.int {
 }
 
 
+// Enumeration for PushStyleColor() / PopStyleColor()
 Col :: enum c.int {
 	Text,
 	TextDisabled,
-	WindowBg,
-	ChildBg,
-	PopupBg,
+	WindowBg,                  // Background of normal windows
+	ChildBg,                   // Background of child windows
+	PopupBg,                   // Background of popups, menus, tooltips windows
 	Border,
 	BorderShadow,
-	FrameBg,
+	FrameBg,                   // Background of checkbox, radio button, plot, slider, text input
 	FrameBgHovered,
 	FrameBgActive,
-	TitleBg,
-	TitleBgActive,
-	TitleBgCollapsed,
+	TitleBg,                   // Title bar
+	TitleBgActive,             // Title bar when focused
+	TitleBgCollapsed,          // Title bar when collapsed
 	MenuBarBg,
 	ScrollbarBg,
 	ScrollbarGrab,
 	ScrollbarGrabHovered,
 	ScrollbarGrabActive,
-	CheckMark,
+	CheckMark,                 // Checkbox tick and RadioButton circle
 	SliderGrab,
 	SliderGrabActive,
 	Button,
 	ButtonHovered,
 	ButtonActive,
-	Header,
+	Header,                    // Header* colors are used for CollapsingHeader, TreeNode, Selectable, MenuItem
 	HeaderHovered,
 	HeaderActive,
 	Separator,
 	SeparatorHovered,
 	SeparatorActive,
-	ResizeGrip,
+	ResizeGrip,                // Resize grip in lower-right and lower-left corners of windows.
 	ResizeGripHovered,
 	ResizeGripActive,
-	TabHovered,
-	Tab,
-	TabSelected,
-	TabSelectedOverline,
-	TabDimmed,
-	TabDimmedSelected,
-	TabDimmedSelectedOverline,
-	DockingPreview,
-	DockingEmptyBg,
+	TabHovered,                // Tab background, when hovered
+	Tab,                       // Tab background, when tab-bar is focused & tab is unselected
+	TabSelected,               // Tab background, when tab-bar is focused & tab is selected
+	TabSelectedOverline,       // Tab horizontal overline, when tab-bar is focused & tab is selected
+	TabDimmed,                 // Tab background, when tab-bar is unfocused & tab is unselected
+	TabDimmedSelected,         // Tab background, when tab-bar is unfocused & tab is selected
+	TabDimmedSelectedOverline, //..horizontal overline, when tab-bar is unfocused & tab is selected
+	DockingPreview,            // Preview overlay color when about to docking something
+	DockingEmptyBg,            // Background color for empty node (e.g. CentralNode with no window docked into it)
 	PlotLines,
 	PlotLinesHovered,
 	PlotHistogram,
 	PlotHistogramHovered,
-	TableHeaderBg,
-	TableBorderStrong,
-	TableBorderLight,
-	TableRowBg,
-	TableRowBgAlt,
-	TextLink,
+	TableHeaderBg,             // Table header background
+	TableBorderStrong,         // Table outer and header borders (prefer using Alpha=1.0 here)
+	TableBorderLight,          // Table inner borders (prefer using Alpha=1.0 here)
+	TableRowBg,                // Table row background (even rows)
+	TableRowBgAlt,             // Table row background (odd rows)
+	TextLink,                  // Hyperlink color
 	TextSelectedBg,
-	DragDropTarget,
-	NavHighlight,
-	NavWindowingHighlight,
-	NavWindowingDimBg,
-	ModalWindowDimBg,
+	DragDropTarget,            // Rectangle highlighting a drop target
+	NavHighlight,              // Gamepad/keyboard: current highlighted item
+	NavWindowingHighlight,     // Highlight window when using CTRL+TAB
+	NavWindowingDimBg,         // Darken/colorize entire screen behind the CTRL+TAB window list, when active
+	ModalWindowDimBg,          // Darken/colorize entire screen behind a modal window, when one is active
 	COUNT,
-	// Some of the next enum values are self referential, which currently causes issues
-	// Search for this in the generator for more info.
-	// TabActive = Col.TabSelected,
-	// TabUnfocused = Col.TabDimmed,
-	// TabUnfocusedActive = Col.TabDimmedSelected,
+	TabActive = 35,            // [renamed in 1.90.9]
+	TabUnfocused = 37,         // [renamed in 1.90.9]
+	TabUnfocusedActive,        // [renamed in 1.90.9]
 }
 
+// Enumeration for PushStyleVar() / PopStyleVar() to temporarily modify the ImGuiStyle structure.
+// - The enum only refers to fields of ImGuiStyle which makes sense to be pushed/popped inside UI code.
+//   During initialization or between frames, feel free to just poke into ImGuiStyle directly.
+// - Tip: Use your programming IDE navigation facilities on the names in the _second column_ below to find the actual members and their description.
+//   - In Visual Studio: CTRL+comma ("Edit.GoToAll") can follow symbols inside comments, whereas CTRL+F12 ("Edit.GoToImplementation") cannot.
+//   - In Visual Studio w/ Visual Assist installed: ALT+G ("VAssistX.GoToImplementation") can also follow symbols inside comments.
+//   - In VS Code, CLion, etc.: CTRL+click can follow symbols inside comments.
+// - When changing this enum, you need to update the associated internal table GStyleVarInfo[] accordingly. This is where we link enum values to members offset/type.
 StyleVar :: enum c.int {
-	Alpha,
-	DisabledAlpha,
-	WindowPadding,
-	WindowRounding,
-	WindowBorderSize,
-	WindowMinSize,
-	WindowTitleAlign,
-	ChildRounding,
-	ChildBorderSize,
-	PopupRounding,
-	PopupBorderSize,
-	FramePadding,
-	FrameRounding,
-	FrameBorderSize,
-	ItemSpacing,
-	ItemInnerSpacing,
-	IndentSpacing,
-	CellPadding,
-	ScrollbarSize,
-	ScrollbarRounding,
-	GrabMinSize,
-	GrabRounding,
-	TabRounding,
-	TabBorderSize,
-	TabBarBorderSize,
-	TabBarOverlineSize,
-	TableAngledHeadersAngle,
-	TableAngledHeadersTextAlign,
-	ButtonTextAlign,
-	SelectableTextAlign,
-	SeparatorTextBorderSize,
-	SeparatorTextAlign,
-	SeparatorTextPadding,
-	DockingSeparatorSize,
+	// Enum name -------------------------- // Member in ImGuiStyle structure (see ImGuiStyle for descriptions)
+	Alpha,                       // float     Alpha
+	DisabledAlpha,               // float     DisabledAlpha
+	WindowPadding,               // ImVec2    WindowPadding
+	WindowRounding,              // float     WindowRounding
+	WindowBorderSize,            // float     WindowBorderSize
+	WindowMinSize,               // ImVec2    WindowMinSize
+	WindowTitleAlign,            // ImVec2    WindowTitleAlign
+	ChildRounding,               // float     ChildRounding
+	ChildBorderSize,             // float     ChildBorderSize
+	PopupRounding,               // float     PopupRounding
+	PopupBorderSize,             // float     PopupBorderSize
+	FramePadding,                // ImVec2    FramePadding
+	FrameRounding,               // float     FrameRounding
+	FrameBorderSize,             // float     FrameBorderSize
+	ItemSpacing,                 // ImVec2    ItemSpacing
+	ItemInnerSpacing,            // ImVec2    ItemInnerSpacing
+	IndentSpacing,               // float     IndentSpacing
+	CellPadding,                 // ImVec2    CellPadding
+	ScrollbarSize,               // float     ScrollbarSize
+	ScrollbarRounding,           // float     ScrollbarRounding
+	GrabMinSize,                 // float     GrabMinSize
+	GrabRounding,                // float     GrabRounding
+	TabRounding,                 // float     TabRounding
+	TabBorderSize,               // float     TabBorderSize
+	TabBarBorderSize,            // float     TabBarBorderSize
+	TabBarOverlineSize,          // float     TabBarOverlineSize
+	TableAngledHeadersAngle,     // float     TableAngledHeadersAngle
+	TableAngledHeadersTextAlign, // ImVec2  TableAngledHeadersTextAlign
+	ButtonTextAlign,             // ImVec2    ButtonTextAlign
+	SelectableTextAlign,         // ImVec2    SelectableTextAlign
+	SeparatorTextBorderSize,     // float     SeparatorTextBorderSize
+	SeparatorTextAlign,          // ImVec2    SeparatorTextAlign
+	SeparatorTextPadding,        // ImVec2    SeparatorTextPadding
+	DockingSeparatorSize,        // float     DockingSeparatorSize
 	COUNT,
 }
 
@@ -785,40 +821,51 @@ SliderFlag :: enum c.int {
 
 SliderFlags_InvalidMask_ :: c.int(0x7000000F) // Meant to be of type SliderFlags // [Internal] We treat using those bits as being potentially a 'float power' argument from the previous API that has got miscast to this enum, and will trigger an assert if needed.
 
+// Identify a mouse button.
+// Those values are guaranteed to be stable and we frequently use 0/1 directly. Named enums provided for convenience.
 MouseButton :: enum c.int {
-	Left = 0,
-	Right = 1,
-	Middle = 2,
+	Left,
+	Right,
+	Middle,
 	COUNT = 5,
 }
 
+// Enumeration for GetMouseCursor()
+// User code may request backend to display given cursor by calling SetMouseCursor(), which is why we have some cursors that are marked unused here
 MouseCursor :: enum c.int {
 	None = -1,
-	Arrow = 0,
-	TextInput,
-	ResizeAll,
-	ResizeNS,
-	ResizeEW,
-	ResizeNESW,
-	ResizeNWSE,
-	Hand,
-	NotAllowed,
+	Arrow,
+	TextInput,  // When hovering over InputText, etc.
+	ResizeAll,  // (Unused by Dear ImGui functions)
+	ResizeNS,   // When hovering over a horizontal border
+	ResizeEW,   // When hovering over a vertical border or a column
+	ResizeNESW, // When hovering over the bottom-left corner of a window
+	ResizeNWSE, // When hovering over the bottom-right corner of a window
+	Hand,       // (Unused by Dear ImGui functions. Use for e.g. hyperlinks)
+	NotAllowed, // When hovering something with disallowed interaction. Usually a crossed circle.
 	COUNT,
 }
 
-MouseSource :: enum c.int {
-	Mouse = 0,
-	TouchScreen,
-	Pen,
+// Enumeration for AddMouseSourceEvent() actual source of Mouse Input data.
+// Historically we use "Mouse" terminology everywhere to indicate pointer data, e.g. MousePos, IsMousePressed(), io.AddMousePosEvent()
+// But that "Mouse" data can come from different source which occasionally may be useful for application to know about.
+// You can submit a change of pointer type using io.AddMouseSourceEvent().
+MouseSource :: enum c.int { // Forward declared enum type ImGuiMouseSource
+	Mouse,       // Input is coming from an actual mouse.
+	TouchScreen, // Input is coming from a touch screen (no hovering prior to initial press, less precise initial press aiming, dual-axis wheeling possible).
+	Pen,         // Input is coming from a pressure/magnetic pen (often used in conjunction with high-sampling rates).
 	COUNT,
 }
 
+// Enumeration for ImGui::SetNextWindow***(), SetWindow***(), SetNextItem***() functions
+// Represent a condition.
+// Important: Treat as a regular enum! Do NOT combine multiple values using binary operators! All the functions above treat 0 as a shortcut to ImGuiCond_Always.
 Cond :: enum c.int {
-	None = 0,
-	Always = 1<<0,
-	Once = 1<<1,
-	FirstUseEver = 1<<2,
-	Appearing = 1<<3,
+	None,             // No condition (always set the variable), same as _Always
+	Always,           // No condition (always set the variable), same as _None
+	Once,             // Set the variable once per runtime session (only the first call will succeed)
+	FirstUseEver = 4, // Set the variable if the object/window has no persistently saved data (no entry in .ini file)
+	Appearing = 8,    // Set the variable if the object/window is appearing after being hidden/inactive (or the first time)
 }
 
 // Flags for ImGui::BeginTable()
@@ -934,11 +981,20 @@ TableRowFlag :: enum c.int {
 }
 
 
+// Enum for ImGui::TableSetBgColor()
+// Background colors are rendering in 3 layers:
+//  - Layer 0: draw with RowBg0 color if set, otherwise draw with ColumnBg0 if set.
+//  - Layer 1: draw with RowBg1 color if set, otherwise draw with ColumnBg1 if set.
+//  - Layer 2: draw with CellBg color if set.
+// The purpose of the two row/columns layers is to let you decide if a background color change should override or blend with the existing color.
+// When using ImGuiTableFlags_RowBg on the table, each row has the RowBg0 color automatically set for odd/even rows.
+// If you set the color of RowBg0 target, your color will override the existing RowBg0 color.
+// If you set the color of RowBg1 or ColumnBg1 target, your color will blend over the RowBg0 color.
 TableBgTarget :: enum c.int {
-	None = 0,
-	RowBg0 = 1,
-	RowBg1 = 2,
-	CellBg = 3,
+	None,
+	RowBg0, // Set row background color 0 (generally used for background, automatically set when ImGuiTableFlags_RowBg is used)
+	RowBg1, // Set row background color 1 (generally used for selection marking)
+	CellBg, // Set cell background color (top-most color)
 }
 
 // Flags for BeginMultiSelect()
@@ -964,10 +1020,11 @@ MultiSelectFlag :: enum c.int {
 }
 
 
+// Selection request type
 SelectionRequestType :: enum c.int {
-	None = 0,
-	SetAll,
-	SetRange,
+	None,
+	SetAll,   // Request app to clear selection (if Selected==false) or select all items (if Selected==true). We cannot set RangeFirstItem/RangeLastItem as its contents is entirely up to user (not necessarily an index)
+	SetRange, // Request app to select/unselect [RangeFirstItem..RangeLastItem] items (inclusive) based on value of Selected. Only EndMultiSelect() request this, app code can read after BeginMultiSelect() and it will always be false.
 }
 
 // Flags for ImDrawList functions
@@ -1833,7 +1890,7 @@ Viewport :: struct {
 	WorkSize:         Vec2,          // Work Area: Size of the viewport minus task bars, menu bars, status bars (<= Size)
 	DpiScale:         f32,           // 1.0f = 96 DPI = No extra scale.
 	ParentViewportId: ID,            // (Advanced) 0: no parent. Instruct the platform backend to setup a parent/child relationship between platform windows.
-	DrawData:         ^DrawData,     // The ImDrawData corresponding to this viewport. Valid after Render() and until the next call to NewFrame().
+	_DrawData:        ^DrawData,     // The ImDrawData corresponding to this viewport. Valid after Render() and until the next call to NewFrame().
 	// Platform/Backend Dependent Data
 	// Our design separate the Renderer and Platform backends to facilitate combining default backends with each others.
 	// When our create your own backend for a custom engine, it is possible that both Renderer and Platform will be handled
