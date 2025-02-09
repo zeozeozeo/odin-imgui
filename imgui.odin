@@ -1,6 +1,7 @@
 package imgui
 
 import "core:c"
+import "core:c/libc"
 
 when ODIN_OS == .Linux || ODIN_OS == .Darwin { @(require) foreign import stdcpp { "system:c++" } }
 when      ODIN_OS == .Windows { when ODIN_ARCH == .amd64 { foreign import lib "imgui_windows_x64.lib" } else { foreign import lib "imgui_windows_arm64.lib" } }
@@ -1091,15 +1092,6 @@ ViewportFlag :: enum c.int {
 // STRUCTS
 ////////////////////////////////////////////////////////////
 
-DrawListSharedData :: struct { // Data shared among multiple draw lists (typically owned by parent ImGui context, but you may create one yourself)
-}
-
-FontBuilderIO :: struct { // Opaque interface to a font builder (stb_truetype or FreeType).
-}
-
-Context :: struct { // Dear ImGui context (opaque structure, unless including imgui_internal.h)
-}
-
 Vec2 :: [2]f32
 Vec4 :: [4]f32
 // Sorting specifications for a table (often handling sort specs for a single column, occasionally more)
@@ -1797,7 +1789,7 @@ FontAtlasCustomRect :: struct {
 	GlyphID:       c.uint,   // Input    // For custom font glyphs only (ID < 0x110000)
 	GlyphAdvanceX: f32,      // Input    // For custom font glyphs only: glyph xadvance
 	GlyphOffset:   Vec2,     // Input    // For custom font glyphs only: glyph display offset
-	Font:          ^Font,    // Input    // For custom font glyphs only: target font
+	Font_:         ^Font,    // Input    // For custom font glyphs only: target font
 }
 
 // Load and rasterize multiple TTF/OTF fonts into a same texture. The font atlas will build a single texture holding:
@@ -1882,7 +1874,7 @@ Font :: struct {
 //   - Work Area = entire viewport minus sections used by main menu bars (for platform windows), or by task bar (for platform monitor).
 //   - Windows are generally trying to stay within the Work Area of their host viewport.
 Viewport :: struct {
-	_ID:              ID,            // Unique identifier for the viewport
+	ID_:              ID,            // Unique identifier for the viewport
 	Flags:            ViewportFlags, // See ImGuiViewportFlags_
 	Pos:              Vec2,          // Main Area: Position of the viewport (Dear ImGui coordinates are the same as OS desktop/native coordinates)
 	Size:             Vec2,          // Main Area: Size of the viewport.
@@ -1890,7 +1882,7 @@ Viewport :: struct {
 	WorkSize:         Vec2,          // Work Area: Size of the viewport minus task bars, menu bars, status bars (<= Size)
 	DpiScale:         f32,           // 1.0f = 96 DPI = No extra scale.
 	ParentViewportId: ID,            // (Advanced) 0: no parent. Instruct the platform backend to setup a parent/child relationship between platform windows.
-	_DrawData:        ^DrawData,     // The ImDrawData corresponding to this viewport. Valid after Render() and until the next call to NewFrame().
+	DrawData_:        ^DrawData,     // The ImDrawData corresponding to this viewport. Valid after Render() and until the next call to NewFrame().
 	// Platform/Backend Dependent Data
 	// Our design separate the Renderer and Platform backends to facilitate combining default backends with each others.
 	// When our create your own backend for a custom engine, it is possible that both Renderer and Platform will be handled

@@ -178,7 +178,7 @@ _type_aliases = {
 
 	"size_t": "c.size_t",
 
-	"va_list": "libc.va_list",
+	"FILE": "libc.FILE"
 }
 
 _pointer_aliases = {
@@ -325,10 +325,13 @@ def convert_imvec_value(value: str, components: int) -> str:
 	return "{" + ", ".join(values) + "}"
 
 def make_value_odiney(value: str, type_hint: str = None) -> str:
-	if value.endswith("f"): return value.removesuffix("f")
+	if value == "IM_COL32(255, 0, 0, 255)": return "u32(0xff0000ff)" # joyous world
 	if value in _odin_value_aliases: return _odin_value_aliases[value]
 	if type_hint == "Vec2": return convert_imvec_value(value, 2)
 	if type_hint == "Vec4": return convert_imvec_value(value, 4)
+	# TODO: This is almost certainly not the right place to do this
+	if strip_imgui_branding(value) != value: return strip_imgui_branding(value)
+	if value.endswith("f"): return value.removesuffix("f")
 
 	if value == "0" and not type_is_int(type_hint): return "{}"
 
@@ -341,6 +344,7 @@ def write_global_header(file: typing.IO):
 def write_import_header(file: typing.IO):
 	write_line(file, """
 import "core:c"
+import "core:c/libc"
 
 when ODIN_OS == .Linux || ODIN_OS == .Darwin { @(require) foreign import stdcpp { "system:c++" } }
 when      ODIN_OS == .Windows { when ODIN_ARCH == .amd64 { foreign import lib "imgui_windows_x64.lib" } else { foreign import lib "imgui_windows_arm64.lib" } }
@@ -457,9 +461,15 @@ _allowed_ifdef = [
 	"IMGUI_ENABLE_FREETYPE",
 ]
 
+_define_overrides = {
+	"IMGUI_ENABLE_SSE": False,
+}
+
 # Defines to process whatsoever
 _defines_to_process = []
 for define in (_defines_to_emit + _allowed_user_defines + _allowed_ifdef):
+	if not define in _defines_to_process: _defines_to_process.append(define)
+for define in _define_overrides.keys():
 	if not define in _defines_to_process: _defines_to_process.append(define)
 
 # Evaluated define and value
@@ -529,16 +539,23 @@ def ingest_and_write_defines(file: typing.IO, defines):
 
 	for define in defines:
 		define_name = define["name"]
-
 		if not define_name in _defines_to_process: continue
-		is_user_define = define["source_location"]["filename"].endswith("imconfig.h")
-		if not passes_conditionals(define): continue
 
-		if is_user_define and not define_name in _allowed_user_defines:
-			die("Disallowed user define '" + define_name + "'")
+		if define_name in _define_overrides:
+			processed_defines[define_name] = _define_overrides[define_name]
+		else:
+			is_user_define = define["source_location"]["filename"].endswith("imconfig.h")
+			if not passes_conditionals(define):
+				assert not is_user_define # Why you ifdef-ing in imconfig....
+				continue
 
-		if define_name in processed_defines: die("Define '" + define_name + "' already defined! This is almost certainly not correct")
-		processed_defines[define_name] = define.get("content", "")
+			if is_user_define and not define_name in _allowed_user_defines:
+				die("Disallowed user define '" + define_name + "'")
+
+			if define_name in processed_defines:
+				die("Define '" + define_name + "' already defined! This is almost certainly not correct")
+			else:
+				processed_defines[define_name] = define.get("content", "")
 
 		if define_name in _defines_to_emit:
 			append_aligned_field(aligned, [define_strip_prefix(define_name), f' :: {define.get("content", "true")}'], define)
@@ -702,6 +719,9 @@ _imgui_enum_as_constants = [
 	# This one is special, because it doesn't actually define a single flag of its own...
 	# It's also deprecated TODO: seems to be fixed!
 	# "ImDrawCornerFlags_",
+	# These are made constants as one of their fields are used as default args in procs
+	"ImGuiNavHighlightFlags_",
+	"ImGuiTypingSelectFlags_",
 ]
 
 _imgui_enum_skip = [
@@ -748,16 +768,20 @@ _imgui_struct_override = {
 	"ImVec4": "Vec4 :: [4]f32",
 }
 
+# Struct fields which are the same identifier as a type.
+# TODO[TS]: This can be fixed properly, by stringifying all the field types,
+# then checking that our field name is not in that list.
 _imgui_struct_field_name_override = {
-	# We have a field called `ID` of type `ID`. In Odin, field names can not
-	# have the same identifier as a type in the same struct.
-	# TODO[TS]: This can be fixed properly, by stringifying all the field types,
-	# then checking that our field name is not in that list.
-	"ID": "_ID",
-	# Same situation here
-	"Rect": "_Rect",
-	"Window": "_Window",
-	"DrawData": "_DrawData",
+	"ID",
+	"Rect",
+	"Window",
+	"DrawData",
+	"Font",
+	"PlatformImeData",
+	"DebugLogFlags",
+	"LayoutType",
+	"DrawList",
+	"DockNode",
 }
 
 # These structs are defined properly if imgui_internal is included, but are
@@ -787,9 +811,11 @@ def write_structs(file: typing.IO, structs):
 		field_components = []
 		for field in struct["fields"]:
 			if not passes_conditionals(field): continue
-			adjusted_name = apply_override(field["name"], _imgui_struct_field_name_override)
+			name = field["name"]
+			if name in _imgui_struct_field_name_override:
+				name = name + "_"
 			field_type = parse_type(field["type"])
-			append_aligned_field(field_components, [f'{adjusted_name}: ', f'{field_type},'], field)
+			append_aligned_field(field_components, [f'{name}: ', f'{field_type},'], field)
 
 		write_aligned_fields(file, field_components, 1)
 
@@ -923,6 +949,10 @@ _imgui_allowed_typedefs = [
 	"ImGuiTableDrawChannelIdx",
 	"ImGuiKeyRoutingIndex",
 	"ImBitArrayPtr",
+	"ImPoolIdx",
+	"ImGuiContextHookCallback",
+	"ImFileHandle",
+	"ImGuiErrorLogCallback",
 ]
 
 _imgui_typedef_overrides = {
