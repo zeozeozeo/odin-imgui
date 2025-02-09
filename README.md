@@ -42,11 +42,11 @@ This project allows you to compile ImGui backends alongside imgui itself, which 
 Bindings have been written for a subset of the backends provided by ImGui
  - You can see if a backend is supported by checking the `backends` table in `build.py`.
  - If a backend is supported it means that:
-	- Bindings have been written to `imgui_impl.odin`
-	- It has been successfully compiled in the latest revision, for both supported branches.
+	- Bindings have been written in `imgui_impl_xyz/`
+	- It has been successfully compiled and run in one of the `examples/`
  - Some backends have external dependencies. These will automatically be cloned into `backend_deps` if necessary.
  - You can enable a backend by adding it to `wanted_backends`
- - You can enable backends not officially supported. (If it works, please MR!)
+ - You can enable backends not officially supported.
 
 ### `compile_debug`
 If set to true, will compile with debug flags
