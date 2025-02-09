@@ -345,6 +345,7 @@ def write_import_header(file: typing.IO):
 	write_line(file, """
 import "core:c"
 import "core:c/libc"
+_ :: libc
 
 when ODIN_OS == .Linux || ODIN_OS == .Darwin { @(require) foreign import stdcpp { "system:c++" } }
 when      ODIN_OS == .Windows { when ODIN_ARCH == .amd64 { foreign import lib "imgui_windows_x64.lib" } else { foreign import lib "imgui_windows_arm64.lib" } }

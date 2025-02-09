@@ -223,6 +223,8 @@ def main():
 	# Gather sources, defines, includes etc
 	all_sources = imgui_sources
 	all_sources += ["c_imgui.cpp"]
+	if build_imgui_internal:
+		all_sources.append("c_imgui_internal.cpp")
 
 	# Basic flags
 	compile_flags = platform_select({
