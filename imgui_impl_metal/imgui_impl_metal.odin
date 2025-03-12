@@ -4,16 +4,20 @@ package imgui_impl_metal
 import imgui "../"
 import mtl "vendor:darwin/Metal"
 
-// NOTE[TS]: This is a workaround to force link with QuartzCore, as required
-// by the imgui metal implementation. Else you'd have to manually link.
-// We also depend on libcxx, which we can hackily depend on by attaching it to this import.
-@(require, extra_linker_flags="-lc++")
-foreign import "system:QuartzCore.framework"
-
 when      ODIN_OS == .Windows { foreign import lib "../imgui_windows_x64.lib" }
 else when ODIN_OS == .Linux   { foreign import lib "../imgui_linux_x64.a" }
 else when ODIN_OS == .Darwin  {
-	when ODIN_ARCH == .amd64 { foreign import lib "../imgui_darwin_x64.a" } else { foreign import lib "../imgui_darwin_arm64.a" }
+	when ODIN_ARCH == .amd64 { 
+		foreign import lib {
+			"../imgui_darwin_x64.a",
+			"system:QuartzCore.framework",
+		}
+	} else {
+		foreign import lib {
+			"../imgui_darwin_arm64.a",
+			"system:QuartzCore.framework",
+		}
+	}
 }
 
 // imgui_impl_metal.h

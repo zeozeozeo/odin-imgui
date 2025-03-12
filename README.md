@@ -10,7 +10,7 @@
  - Compiles bindings as well as any wanted backends
  - Tested on Windows, Linux, and Mac
  - Includes several examples which can be used as a reference
-	- `GLFW + OpenGL, SDL2 + D3D11, SDL2 + Metal, SDL2 + OpenGL, SDL2 + SDL2 Renderer, SDL2 + Vulkan, GLFW + WGPU`
+	- `GLFW + OpenGL, SDL2 + D3D11, SDL2 + Metal, SDL2 + OpenGL, SDL2 + SDL2 Renderer, SDL2 + Vulkan, GLFW + WGPU, JS/GLFW + W(eb)GPU, JS + WebGL`
 
 ## Usage
 If you don't want to configure and or build yourself, a prebuilt binary has been committed to the repository.
@@ -51,6 +51,9 @@ Bindings have been written for a subset of the backends provided by ImGui
 ### `compile_debug`
 If set to true, will compile with debug flags
 
+### `build_wasm`
+If set to true, will compile WASM object files too
+
 ## Examples
 
 There are some examples in `examples/`. They are runnable directly.
@@ -79,8 +82,10 @@ It seems likely to me that SDL3, and maybe Android will exist in vendor in the f
 | SDL_Renderer 2 |     Yes      |     Yes     | Has example, but Odin vendor library lacks required version (2.0.18) |
 | SDL_Renderer 3 |      No      |     No      | No odin bindings in vendor (yet)                                     |
 | Vulkan         |     Yes      |     No      | Tested in my own engine, but no example yet due to size              |
-| WebGPU         |     Yes      |     Yes     | Browser/JS not supported, would require some emscripten workaround   |
 | win32          |     Yes      |     No      | Bindings created, but not tested                                     |
+| JS             |     Yes      |     Yes     | Native Odin backend - Docking doesn't work for some reason           |
+| WebGPU         |     Yes      |     Yes     | Native Odin backend                                                  |
+| WebGL          |     Yes      |     Yes     | Native Odin backend - WebGL 2 only                                   |
 
 ## Updating
 

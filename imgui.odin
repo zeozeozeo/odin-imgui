@@ -1,13 +1,29 @@
 package imgui
 
 import "core:c"
-import "core:c/libc"
-_ :: libc
 
-when ODIN_OS == .Linux || ODIN_OS == .Darwin { @(require) foreign import stdcpp { "system:c++" } }
-when      ODIN_OS == .Windows { when ODIN_ARCH == .amd64 { foreign import lib "imgui_windows_x64.lib" } else { foreign import lib "imgui_windows_arm64.lib" } }
-else when ODIN_OS == .Linux   { when ODIN_ARCH == .amd64 { foreign import lib "imgui_linux_x64.a" }     else { foreign import lib "imgui_linux_arm64.a" } }
-else when ODIN_OS == .Darwin  { when ODIN_ARCH == .amd64 { foreign import lib "imgui_darwin_x64.a" }    else { foreign import lib "imgui_darwin_arm64.a" } }
+@(private="file") ARCH :: "x64" when ODIN_ARCH == .amd64 else "arm64"
+
+when ODIN_OS == .Windows {
+	foreign import lib { "imgui_windows_" + ARCH + ".lib" }
+} else when ODIN_OS == .Linux {
+	foreign import lib {
+		"imgui_linux_" + ARCH + ".a",
+		"system:c++",
+	}
+} else when ODIN_OS == .Darwin {
+	foreign import lib {
+		"imgui_darwin_" + ARCH + ".a",
+		"system:c++",
+	}
+} else when ODIN_OS == .JS {
+	foreign import lib "wasm/c_imgui.o"
+	@(require) foreign import "wasm/imgui.o"
+	@(require) foreign import "wasm/imgui_demo.o"
+	@(require) foreign import "wasm/imgui_draw.o"
+	@(require) foreign import "wasm/imgui_tables.o"
+	@(require) foreign import "wasm/imgui_widgets.o"
+}
 
 CHECKVERSION :: proc() {
 	DebugCheckVersionAndDataLayout(VERSION, size_of(IO), size_of(Style), size_of(Vec2), size_of(Vec4), size_of(DrawVert), size_of(DrawIdx))
@@ -1975,6 +1991,7 @@ PlatformImeData :: struct {
 // FUNCTIONS
 ////////////////////////////////////////////////////////////
 
+@(default_calling_convention="c")
 foreign lib {
 	// Context creation and access
 	// - Each context create its own ImFontAtlas by default. You may instance one yourself and pass it to CreateContext() to share a font atlas between contexts.

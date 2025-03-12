@@ -1,14 +1,24 @@
 package imgui
 
 import "core:c"
-import "core:c/libc"
-_ :: libc
 
-when ODIN_OS == .Linux || ODIN_OS == .Darwin { @(require) foreign import stdcpp { "system:c++" } }
-when      ODIN_OS == .Windows { when ODIN_ARCH == .amd64 { foreign import lib "imgui_windows_x64.lib" } else { foreign import lib "imgui_windows_arm64.lib" } }
-else when ODIN_OS == .Linux   { when ODIN_ARCH == .amd64 { foreign import lib "imgui_linux_x64.a" }     else { foreign import lib "imgui_linux_arm64.a" } }
-else when ODIN_OS == .Darwin  { when ODIN_ARCH == .amd64 { foreign import lib "imgui_darwin_x64.a" }    else { foreign import lib "imgui_darwin_arm64.a" } }
+@(private="file") ARCH :: "x64" when ODIN_ARCH == .amd64 else "arm64"
 
+when ODIN_OS == .Windows {
+	foreign import lib { "imgui_windows_" + ARCH + ".lib" }
+} else when ODIN_OS == .Linux {
+	foreign import lib {
+		"imgui_linux_" + ARCH + ".a",
+		"system:c++",
+	}
+} else when ODIN_OS == .Darwin {
+	foreign import lib {
+		"imgui_darwin_" + ARCH + ".a",
+		"system:c++",
+	}
+} else when ODIN_OS == .JS {
+	foreign import lib "wasm/c_imgui_internal.o"
+}
 
 ////////////////////////////////////////////////////////////
 // DEFINES
@@ -2142,6 +2152,7 @@ FontBuilderIO :: struct {
 // FUNCTIONS
 ////////////////////////////////////////////////////////////
 
+@(default_calling_convention="c")
 foreign lib {
 	// Helpers: Hashing
 	@(link_name="cImHashData") cImHashData :: proc(data: rawptr, data_size: c.size_t, seed: ID = {}) -> ID       ---
@@ -2912,7 +2923,7 @@ foreign lib {
 // Our current column maximum is 64 but we may raise that in the future.
 TableColumnIdx   :: i16
 ErrorLogCallback :: proc "c" (user_data: rawptr, fmt: cstring, #c_vararg args: ..any)
-FileHandle       :: ^libc.FILE
+FileHandle       :: ^c.FILE
 BitArrayPtr      :: ^u32                                                              // Name for use in structs
 // Helper: ImPool<>
 // Basic keyed storage for contiguous instances, slow/amortized insertion, O(1) indexable, O(Log N) queries by ID over a dense/hot buffer,
