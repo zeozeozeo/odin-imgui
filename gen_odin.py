@@ -259,7 +259,7 @@ _imgui_bounds_value_overrides = {
 	# TODO: These can be evaluated with varying levels of effort
 	"32+1": "33",
 	"IM_DRAWLIST_TEX_LINES_WIDTH_MAX+1": str(int(IM_DRAWLIST_TEX_LINES_WIDTH_MAX+1)),
-	"(IM_UNICODE_CODEPOINT_MAX +1)/4096/8": str(int((IM_UNICODE_CODEPOINT_MAX +1)/4096/8)),
+	"(IM_UNICODE_CODEPOINT_MAX +1)/8192/8": str(int((IM_UNICODE_CODEPOINT_MAX +1)/8192/8)),
 }
 
 # Get array count for name. If not array, returns None
@@ -631,6 +631,14 @@ def write_enum_as_flags(file, enum, enum_field_prefix, name):
 			handled = True
 		else:
 			# We're something weird
+
+			# NavRenderCursorFlags_None is used for some argument default values
+			# as well as backward-compat names, so let's generate it
+			if enum["name"] == "ImGuiNavRenderCursorFlags_":
+				if element_value == "0" or element_value == "ImGuiNavRenderCursorFlags_None":
+					append_aligned_field(aligned_flags, [f'{name}_{element_name}', f' :: {name}{{}}'], element)
+					continue
+
 			if element_value == "0": continue # This is the _None variant, which can be represented in Odin by {}
 
 			if try_eval(element_value) != None:
@@ -953,7 +961,7 @@ _imgui_allowed_typedefs = [
 	"ImPoolIdx",
 	"ImGuiContextHookCallback",
 	"ImFileHandle",
-	"ImGuiErrorLogCallback",
+	"ImGuiErrorCallback"
 ]
 
 _imgui_typedef_overrides = {

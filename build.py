@@ -17,14 +17,14 @@ import random
 # @CONFIGURE: Must be key into below table
 # Note that the backend files and examples may also have to be updated, if you use these.
 git_heads = {
-	"imgui": "v1.91.1-docking",
-	"dear_bindings": "81c906b",
+	"imgui": "v1.91.9b-docking",
+	"dear_bindings": "b8e5511",
 }
 
 # Note - tested with Odin version `dev-2025-01`
 
 # @CONFIGURE: Elements must be keys into below table
-wanted_backends = ["vulkan", "sdl2", "opengl3", "sdlrenderer2", "glfw", "dx11", "dx12", "win32", "osx", "metal", "wgpu"]
+wanted_backends = ["sdl3", "sdlgpu3"]
 # Supported means that an impl bindings file exists, and that it has been tested.
 # Some backends (like dx12, win32) have bindings but not been tested.
 backends = {
@@ -42,7 +42,8 @@ backends = {
 	"opengl3":      { "supported": True  },
 	"osx":          { "supported": False, "enabled_on": ["darwin"] },
 	"sdl2":         { "supported": True,  "deps": ["sdl2"] },
-	"sdl3":         { "supported": False },
+	"sdl3":         { "supported": True,  "deps": ["sdl3"] },
+	"sdlgpu3":      { "supported": True,  "deps": ["sdl3"] },
 	"sdlrenderer2": { "supported": True,  "deps": ["sdl2"] },
 	"sdlrenderer3": { "supported": False },
 	"vulkan":       { "supported": True,  "defines": ["VK_NO_PROTOTYPES"], "deps": ["vulkan"] },
@@ -54,6 +55,7 @@ backends = {
 # Indirection for backend dependencies, as some might have the same dependency, and their commits can't get out of sync.
 backend_deps = {
 	"sdl2":   { "repo": "https://github.com/libsdl-org/SDL.git",               "commit": "release-2.28.3", "path": "SDL2" },
+	"sdl3":   { "repo": "https://github.com/libsdl-org/SDL.git",               "commit": "release-3.2.8",  "path": "SDL3" },
 	"glfw":   { "repo": "https://github.com/glfw/glfw.git",                    "commit": "3eaf125",        "path": "glfw" },
 	"vulkan": { "repo": "https://github.com/KhronosGroup/Vulkan-Headers.git",  "commit": "4f51aac",        "path": "Vulkan-Headers" },
 	"wgpu":   { "repo": "https://github.com/webgpu-native/webgpu-headers.git", "commit": "aef5e42",        "path": "webgpu-headers/webgpu", "include": "webgpu-headers" },
@@ -135,6 +137,8 @@ def has_tool(tool: str) -> bool:
 def ensure_checked_out_with_commit(dir: str, repo: str, wanted_commit: str):
 	if not path.exists(dir):
 		exec(["git", "clone", repo, dir], f"Cloning {dir}")
+	else:
+		exec(["git", "-C", dir, "fetch"], f"Updating {dir}")
 
 	exec(["git", "-c", "advice.detachedHead=false", "-C", dir, "checkout", "-f", wanted_commit], f"Checking out {dir}")
 
@@ -266,6 +270,9 @@ def main():
 
 		if backend_name == "opengl3":
 			shutil.copy(pp("imgui/backends/imgui_impl_opengl3_loader.h"), "temp")
+
+		if backend_name == "sdlgpu3":
+			shutil.copy(pp("imgui/backends/imgui_impl_sdlgpu3_shaders.h"), "temp")
 
 		for define in backend.get("defines", []): compile_flags += [platform_select({ "windows": f"/D{define}", "linux, darwin": f"-D{define}" })]
 
