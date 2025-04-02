@@ -20,6 +20,10 @@ InitInfo :: struct {
 	MSAASamples: sdl.GPUSampleCount
 }
 
+texture_id :: #force_inline proc(binding: ^sdl.GPUTextureSamplerBinding) -> imgui.TextureID {
+	return transmute(imgui.TextureID)binding
+}
+
 @(link_prefix="ImGui_ImplSDLGPU3_")
 foreign lib {
 	Init :: proc(info: ^InitInfo) -> bool ---
