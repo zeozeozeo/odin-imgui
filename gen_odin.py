@@ -1072,9 +1072,4 @@ def main():
 		write_functions(imgui_internal_file, imgui_internal_info["functions"])
 		write_typedefs(imgui_internal_file, imgui_internal_info["typedefs"])
 
-	js_file = open("imgui_js.odin", "w+")
-	write_global_header(js_file)
-	write_line(js_file)
-	write_line(js_file, '@(require) import _ "vendor:libc"')
-
 if __name__ == "__main__": main()
