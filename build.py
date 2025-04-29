@@ -24,7 +24,7 @@ git_heads = {
 # Note - tested with Odin version `dev-2025-01`
 
 # @CONFIGURE: Elements must be keys into below table
-wanted_backends = ["sdl3", "sdlgpu3", "vulkan"]
+wanted_backends = ["vulkan", "glfw", "sdl3", "sdlgpu3"]
 # Supported means that an impl bindings file exists, and that it has been tested.
 # Some backends (like dx12, win32) have bindings but not been tested.
 backends = {
