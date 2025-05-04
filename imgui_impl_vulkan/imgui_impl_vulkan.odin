@@ -18,6 +18,7 @@ else when ODIN_OS == .Darwin  {
 // - When using dynamic rendering, set UseDynamicRendering=true and fill PipelineRenderingCreateInfo structure.
 // [Please zero-clear before use!]
 InitInfo :: struct {
+	ApiVersion:     u32,
 	Instance:       vk.Instance,
 	PhysicalDevice: vk.PhysicalDevice,
 	Device:         vk.Device,
@@ -32,6 +33,9 @@ InitInfo :: struct {
 	// (Optional)
 	PipelineCache: vk.PipelineCache,
 	Subpass:       u32,
+
+	// (Optional) Set to create internal descriptor pool instead of using DescriptorPool
+	DescriptorPoolSize: u32,
 
 	// (Optional) Dynamic Rendering
 	// Need to explicitly enable VK_KHR_dynamic_rendering extension to use this, even for Vulkan 1.3.
@@ -64,7 +68,7 @@ foreign lib {
 
 	// Optional: load Vulkan functions with a custom function loader
 	// This is only useful with IMGUI_IMPL_VULKAN_NO_PROTOTYPES / VK_NO_PROTOTYPES
-	LoadFunctions :: proc(loader_func: proc "c" (function_name: cstring, user_data: rawptr) -> vk.ProcVoidFunction, user_data: rawptr = nil) -> bool ---
+	LoadFunctions :: proc(api_version: u32, loader_func: proc "c" (function_name: cstring, user_data: rawptr) -> vk.ProcVoidFunction, user_data: rawptr = nil) -> bool ---
 }
 
 // There are some more Vulkan functions/structs, but they aren't necessary
