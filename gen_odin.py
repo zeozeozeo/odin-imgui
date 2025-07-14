@@ -178,7 +178,7 @@ _type_aliases = {
 
 	"size_t": "c.size_t",
 
-	"FILE": "libc.FILE"
+	"FILE": "c.FILE"
 }
 
 _pointer_aliases = {
@@ -344,14 +344,52 @@ def write_global_header(file: typing.IO):
 def write_import_header(file: typing.IO):
 	write_line(file, """
 import "core:c"
-import "core:c/libc"
-_ :: libc
 
-when ODIN_OS == .Linux || ODIN_OS == .Darwin { @(require) foreign import stdcpp { "system:c++" } }
-when      ODIN_OS == .Windows { when ODIN_ARCH == .amd64 { foreign import lib "imgui_windows_x64.lib" } else { foreign import lib "imgui_windows_arm64.lib" } }
-else when ODIN_OS == .Linux   { when ODIN_ARCH == .amd64 { foreign import lib "imgui_linux_x64.a" }     else { foreign import lib "imgui_linux_arm64.a" } }
-else when ODIN_OS == .Darwin  { when ODIN_ARCH == .amd64 { foreign import lib "imgui_darwin_x64.a" }    else { foreign import lib "imgui_darwin_arm64.a" } }
+@(private="file") ARCH :: "x64" when ODIN_ARCH == .amd64 else "arm64"
+
+when ODIN_OS == .Windows {
+	foreign import lib { "imgui_windows_" + ARCH + ".lib" }
+} else when ODIN_OS == .Linux {
+	foreign import lib {
+		"imgui_linux_" + ARCH + ".a",
+		"system:c++",
+	}
+} else when ODIN_OS == .Darwin {
+	foreign import lib {
+		"imgui_darwin_" + ARCH + ".a",
+		"system:c++",
+	}
+} else when ODIN_OS == .JS {
+	foreign import lib "wasm/c_imgui.o"
+	@(require) foreign import "wasm/imgui.o"
+	@(require) foreign import "wasm/imgui_demo.o"
+	@(require) foreign import "wasm/imgui_draw.o"
+	@(require) foreign import "wasm/imgui_tables.o"
+	@(require) foreign import "wasm/imgui_widgets.o"
+}
 """)
+
+def write_import_header_internal(file: typing.IO):
+	write_line(file, """
+import "core:c"
+
+@(private="file") ARCH :: "x64" when ODIN_ARCH == .amd64 else "arm64"
+
+when ODIN_OS == .Windows {
+	foreign import lib { "imgui_windows_" + ARCH + ".lib" }
+} else when ODIN_OS == .Linux {
+	foreign import lib {
+		"imgui_linux_" + ARCH + ".a",
+		"system:c++",
+	}
+} else when ODIN_OS == .Darwin {
+	foreign import lib {
+		"imgui_darwin_" + ARCH + ".a",
+		"system:c++",
+	}
+} else when ODIN_OS == .JS {
+	foreign import lib "wasm/c_imgui_internal.o"
+}""")
 
 def write_main_file_header(file: typing.IO):
 	write_line(file, """CHECKVERSION :: proc() {
@@ -906,6 +944,7 @@ def function_has_default_args(function) -> bool:
 
 def write_functions(file: typing.IO, functions):
 	write_section(file, "Functions")
+	write_line(file, '@(default_calling_convention="c")')
 	write_line(file, "foreign lib {")
 
 	aligned = []
@@ -1034,7 +1073,7 @@ def main():
 		imgui_internal_info = json.load(open(args.imgui_internal))
 		imgui_internal_file = open("imgui_internal.odin", "w+")
 		write_global_header(imgui_internal_file)
-		write_import_header(imgui_internal_file)
+		write_import_header_internal(imgui_internal_file)
 		ingest_and_write_defines(imgui_internal_file, imgui_internal_info["defines"])
 		write_enums(imgui_internal_file, imgui_internal_info["enums"])
 		write_structs(imgui_internal_file, imgui_internal_info["structs"])
