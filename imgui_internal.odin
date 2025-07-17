@@ -2993,10 +2993,9 @@ foreign lib {
 ////////////////////////////////////////////////////////////
 
 // Our current column maximum is 64 but we may raise that in the future.
-TableColumnIdx   :: i16
-ErrorLogCallback :: proc "c" (user_data: rawptr, fmt: cstring, #c_vararg args: ..any)
-FileHandle       :: ^c.FILE
-BitArrayPtr      :: ^u32                                                              // Name for use in structs
+TableColumnIdx :: i16
+FileHandle     :: ^c.FILE
+BitArrayPtr    :: ^u32    // Name for use in structs
 // Helper: ImPool<>
 // Basic keyed storage for contiguous instances, slow/amortized insertion, O(1) indexable, O(Log N) queries by ID over a dense/hot buffer,
 // Honor constructor/destructor. Add/remove invalidate all pointers. Indexes have the same lifetime as the associated object.

@@ -3046,7 +3046,6 @@ foreign lib {
 // TYPEDEFS
 ////////////////////////////////////////////////////////////
 
-DrawIdx :: c.ushort // Default: 16-bit (for maximum compatibility with renderer backends)
 // Scalar data types
 ID       :: c.uint // A unique ID used by widgets (typically the result of hashing a stack of string)
 KeyChord :: c.int  // -> ImGuiKey | ImGuiMod_XXX    // Flags: for IsKeyChordPressed(), Shortcut() etc. an ImGuiKey optionally OR-ed with one or more ImGuiMod_XXX values.
@@ -3065,4 +3064,5 @@ SizeCallback      :: proc "c" (data: ^SizeCallbackData)                   // Cal
 MemAllocFunc      :: proc "c" (sz: c.size_t, user_data: rawptr) -> rawptr // Function signature for ImGui::SetAllocatorFunctions()
 MemFreeFunc       :: proc "c" (ptr: rawptr, user_data: rawptr)            // Function signature for ImGui::SetAllocatorFunctions()
 TextureID         :: u64                                                  // Default: store a pointer or an integer fitting in a pointer (most renderer backends are ok with that)
+DrawIdx           :: c.ushort                                             // Default: 16-bit (for maximum compatibility with renderer backends)
 DrawCallback      :: proc "c" (parent_list: ^DrawList, cmd: ^DrawCmd)

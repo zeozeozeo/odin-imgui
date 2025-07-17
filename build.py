@@ -18,13 +18,13 @@ import random
 # Note that the backend files and examples may also have to be updated, if you use these.
 git_heads = {
 	"imgui": "v1.91.9b-docking",
-	"dear_bindings": "b8e5511",
+	"dear_bindings": "81c906b",
 }
 
 # Note - tested with Odin version `dev-2025-01`
 
 # @CONFIGURE: Elements must be keys into below table
-wanted_backends = ["vulkan", "sdl2", "opengl3", "sdlrenderer2", "glfw", "dx11", "dx12", "win32", "osx", "metal", "wgpu", "webgl", "sdl3", "sdlgpu3"]
+wanted_backends = ["vulkan", "sdl2", "opengl3", "sdlrenderer2", "glfw", "dx11", "dx12", "win32", "osx", "metal", "wgpu", "webgl", "sdlgpu3"]
 # Supported means that an impl bindings file exists, and that it has been tested.
 # Some backends (like dx12, win32) have bindings but not been tested.
 backends = {
@@ -213,6 +213,9 @@ def compile(backend_deps_names: typing.Set[str], all_sources: typing.List[str], 
 			if backend_name == "opengl3":
 				shutil.copy(pp("imgui/backends/imgui_impl_opengl3_loader.h"), "temp")
 
+			if backend_name == "sdlgpu3":
+				shutil.copy(pp("imgui/backends/imgui_impl_sdlgpu3_shaders.h"), "temp")
+
 			for define in backend.get("defines", []): compile_flags += [platform_select({ "windows": f"/D{define}", "linux, darwin": f"-D{define}" })]
 
 		# Add backend dependency include paths
@@ -328,54 +331,6 @@ def main():
 	if build_wasm:
 		compile(backend_deps_names, all_sources, True)
 	compile(backend_deps_names, all_sources, False)
-
-	# Find and copy imgui backend sources to temp folder
-	for backend_name in wanted_backends:
-		backend = backends[backend_name]
-
-		if "enabled_on" in backend and not platform.system().lower() in backend["enabled_on"]:
-			continue
-
-		if not backend["supported"]:
-			print(f"Warning: compiling backend '{backend_name}' which is not officially supported")
-
-		glob_copy(pp("imgui/backends"), f"imgui_impl_{backend_name}.*", "temp")
-
-		if backend_name in ["osx", "metal"]: all_sources += [f"imgui_impl_{backend_name}.mm"]
-		else:                                all_sources += [f"imgui_impl_{backend_name}.cpp"]
-
-		if backend_name == "opengl3":
-			shutil.copy(pp("imgui/backends/imgui_impl_opengl3_loader.h"), "temp")
-
-		if backend_name == "sdlgpu3":
-			shutil.copy(pp("imgui/backends/imgui_impl_sdlgpu3_shaders.h"), "temp")
-
-		for define in backend.get("defines", []): compile_flags += [platform_select({ "windows": f"/D{define}", "linux, darwin": f"-D{define}" })]
-
-	# Add backend dependency include paths
-	for backend_dep in backend_deps_names:
-		include_path = path.join(backend_deps[backend_dep]["path"], "include")
-		if "include" in backend_deps[backend_dep]:
-			include_path = backend_deps[backend_dep]["include"]
-
-		if platform_win32_like:  compile_flags += ["/I" + path.join("..", "backend_deps", include_path)]
-		elif platform_unix_like: compile_flags += ["-I" + path.join("..", "backend_deps", include_path)]
-
-	all_objects = []
-	if platform_win32_like: all_objects += map(lambda file: file.removesuffix(".cpp") + ".obj", all_sources)
-	elif platform_unix_like:
-		for file in all_sources:
-			if file.endswith(".cpp"): all_objects.append(file.removesuffix(".cpp") + ".o")
-			elif file.endswith(".mm"): all_objects.append(file.removesuffix(".mm") + ".o")
-
-	os.chdir("temp")
-
-	# cl.exe, *in particular*, won't work without running vcvarsall first, even if cl.exe is in the path.
-	# See did_re_execute
-	if platform_win32_like:  exec_vcvars(["cl"] + compile_flags + ["/c"] + all_sources, "Compiling sources")
-	elif platform_unix_like: exec(["clang"] + compile_flags + ["-c"] + all_sources, "Compiling sources")
-
-	os.chdir("..")
 
 	dest_binary = get_platform_imgui_lib_name()
 
